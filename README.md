@@ -21,6 +21,15 @@ credit** — with a database that guarantees stock and credit integrity.
   overrides, stock-take approval and user management are gated in the RPCs and
   in RLS — not just the UI.
 
+## Documentation
+
+| Doc | What's in it |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, request lifecycle, why the database is the security boundary, concurrency. |
+| [docs/DATABASE.md](docs/DATABASE.md) | Table-by-table schema, every RPC and view, and the RLS model. |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Supabase + Vercel setup, CI checks, and the go-live checklist. |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Requirements interrogation: ambiguities, risks, and the interpretations chosen. |
+
 ## Tech stack
 
 | Layer | Choice |
