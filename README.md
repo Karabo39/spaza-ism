@@ -16,7 +16,12 @@ credit** — with a database that guarantees stock and credit integrity.
   PostgreSQL **Row Level Security**. Tenant isolation is enforced in the
   database, not the client.
 - **Scan-first UX.** USB keyboard-wedge scanners work out of the box (scan →
-  Enter → next). Unknown barcodes prompt product registration inline.
+  Enter → next), plus **live camera scanning** on phones. Unknown barcodes
+  prompt product registration inline.
+- **Works offline.** Installable PWA: scan, look up prices, and record cash sales
+  with no signal — sales queue locally and replay through the authoritative RPC
+  on reconnect. The server stays the source of truth, so offline can't corrupt
+  stock. See [docs/OFFLINE.md](docs/OFFLINE.md).
 - **Roles.** `owner` > `manager` > `employee`. Adjustments, credit-limit
   overrides, stock-take approval and user management are gated in the RPCs and
   in RLS — not just the UI.
@@ -28,6 +33,7 @@ credit** — with a database that guarantees stock and credit integrity.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, request lifecycle, why the database is the security boundary, concurrency. |
 | [docs/DATABASE.md](docs/DATABASE.md) | Table-by-table schema, every RPC and view, and the RLS model. |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Supabase + Vercel setup, CI checks, and the go-live checklist. |
+| [docs/OFFLINE.md](docs/OFFLINE.md) | Camera scanning and the offline-first design (safe cache + outbox). |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Requirements interrogation: ambiguities, risks, and the interpretations chosen. |
 
 ## Tech stack

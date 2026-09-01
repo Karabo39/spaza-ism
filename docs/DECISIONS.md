@@ -65,11 +65,14 @@ contradictory, the most reliable option for an inventory system was taken.
 
 ## Deliberately deferred
 
-- **Offline-first / PWA sync.** The app is PWA-installable and resilient to
-  connection failures, but a full offline transaction ledger was **not** built:
-  reconciling offline stock mutations safely is a substantial project and a naive
-  version would corrupt stock integrity — exactly what this system exists to
-  protect. Deferred to a dedicated phase.
+- **Offline-first / PWA.** Shipped as a **safe cache + outbox**, not an
+  independent offline ledger: the app installs and runs offline, scans/looks up
+  products from a local mirror, and captures **cash** sales to a local queue that
+  replays through the authoritative `complete_sale` RPC on reconnect (conflicts
+  surface for review, never silently corrupt stock). Credit sales, Goods In and
+  adjustments intentionally still require a connection. Full offline coverage
+  (credit offline, background sync) is a later phase. See
+  [OFFLINE.md](OFFLINE.md).
 - **Email-based user invitations.** Adding a teammate requires them to have
   signed up first; the owner then adds them by email (`add_member_by_email`).
   True invite emails need a mailer/edge function and are future work.

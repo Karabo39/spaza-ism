@@ -8,6 +8,7 @@ import { Menu, MenuTrigger, MenuContent, MenuItem, MenuLabel, MenuSeparator } fr
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { GlobalSearch } from "./global-search";
+import { OfflineIndicator } from "./offline-indicator";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
@@ -43,6 +44,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
       </button>
 
       <div className="ml-auto flex items-center gap-2">
+        <OfflineIndicator />
         {/* Store switcher */}
         {stores.length > 1 ? (
           <Menu>

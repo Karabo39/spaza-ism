@@ -14,15 +14,23 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/misc";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
+import { useOffline } from "@/lib/offline/offline-context";
+import { enqueueSale, localAdjustQuantity } from "@/lib/offline/db";
 import { money, qty, friendlyError } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ProductStock, CreditCustomer } from "@/lib/db/database.types";
 
 type Line = { productId: string; name: string; unit: string; quantity: number; unitPrice: number; stock: number };
 
+function isNetworkError(message?: string) {
+  const m = (message ?? "").toLowerCase();
+  return m.includes("fetch") || m.includes("network") || m.includes("failed") || m === "";
+}
+
 export function GoodsOutConsole() {
   const router = useRouter();
   const { store, currency, can } = useStore();
+  const { online, refresh: refreshOffline } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [saleType, setSaleType] = React.useState<"CASH" | "CREDIT">("CASH");
   const [customer, setCustomer] = React.useState<CreditCustomer | null>(null);
@@ -76,6 +84,26 @@ export function GoodsOutConsole() {
     setLines((prev) => prev.filter((l) => l.productId !== id));
   }
 
+  function resetCart() {
+    setLines([]); setCustomer(null); setOverride(false); setSaleType("CASH");
+  }
+
+  async function saveOffline() {
+    await enqueueSale({
+      id: crypto.randomUUID(),
+      storeId: store.id,
+      items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, unit_price: l.unitPrice })),
+      total,
+      createdAt: Date.now(),
+      status: "pending",
+    });
+    // Optimistically reduce mirrored stock so the next scans reflect it.
+    for (const l of lines) await localAdjustQuantity(l.productId, -l.quantity);
+    toast.success(`Saved offline — ${money(total, currency)}. It will sync when you're back online.`);
+    resetCart();
+    await refreshOffline();
+  }
+
   async function complete() {
     if (lines.length === 0) return;
     if (saleType === "CREDIT" && !customer) { toast.error("Select a customer for credit sale"); return; }
@@ -83,22 +111,45 @@ export function GoodsOutConsole() {
       toast.error("Over credit limit — enable override (manager) to proceed");
       return;
     }
+
+    // Offline: capture cash sales locally; credit needs the server (limit checks).
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      if (saleType === "CREDIT") {
+        toast.error("Credit sales need a connection. Use Cash, or complete this once you're back online.");
+        return;
+      }
+      setBusy(true);
+      await saveOffline();
+      setBusy(false);
+      return;
+    }
+
     setBusy(true);
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("complete_sale", {
-      p_store: store.id,
-      p_sale_type: saleType,
-      p_customer: saleType === "CREDIT" ? customer!.customer_id : null,
-      p_items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, unit_price: l.unitPrice })),
-      p_override: override,
-    });
-    setBusy(false);
-    if (error || !data) { toast.error(friendlyError(error?.message)); return; }
-    toast.success(
-      saleType === "CASH" ? `Cash sale complete — ${money(total, currency)}` : `Credit sale to ${customer?.name} — ${money(total, currency)}`,
-    );
-    setLines([]); setCustomer(null); setOverride(false); setSaleType("CASH");
-    router.refresh();
+    try {
+      const { data, error } = await supabase.rpc("complete_sale", {
+        p_store: store.id,
+        p_sale_type: saleType,
+        p_customer: saleType === "CREDIT" ? customer!.customer_id : null,
+        p_items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, unit_price: l.unitPrice })),
+        p_override: override,
+      });
+      setBusy(false);
+      if (error || !data) {
+        if (saleType === "CASH" && isNetworkError(error?.message)) { setBusy(true); await saveOffline(); setBusy(false); return; }
+        toast.error(friendlyError(error?.message));
+        return;
+      }
+      toast.success(
+        saleType === "CASH" ? `Cash sale complete — ${money(total, currency)}` : `Credit sale to ${customer?.name} — ${money(total, currency)}`,
+      );
+      resetCart();
+      router.refresh();
+    } catch {
+      setBusy(false);
+      if (saleType === "CASH") { setBusy(true); await saveOffline(); setBusy(false); return; }
+      toast.error("Couldn't reach the server. Try again when you have a connection.");
+    }
   }
 
   return (
@@ -227,9 +278,15 @@ export function GoodsOutConsole() {
           </div>
         </div>
 
-        <Button className="w-full" size="lg" loading={busy} disabled={lines.length === 0}
-          variant={saleType === "CREDIT" ? "primary" : "primary"} onClick={complete}>
-          {saleType === "CASH" ? "Complete cash sale" : "Complete credit sale"}
+        {!online ? (
+          <p className="rounded-md border border-warning/40 bg-warning/10 p-2 text-center text-xs text-warning">
+            Offline — cash sales are saved and synced automatically. Credit needs a connection.
+          </p>
+        ) : null}
+
+        <Button className="w-full" size="lg" loading={busy} disabled={lines.length === 0 || (!online && saleType === "CREDIT")}
+          onClick={complete}>
+          {!online && saleType === "CASH" ? "Save cash sale offline" : saleType === "CASH" ? "Complete cash sale" : "Complete credit sale"}
         </Button>
       </div>
 
