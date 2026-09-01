@@ -1,0 +1,12 @@
+{
+  "name": "Spaza ISM — Inventory Management",
+  "short_name": "Spaza ISM",
+  "description": "Fast, reliable stock and credit management for spaza shops and community retailers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1120",
+  "theme_color": "#0a1120",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
