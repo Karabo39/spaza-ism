@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -63,6 +64,7 @@
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
     "pg": "^8.23.0",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
