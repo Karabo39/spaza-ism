@@ -21,7 +21,9 @@ function LoginInner() {
   const params = useSearchParams();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(
+    params.get("error") ? "That sign-in link didn't work or has expired. Please sign in below." : null,
+  );
   const [loading, setLoading] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {

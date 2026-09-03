@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Never track local secrets / recovery codes
+docs/recovery-codes.txt
+*recovery-codes*
+*.secret
