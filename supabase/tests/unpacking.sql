@@ -1,0 +1,31 @@
+do $$
+declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); biz uuid; loc uuid; pack uuid; unit uuid; cid uuid; uid uuid; req uuid:=gen_random_uuid(); res jsonb; q numeric; blocked boolean; mid uuid;
+begin
+  insert into auth.users(id,email,raw_user_meta_data) values(u,'unpack-owner@test.invalid','{}'),(staff,'unpack-staff@test.invalid','{}');
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true); set local role authenticated;
+  res:=public.create_business('Unpack test','Shop'); biz:=(res->>'business_id')::uuid; loc:=(res->>'store_id')::uuid;
+  pack:=public.create_product(loc,'Six pack','PACK',null,null,60,90,0,0,'pack',true);
+  unit:=public.create_product(loc,'Bottle','UNIT',null,null,10,15,0,0,'each',true);
+  cid:=public.set_bulk_conversion(pack,unit,6);
+  perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',pack,'quantity',2,'expiry_date','2028-01-01')));
+  mid:=public.add_member_by_email(biz,'unpack-staff@test.invalid','employee'); perform public.set_member_locations(mid,array[loc]);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+  uid:=public.unpack_stock(cid,1,'Shelf restock',req);
+  if uid<>public.unpack_stock(cid,1,'Shelf restock',req) then raise exception 'ASSERT unpack idempotency'; end if;
+  select quantity into q from public.stock where product_id=pack and store_id=loc;
+  if q<>1 then raise exception 'ASSERT one pack removed'; end if;
+  select quantity into q from public.stock where product_id=unit and store_id=loc;
+  if q<>6 then raise exception 'ASSERT six units added'; end if;
+  select sum(quantity) into q from public.stock_batches where product_id=unit and expiry_date='2028-01-01';
+  if q<>6 then raise exception 'ASSERT unpack expiry preserved'; end if;
+  if (select count(*) from public.stock_movements where reference_id=uid)<>2 then raise exception 'ASSERT linked unpack ledger'; end if;
+  blocked:=false;
+  begin perform public.unpack_stock(cid,2,'Too many',gen_random_uuid()); exception when check_violation then blocked:=true; end;
+  if not blocked then raise exception 'ASSERT insufficient bulk denied'; end if;
+  if (select count(*) from public.bulk_unpackings)<>1 then raise exception 'ASSERT failed unpack atomic'; end if;
+  blocked:=false;
+  begin perform public.set_bulk_conversion(pack,unit,12); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
+  if not blocked then raise exception 'ASSERT employee cannot change ratio'; end if;
+  if exists(select 1 from public.reconcile_stock(loc) where diff<>0) then raise exception 'ASSERT unpack stock reconciles'; end if;
+  reset role; raise exception 'TESTS_PASSED';
+end $$;
