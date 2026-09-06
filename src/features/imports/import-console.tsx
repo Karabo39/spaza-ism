@@ -39,7 +39,11 @@ function save(blob: Blob, filename: string) {
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function ImportConsole({initialKind="products"}:{initialKind?:ImportKind}) {
+export function ImportConsole({
+  initialKind = "products",
+}: {
+  initialKind?: ImportKind;
+}) {
   const { store, can } = useStore(),
     { online } = useOffline(),
     router = useRouter(),
@@ -245,7 +249,8 @@ export function ImportConsole({initialKind="products"}:{initialKind?:ImportKind}
       {preview && !preview.ok && (
         <div role="alert" className="rounded-lg border border-danger/40 p-4">
           <p className="font-medium">
-            Row {preview.row}: {preview.error?.replaceAll("_", " ")}
+            Record {preview.row ? preview.row - 1 : ""}:{" "}
+            {preview.error?.replaceAll("_", " ")}
           </p>
           <p className="mt-1 text-sm">
             Nothing was imported. Correct the file or download fresh records,
@@ -274,7 +279,7 @@ export function ImportConsole({initialKind="products"}:{initialKind?:ImportKind}
             <Table>
               <THead>
                 <TR>
-                  <TH>Row</TH>
+                  <TH>Record</TH>
                   <TH>Action</TH>
                   <TH>Name</TH>
                   {kind === "products" && (
@@ -289,7 +294,7 @@ export function ImportConsole({initialKind="products"}:{initialKind?:ImportKind}
               <TBody>
                 {preview.rows?.map((row) => (
                   <TR key={row.row}>
-                    <TD>{row.row}</TD>
+                    <TD>{row.row - 1}</TD>
                     <TD>{row.action}</TD>
                     <TD>{row.name}</TD>
                     {kind === "products" && (

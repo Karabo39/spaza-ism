@@ -43,8 +43,8 @@ export function BusinessLogo() {
   const { store } = useStore(),
     { data } = useBusinessLogo();
   // Signed private URLs are renewed by the query; no public image host is needed.
-  // eslint-disable-next-line @next/next/no-img-element
   return data?.url ? (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={data.url}
       alt={`${store.businessName} logo`}

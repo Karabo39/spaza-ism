@@ -189,7 +189,11 @@ export function StockTakeCounter({
                 <TD>{qty(item.system_qty)}</TD>
                 <TD>
                   {closed ? (
-                    qty(item.counted_qty)
+                    item.counted_qty === null ? (
+                      "—"
+                    ) : (
+                      qty(item.counted_qty)
+                    )
                   ) : (
                     <Input
                       aria-label={`Count ${item.products?.name}`}

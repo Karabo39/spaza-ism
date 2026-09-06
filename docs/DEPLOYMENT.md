@@ -12,7 +12,7 @@ Node host). The app is stateless; all state is in Supabase.
    ```bash
    supabase db push
    ```
-   or run each file in [`supabase/migrations`](../supabase/migrations) `0001 → 0012`
+   or run each file in [`supabase/migrations`](../supabase/migrations) `0001 → 0034`
    in the SQL editor, in numeric order.
 3. **Auth settings** (Dashboard → Authentication):
    - Enable **Email** provider.
@@ -64,7 +64,7 @@ npx playwright install chromium && npm run test:e2e
 
 ## 4. Go-live checklist
 
-- [ ] Migrations `0001–0012` applied to the production database.
+- [ ] Migrations `0001–0034` applied to staging, accepted, then applied to production.
 - [ ] Auth: Email provider on, Site URL + redirects set, **leaked-password
       protection on**, confirmation policy decided.
 - [ ] Env vars set on the host (publishable key only; **no** service-role key).
@@ -128,3 +128,68 @@ Supabase staging project before production rollout, including authenticated
 employee/manager/owner flows, expired approvals, partial payments, returns,
 refunds, store-credit allocation and reconciliation. The local PostgreSQL suite
 uses minimal Supabase Auth contracts and is not a replacement for staging.
+
+## BRD v1.02 final rollout (through 0034)
+
+The final application requires every migration through **0034**. Apply missing
+migrations in sequence to staging first, then complete
+[BRD_V102_ACCEPTANCE.md](BRD_V102_ACCEPTANCE.md). Back up and verify the production
+schema/data before applying the same migration stack and deploying the app.
+Do not deploy this app against a partial schema.
+
+### Upgrade steps that need attention
+
+1. Assign existing multi-store managers/employees in **Users → Assign locations**.
+   The single-store backfill is automatic; multiple-store access is intentionally
+   explicit. Include any warehouse each person operates.
+2. Finish existing stock takes before migration or re-save every counted line
+   after upgrading to 0031. Old in-progress counts have no saved-at marker and
+   cannot be approved until recounted. Completed history is retained.
+3. Check that expiry-batch quantities cover tracked product quantities. New
+   adjustments, stock counts, imports, returns and unpacking maintain the batch
+   ledger. Missing legacy batch allocations need a reviewed data correction;
+   never manufacture dates or edit posted ledgers to bypass validation.
+4. Configure invoice tax, return reasons/approval and each manager's personal
+   credit approval code. Defaults are zero tax and required return approval.
+5. Validate the private `business-logos` bucket using actual Storage uploads.
+   Migration 0029 defines the bucket and owner/member policies.
+6. Configure server-only report email credentials and the Edge worker/schedule
+   in [EMAIL_NOTIFICATIONS.md](EMAIL_NOTIFICATIONS.md). Keep preferences off until
+   test delivery succeeds. The web app does not need a service-role key.
+
+### Password recovery and domain configuration
+
+Set Supabase Auth's Site URL to the final application origin and allow the
+application's `/auth/callback` redirect, including the recovery destination
+`?next=/reset-password`. Use the same configuration for a separate staging
+project and its own host. Recheck it whenever the domain changes.
+
+For recovery links that also work across devices, the Reset password email
+template can use the supplied server-side token verification route:
+
+```html
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/reset-password">Choose a new password</a>
+```
+
+The same-device callback flow is also supported. Verify actual email delivery,
+expired links and the final password update before rollout. Reference:
+[Supabase email templates](https://supabase.com/docs/guides/auth/auth-email-templates)
+and [redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+### Local browser verification on Windows
+
+The production server can be started separately for smoke tests so Playwright
+does not need to stop a Windows child-process tree during teardown:
+
+```powershell
+npm run build
+npm run start -- --port 3100
+# In a second terminal:
+$env:E2E_BASE_URL = 'http://localhost:3100'
+npm run test:e2e -- --workers=2
+```
+
+Stop the local server when finished. These public-route smoke tests do not
+replace authenticated staging acceptance, physical scanner/printer checks or a
+backup/restore drill. Deployment and scheduler activation were not performed as
+part of local development.

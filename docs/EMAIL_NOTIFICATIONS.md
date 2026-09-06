@@ -17,7 +17,7 @@ send beyond 23 hours; verify delivery before starting a new email.
 
 ## Scheduled worker
 
-1. Apply migrations through 0025 and deploy `scheduled-notifications` with the
+1. Apply the final v1.02 migration stack through 0034 and deploy `scheduled-notifications` with the
    included Supabase function configuration.
 2. Configure its `RESEND_API_KEY`, `REPORT_EMAIL_FROM` and a random
    `NOTIFICATION_CRON_SECRET` of at least 32 characters. Supabase supplies the

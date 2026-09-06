@@ -2,11 +2,14 @@
 -- rpc_integration.sql
 -- Self-contained integration test for the stock/credit engine. It
 -- simulates three authenticated users (via SET ROLE + JWT claims),
--- exercises every workflow RPC, RLS isolation, and the authorization
+-- exercises the core workflow RPCs, RLS isolation, and the authorization
 -- rules, then RAISES 'TESTS_PASSED' to roll the whole thing back so the
 -- database is left untouched.
 --
--- Run against a database that has migrations 0001–0011 applied:
+-- BRD v1.02 also runs the dedicated suites listed in scripts/test-db-local.mjs.
+-- These cover transfers, unpacking, invoices (including linked order voids),
+-- returns/refunds, store credit, imports, approvals and expiry/count integrity.
+-- Run against a disposable database with migrations 0001–0034 applied:
 --   psql "$DATABASE_URL" -f supabase/tests/rpc_integration.sql
 -- Expected result: ERROR ... TESTS_PASSED  (any other error = failure).
 --

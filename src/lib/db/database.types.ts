@@ -205,6 +205,7 @@ export type Database = {
       v_stock_take_variance: { Row: { id: string; stock_take_id: string; business_id: string; store_id: string; created_at: string; status: string; product_name: string; product_id: string; system_qty: number; counted_qty: number | null; variance: number | null; counted: boolean; counted_at: string | null; counted_expiry: string | null; counted_by: string | null }; Relationships: [] }
       v_payment_activity: { Row: { id: string; store_id: string; business_id: string; created_at: string; method: string; amount: number; reference: string; payment_reference: string | null; source: string; document_id: string }; Relationships: [] }
       v_invoice_balances: { Row: InvoiceBalance; Relationships: [] }
+      v_audit_activity: { Row: Database["public"]["Tables"]["audit_logs"]["Row"] & { actor_name: string | null; location_name: string | null; stock_items: string }; Relationships: [] }
       v_invoice_payment_report: { Row: InvoiceBalance & { payment_methods: string[] }; Relationships: [] }
       v_product_stock: {
         Row: {

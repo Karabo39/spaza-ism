@@ -10,44 +10,137 @@ import { ExportButton } from "@/features/reports/export-button";
 import { money } from "@/lib/format";
 import { Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
 
-export default async function CreditBalancesReport() {
+export default async function CreditBalancesReport({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, Math.floor(Number(sp.page) || 1));
+  const pageSize = 100;
   const session = await getSession();
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();
 
-  const { data } = await supabase.from("v_credit_customers").select("*").eq("store_id", store.id).order("balance", { ascending: false });
+  const { data, error, count } = await supabase
+    .from("v_credit_customers")
+    .select("*", { count: "exact" })
+    .eq("store_id", store.id)
+    .order("balance", { ascending: false })
+    .order("customer_id")
+    .range((page - 1) * pageSize, page * pageSize - 1);
+  if (error) throw error;
   const rows = data ?? [];
   const total = rows.reduce((s, r) => s + Math.max(Number(r.balance), 0), 0);
 
-  const exportRows = rows.map((r) => ({ name: r.name, phone: r.phone ?? "", balance: r.balance, limit: r.credit_limit, available: r.available_credit, status: r.over_limit ? "over limit" : Number(r.balance) > 0 ? "owing" : "clear" }));
-  const columns = [{ key: "name", label: "Customer" }, { key: "phone", label: "Phone" }, { key: "balance", label: "Balance" }, { key: "limit", label: "Limit" }, { key: "available", label: "Available" }, { key: "status", label: "Status" }];
+  const exportRows = rows.map((r) => ({
+    name: r.name,
+    phone: r.phone ?? "",
+    balance: r.balance,
+    limit: r.credit_limit,
+    available: r.available_credit,
+    status: r.over_limit
+      ? "over limit"
+      : Number(r.balance) > 0
+        ? "owing"
+        : "clear",
+  }));
+  const columns = [
+    { key: "name", label: "Customer" },
+    { key: "phone", label: "Phone" },
+    { key: "balance", label: "Balance" },
+    { key: "limit", label: "Limit" },
+    { key: "available", label: "Available" },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <>
-      <PageHeader title="Customer Credit Balances" crumbs={[{ label: "Reports", href: "/reports" }, { label: "Credit Balances" }]}
-        description={`Total outstanding: ${money(total, store.currency)}`}
-        actions={<ExportButton rows={exportRows} columns={columns} filename="credit-balances" />} />
+      <PageHeader
+        title="Customer Credit Balances"
+        crumbs={[
+          { label: "Reports", href: "/reports" },
+          { label: "Credit Balances" },
+        ]}
+        description={`Customer balances, limits and available credit. Outstanding on this page: ${money(total, store.currency)}. Exports cover this page.`}
+        actions={
+          <ExportButton
+            rows={exportRows}
+            columns={columns}
+            filename="credit-balances"
+          />
+        }
+      />
       <div className="rounded-lg border border-border bg-surface">
-        {rows.length === 0 ? <EmptyState icon={Wallet} title="No credit customers" /> : (
+        {rows.length === 0 ? (
+          <EmptyState icon={Wallet} title="No credit customers" />
+        ) : (
           <Table>
-            <THead><TR><TH>Customer</TH><TH>Phone</TH><TH className="text-right">Balance</TH><TH className="text-right">Limit</TH><TH className="text-right">Available</TH><TH>Status</TH></TR></THead>
+            <THead>
+              <TR>
+                <TH>Customer</TH>
+                <TH>Phone</TH>
+                <TH className="text-right">Balance</TH>
+                <TH className="text-right">Limit</TH>
+                <TH className="text-right">Available</TH>
+                <TH>Status</TH>
+              </TR>
+            </THead>
             <TBody>
               {rows.map((r) => (
                 <TR key={r.customer_id}>
-                  <TD className="font-medium"><Link href={`/credit/${r.customer_id}`} className="hover:text-primary-hover">{r.name}</Link></TD>
+                  <TD className="font-medium">
+                    <Link
+                      href={`/credit/${r.customer_id}`}
+                      className="hover:text-primary-hover"
+                    >
+                      {r.name}
+                    </Link>
+                  </TD>
                   <TD className="text-muted">{r.phone ?? "—"}</TD>
-                  <TD className={cn("text-right tabular-nums", Number(r.balance) > 0 ? "text-warning" : "text-muted-foreground")}>{money(r.balance, store.currency)}</TD>
-                  <TD className="text-right tabular-nums text-muted-foreground">{Number(r.credit_limit) > 0 ? money(r.credit_limit, store.currency) : "—"}</TD>
-                  <TD className="text-right tabular-nums">{money(r.available_credit, store.currency)}</TD>
-                  <TD>{r.over_limit ? <Badge variant="danger">Over limit</Badge> : Number(r.balance) > 0 ? <Badge variant="warning">Owing</Badge> : <Badge variant="success">Clear</Badge>}</TD>
+                  <TD
+                    className={cn(
+                      "text-right tabular-nums",
+                      Number(r.balance) > 0
+                        ? "text-warning"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {money(r.balance, store.currency)}
+                  </TD>
+                  <TD className="text-right tabular-nums text-muted-foreground">
+                    {Number(r.credit_limit) > 0
+                      ? money(r.credit_limit, store.currency)
+                      : "—"}
+                  </TD>
+                  <TD className="text-right tabular-nums">
+                    {money(r.available_credit, store.currency)}
+                  </TD>
+                  <TD>
+                    {r.over_limit ? (
+                      <Badge variant="danger">Over limit</Badge>
+                    ) : Number(r.balance) > 0 ? (
+                      <Badge variant="warning">Owing</Badge>
+                    ) : (
+                      <Badge variant="success">Clear</Badge>
+                    )}
+                  </TD>
                 </TR>
               ))}
             </TBody>
           </Table>
         )}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={count ?? 0}
+        params={{}}
+        basePath="/reports/credit"
+      />
     </>
   );
 }

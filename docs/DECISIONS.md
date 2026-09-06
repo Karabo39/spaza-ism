@@ -82,10 +82,10 @@ contradictory, the most reliable option for an inventory system was taken.
    Decision: a `stock_batches` table keyed by product+store+expiry, enabled per
    product via `track_expiry`. Authoritative quantity still lives in `stock`.
 
-4. **Customer / product store-scoping.** The BRD treats one shop as the norm but
-   asks for multi-store readiness. Decision: products, stock, customers and
-   credit are **store-scoped**; a membership grants access to all stores in the
-   business (MVP). This keeps isolation simple now and multi-store-ready later.
+4. **Customer / product store-scoping.** Products, stock, customers and credit
+   are **store-scoped**. In v1.02, owners see all business locations; managers and
+   employees require explicit location assignments. This supersedes the v1.0
+   business-wide membership access model.
 
 5. **Credit overpayment.** The BRD supports partial payments but is silent on
    paying more than owed. Decision: allow it (balance may go negative = credit in
@@ -133,8 +133,10 @@ contradictory, the most reliable option for an inventory system was taken.
 - **Email-based user invitations.** Adding a teammate requires them to have
   signed up first; the owner then adds them by email (`add_member_by_email`).
   True invite emails need a mailer/edge function and are future work.
-- Negative-stock override, multi-store transfers, WhatsApp/SMS, OCR invoices,
-  subscription billing — all listed as BRD “future enhancements.”
+- WhatsApp/SMS, OCR invoices, supplier purchase-order automation and subscription
+  billing remain future scope. Multi-store access and transfers were made
+  mandatory in v1.02 and are now implemented. Negative sale stock remains blocked;
+  the unpacking count-override workflow below records verified physical stock.
 
 ## Advisor note
 
@@ -204,3 +206,27 @@ or transferring stock that does not physically exist.
 
 Report date boundaries and timestamps use Africa/Johannesburg. End dates include
 the whole selected day by using the next midnight as an exclusive upper bound.
+
+## BRD v1.02 acceptance decisions
+
+Return reasons are configured by the owner; new returns must select a configured
+category, and Other requires explanatory detail. Previously recorded reasons
+and request-safe retries remain valid if the configured list changes later.
+
+Stock-take counts save the current system quantity and the physical quantity
+together. Approval checks the system quantity again; a later stock change
+requires a recount. Direct client edits of count tables are revoked, and closed
+counts are immutable through public APIs. Any tracked quantity increase requires
+an expiry date; approved changes reconcile both stock and batch quantities.
+
+Order/invoice cancellation uses one linked operation and a consistent lock order
+(order before invoice). The manager-only invoice rules apply from either screen:
+unpaid/unreleased invoices can be voided and the order cancelled; payments, notes
+or released goods require credit/return corrections. The original records and
+ledger reversals remain available for review.
+
+Report receipt-method filters reflect actual invoice entries; invoice payment
+terms are a separate filter. Report tables state their export limits or pages.
+Movers are sorted by the database before limiting results. The audit read model
+adds product names and change details while preserving owner/assigned-manager
+RLS. The Next.js request entry point now uses the documented `proxy.ts` convention.

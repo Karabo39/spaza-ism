@@ -3,7 +3,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /** Server-friendly pagination: builds hrefs from current search params. */
 export function Pagination({
-  page, pageSize, total, params, basePath,
+  page,
+  pageSize,
+  total,
+  params,
+  basePath,
 }: {
   page: number;
   pageSize: number;
@@ -24,15 +28,27 @@ export function Pagination({
 
   return (
     <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted">
-      <span>{from}–{to} of {total}</span>
+      <span>
+        {from}–{to} of {total}
+      </span>
       <div className="flex items-center gap-1">
-        <Link aria-disabled={page <= 1} href={page <= 1 ? "#" : href(page - 1)}
-          className={`flex size-8 items-center justify-center rounded-md border border-border ${page <= 1 ? "pointer-events-none opacity-40" : "hover:bg-surface-2"}`}>
+        <Link
+          aria-label="Previous page"
+          aria-disabled={page <= 1}
+          href={page <= 1 ? "#" : href(page - 1)}
+          className={`flex size-8 items-center justify-center rounded-md border border-border ${page <= 1 ? "pointer-events-none opacity-40" : "hover:bg-surface-2"}`}
+        >
           <ChevronLeft className="size-4" />
         </Link>
-        <span className="px-2 tabular-nums">{page} / {pages}</span>
-        <Link aria-disabled={page >= pages} href={page >= pages ? "#" : href(page + 1)}
-          className={`flex size-8 items-center justify-center rounded-md border border-border ${page >= pages ? "pointer-events-none opacity-40" : "hover:bg-surface-2"}`}>
+        <span className="px-2 tabular-nums">
+          {page} / {pages}
+        </span>
+        <Link
+          aria-label="Next page"
+          aria-disabled={page >= pages}
+          href={page >= pages ? "#" : href(page + 1)}
+          className={`flex size-8 items-center justify-center rounded-md border border-border ${page >= pages ? "pointer-events-none opacity-40" : "hover:bg-surface-2"}`}
+        >
           <ChevronRight className="size-4" />
         </Link>
       </div>

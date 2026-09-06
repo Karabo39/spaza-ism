@@ -31,9 +31,10 @@ export default async function AdjustmentsReport({
     .eq("store_id", store.id);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
   if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
-  const { data } = await query
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(500);
+  if (error) throw error;
   const rows = (data ?? []) as unknown as {
     id: string;
     reason: string;
@@ -84,6 +85,12 @@ export default async function AdjustmentsReport({
           </>
         }
       />
+      <p className="mb-4 text-sm text-muted">
+        {rows.length} records shown. Exports and totals cover these results.
+        {rows.length === 500
+          ? " Latest 500; narrow the dates for earlier records."
+          : ""}
+      </p>
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
           <EmptyState
