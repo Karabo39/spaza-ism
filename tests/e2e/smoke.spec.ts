@@ -18,6 +18,22 @@ test.describe("public routing & auth gate", () => {
     await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
   });
 
+  test("back navigation returns from signup to login", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("link", { name: "Create an account" }).click();
+    await expect(page).toHaveURL(/\/signup/);
+    await page.getByRole("button", { name: "Go back" }).click();
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole("link", { name: "Spaza ISM home" })).toBeVisible();
+  });
+
+  test("new operations require a signed-in user", async ({ page }) => {
+    for (const route of ["imports","orders","invoices","returns","operations","settings"]) {
+      await page.goto(`/${route}`);
+      await expect(page).toHaveURL(new RegExp(`/login\\?next=%2F${route}`));
+    }
+  });
+
   test("protected route redirects to login with next param", async ({ page }) => {
     await page.goto("/goods-out");
     await expect(page).toHaveURL(/\/login\?next=%2Fgoods-out/);

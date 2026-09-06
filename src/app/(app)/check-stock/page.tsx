@@ -11,13 +11,16 @@ import { StockStatusBadge } from "@/features/stock/status-badge";
 import { money, qty } from "@/lib/format";
 import { Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const PAGE_SIZE = 20;
 const FILTERS = [
-  { key: "all", label: "All" },
+  { key: "all", label: "All active" },
+  { key: "ok", label: "In stock" },
   { key: "low", label: "Low" },
   { key: "out", label: "Out of stock" },
-  { key: "reorder", label: "Reorder" },
+  { key: "reorder", label: "Reorder point" },
+  { key: "inactive", label: "Inactive" },
 ];
 
 export default async function CheckStockPage({
@@ -38,11 +41,12 @@ export default async function CheckStockPage({
     .from("v_product_stock")
     .select("*", { count: "exact" })
     .eq("store_id", store.id)
-    .eq("is_active", true);
+    .eq("is_active", status !== "inactive");
   if (q) query = query.ilike("name", `%${q}%`);
   if (status === "low") query = query.eq("stock_status", "low");
   else if (status === "out") query = query.eq("stock_status", "out");
-  else if (status === "reorder") query = query.in("stock_status", ["low", "out", "reorder"]);
+  else if (status === "reorder" || status === "ok")
+    query = query.eq("stock_status", status);
 
   const { data, count } = await query
     .order("name")
@@ -64,9 +68,16 @@ export default async function CheckStockPage({
           if (q) params.set("q", q);
           if (f.key !== "all") params.set("status", f.key);
           return (
-            <Link key={f.key} href={`/check-stock?${params.toString()}`}
-              className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                status === f.key ? "border-primary/50 bg-primary/15 text-primary-hover" : "border-border text-muted hover:bg-surface-2")}>
+            <Link
+              key={f.key}
+              href={`/check-stock?${params.toString()}`}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                status === f.key
+                  ? "border-primary/50 bg-primary/15 text-primary-hover"
+                  : "border-border text-muted hover:bg-surface-2",
+              )}
+            >
               {f.label}
             </Link>
           );
@@ -75,8 +86,15 @@ export default async function CheckStockPage({
 
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
-          <EmptyState icon={Boxes} title="No products found"
-            description={q ? "Try a different search." : "Add products or receive stock to see them here."} />
+          <EmptyState
+            icon={Boxes}
+            title="No products found"
+            description={
+              q
+                ? "Try a different search."
+                : "Add products or receive stock to see them here."
+            }
+          />
         ) : (
           <>
             <Table>
@@ -95,20 +113,45 @@ export default async function CheckStockPage({
                 {rows.map((r) => (
                   <TR key={r.id} className="cursor-pointer">
                     <TD className="font-medium">
-                      <Link href={`/products/${r.id}`} className="hover:text-primary-hover">{r.name}</Link>
+                      <Link
+                        href={`/products/${r.id}`}
+                        className="hover:text-primary-hover"
+                      >
+                        {r.name}
+                      </Link>
                     </TD>
                     <TD className="text-muted">{r.category_name ?? "—"}</TD>
-                    <TD className="text-right tabular-nums">{qty(r.quantity)} <span className="text-xs text-muted">{r.unit}</span></TD>
-                    <TD><StockStatusBadge status={r.stock_status} /></TD>
-                    <TD className="text-right tabular-nums text-muted-foreground">{money(r.cost_price, store.currency)}</TD>
-                    <TD className="text-right tabular-nums">{money(r.selling_price, store.currency)}</TD>
-                    <TD className="text-right tabular-nums">{money(r.stock_value, store.currency)}</TD>
+                    <TD className="text-right tabular-nums">
+                      {qty(r.quantity)}{" "}
+                      <span className="text-xs text-muted">{r.unit}</span>
+                    </TD>
+                    <TD>
+                      {r.is_active ? (
+                        <StockStatusBadge status={r.stock_status} />
+                      ) : (
+                        <Badge variant="neutral">Inactive</Badge>
+                      )}
+                    </TD>
+                    <TD className="text-right tabular-nums text-muted-foreground">
+                      {money(r.cost_price, store.currency)}
+                    </TD>
+                    <TD className="text-right tabular-nums">
+                      {money(r.selling_price, store.currency)}
+                    </TD>
+                    <TD className="text-right tabular-nums">
+                      {money(r.stock_value, store.currency)}
+                    </TD>
                   </TR>
                 ))}
               </TBody>
             </Table>
-            <Pagination page={page} pageSize={PAGE_SIZE} total={count ?? 0}
-              params={{ q, status: status === "all" ? undefined : status }} basePath="/check-stock" />
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={count ?? 0}
+              params={{ q, status: status === "all" ? undefined : status }}
+              basePath="/check-stock"
+            />
           </>
         )}
       </div>
