@@ -35,19 +35,36 @@ Implemented on `codex/brd-v102-operations`, stacked on the foundation:
 - Stock RPC integration and component tests cover lifecycle, retries, permission
   denials, shortage rollback, expiry preservation and configured conversion use.
 
+## Payments and credit change set
+
+Implemented on `codex/brd-v102-payments-credit`:
+
+- Card/EFT checkout records a slip/EFT reference and moves stock without debt.
+- Sale request IDs prevent duplicate stock/debt changes after uncertain responses,
+  including cash sales replayed from the offline outbox.
+- Expiry-tracked products require expiry dates on receipt; sales consume batches.
+- Managers set personal hashed approval codes. A cashier requests an approval
+  scoped to their customer, location and amount, expiring after two minutes.
+  Five incorrect attempts trigger a fifteen-minute limit. Successful sales record
+  the actual authorizing manager and consume the approval once.
+- Payment Report separates checkout Cash/Card-EFT/Credit. Statements display
+  receipts as positive green amounts and credit taken as negative amounts.
+- Local migration and RPC tests cover payment retry, debt/stock reconciliation,
+  code permissions, incorrect-code throttling and approval reuse prevention.
+
 ## Remaining implementation
 
 | Epic | Remaining work |
 | --- | --- |
 | B | Implemented; Supabase staging and authenticated browser verification remain before rollout. Export formats are completed with Epic F. |
-| D | Card/EFT sale type, reconciliation reference and Payment Report. |
+| D | Implemented for checkout; invoice payments join this report with Epic C. |
 | C | Orders, invoices, payments, goods issue, receipts, credit/debit notes, returns, refunds and reconciliation. |
-| E | Audited manager override codes, statements/exports and credit display convention. |
+| E | Codes and statement convention implemented; Excel/PDF/email and further list sorting complete with F/G. |
 | F | Additional reports and Excel/PDF/email exports, scheduled notification delivery. |
 | G | Imports, global back navigation, barcode copy, list filters and business logo upload. |
 
 The full v1.02 release remains in progress. Apply migrations 0013–0016 before
-deploying the Operations app version, and explicitly
+deploying the Operations app version; apply 0017–0018 for Payments/Credit. Explicitly
 assign existing multi-store staff as described in DEPLOYMENT.md.
 
 ## Open business decisions

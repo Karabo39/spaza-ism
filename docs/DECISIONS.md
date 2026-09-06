@@ -144,3 +144,15 @@ they must be callable by signed-in users and each authorises internally
 (`auth.uid()` + role/store checks). All other advisor findings (mutable
 search_path, extension-in-public, anon-executable functions) were remediated in
 migrations `0007`–`0008`.
+# BRD v1.02 payment and credit decisions
+
+Card/EFT is a record of an externally completed payment; the application does not
+charge a card. Cash outbox identifiers are passed to the same sale RPC to cover
+the case where a server committed before its response was lost. Reusing an ID
+with different sale content is rejected.
+
+Credit codes are personal to each manager and stored as bcrypt hashes in the
+private app schema. Approval returns a single-use token scoped to cashier,
+location, customer and maximum amount, with two-minute expiry. Failed-code
+counters return a denial result so the counter commits rather than rolling back.
+These online-only approvals preserve current direct manager authorization.

@@ -6,10 +6,11 @@ import {
 } from "lucide-react";
 
 const REPORTS = [
+  { href: "/reports/payments", label: "Payment Report", desc: "Cash, Card/EFT and Credit reconciliation", icon: Wallet },
   { href: "/reports/stock-valuation", label: "Stock Valuation", desc: "Current stock value by product", icon: Boxes },
   { href: "/reports/movements", label: "Stock Movements", desc: "Full stock ledger with filters", icon: ArrowLeftRight },
   { href: "/reports/goods-in", label: "Goods In", desc: "Stock received from suppliers", icon: PackagePlus },
-  { href: "/reports/goods-out", label: "Goods Out", desc: "Cash and credit sales", icon: PackageMinus },
+  { href: "/reports/goods-out", label: "Goods Out", desc: "Cash, Card/EFT and credit sales", icon: PackageMinus },
   { href: "/reports/adjustments", label: "Stock Adjustments", desc: "Corrections, damage, losses", icon: SlidersHorizontal },
   { href: "/reports/credit", label: "Customer Credit Balances", desc: "Who owes what", icon: Wallet },
   { href: "/reports/fast-moving", label: "Fast Moving", desc: "Top sellers by quantity", icon: TrendingUp },

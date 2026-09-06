@@ -10,6 +10,7 @@ import { CreditActions } from "@/features/credit/credit-actions";
 import { money, dateTime } from "@/lib/format";
 import { ScrollText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ExportButton } from "@/features/reports/export-button";
 
 const TXN_LABEL: Record<string, string> = {
   CREDIT_SALE: "Credit sale", PAYMENT: "Payment", ADJUSTMENT: "Adjustment", OPENING_BALANCE: "Opening balance",
@@ -34,7 +35,7 @@ export default async function CustomerCreditPage({ params }: { params: Promise<{
         title={customer.name}
         crumbs={[{ label: "Credit", href: "/credit" }, { label: customer.name }]}
         description={customer.phone ?? undefined}
-        actions={<CreditActions customerId={customer.customer_id} balance={Number(customer.balance)} creditLimit={Number(customer.credit_limit)} />}
+        actions={<><ExportButton rows={rows.map(t => ({ date: dateTime(t.created_at), type: TXN_LABEL[t.txn_type] ?? t.txn_type, amount: -Number(t.amount), balance: t.balance_after, note: t.note ?? "" }))} columns={[{key:"date",label:"Date"},{key:"type",label:"Type"},{key:"amount",label:"Amount (+ received / - credit taken)"},{key:"balance",label:"Outstanding"},{key:"note",label:"Note"}]} filename="customer-statement" /><CreditActions customerId={customer.customer_id} balance={Number(customer.balance)} creditLimit={Number(customer.credit_limit)} /></>}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -71,7 +72,7 @@ export default async function CustomerCreditPage({ params }: { params: Promise<{
                     <TD><Badge variant={t.txn_type === "PAYMENT" ? "success" : "primary"}>{TXN_LABEL[t.txn_type] ?? t.txn_type}</Badge></TD>
                     <TD className="text-muted">{t.note ?? "—"}</TD>
                     <TD className={cn("text-right tabular-nums", positive ? "text-warning" : "text-success")}>
-                      {positive ? "+" : ""}{money(t.amount, store.currency)}
+                      {positive ? "−" : "+"}{money(Math.abs(Number(t.amount)), store.currency)}
                     </TD>
                     <TD className="text-right font-medium tabular-nums">{money(t.balance_after, store.currency)}</TD>
                   </TR>
