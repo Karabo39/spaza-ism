@@ -225,6 +225,7 @@ export type Database = {
       }
     }
     Functions: {
+      unpack_stock_with_count: { Args: { p_conversion: string; p_packs: number; p_counted: number; p_reason: string; p_request: string; p_expiry?: string }; Returns: string }
       set_business_logo: { Args: { p_business: string; p_path: string | null }; Returns: undefined }
       import_excel: { Args: { p_store: string; p_kind: string; p_rows: Json; p_request: string; p_preview?: boolean }; Returns: Json }
       profit_summary: { Args: { p_store: string; p_from: string; p_to: string }; Returns: Json }
@@ -472,4 +473,3 @@ export type CustomerRefund = {
 };
 
 export type InvoiceBalance = SalesInvoice & { debits: number; credits: number; paid: number; outstanding: number; status: string; };
-

@@ -10,21 +10,34 @@ export function DateFilter() {
 
   function update(key: "from" | "to", value: string) {
     const next = new URLSearchParams(Array.from(params.entries()));
-    if (value) next.set(key, value); else next.delete(key);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    next.delete("page");
     router.replace(`${pathname}?${next.toString()}`);
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div
+      className="flex flex-wrap items-center gap-2 text-sm"
+      title="South African calendar dates"
+    >
       <label className="flex items-center gap-1.5 text-muted">
         From
-        <input type="date" defaultValue={params.get("from") ?? ""} onChange={(e) => update("from", e.target.value)}
-          className="rounded-md border border-border bg-input px-2 py-1.5 text-foreground" />
+        <input
+          type="date"
+          value={params.get("from") ?? ""}
+          onChange={(e) => update("from", e.target.value)}
+          className="rounded-md border border-border bg-input px-2 py-1.5 text-foreground"
+        />
       </label>
       <label className="flex items-center gap-1.5 text-muted">
         To
-        <input type="date" defaultValue={params.get("to") ?? ""} onChange={(e) => update("to", e.target.value)}
-          className="rounded-md border border-border bg-input px-2 py-1.5 text-foreground" />
+        <input
+          type="date"
+          value={params.get("to") ?? ""}
+          onChange={(e) => update("to", e.target.value)}
+          className="rounded-md border border-border bg-input px-2 py-1.5 text-foreground"
+        />
       </label>
     </div>
   );

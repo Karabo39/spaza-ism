@@ -179,3 +179,28 @@ Return actions other than return-to-stock never increase saleable stock. A later
 manager inspection can clear an entire quarantined line to stock, send it to the
 supplier or write it off. Tax defaults to zero and is configurable by the owner.
 Return approval defaults to required.
+
+## BRD v1.02 imports, branding and shortage approval
+
+Excel imports are online-only and require a manager at the selected location.
+Products match by ID or active barcode; suppliers and customers match by ID.
+Blank cells preserve values. Quantity means the new total on hand. Previews run
+the same database changes inside a rolled-back transaction. Confirmation checks
+the reviewed record timestamp, stock balance and credit limit again. Every file
+is atomic and an import request can be replayed without posting twice.
+Customer imports never manufacture or replace account balances.
+
+Business logos use a private, image-only Storage bucket with a 2 MB limit.
+Active members can read their business images; only owners can upload, change
+or remove them. The currently selected image cannot be deleted. References:
+[Storage access control](https://supabase.com/docs/guides/storage/security/access-control)
+and [bucket file limits](https://supabase.com/docs/guides/storage/uploads/file-limits).
+
+A manager shortage override for unpacking requires a physical count and reason.
+The stock-count correction and unpacking post atomically with expiry allocations
+and the authorizing manager. This allows verified stock to be unpacked while
+retaining the existing non-negative-stock invariant. It does not enable selling
+or transferring stock that does not physically exist.
+
+Report date boundaries and timestamps use Africa/Johannesburg. End dates include
+the whole selected day by using the next midnight as an exclusive upper bound.

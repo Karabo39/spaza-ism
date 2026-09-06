@@ -19,18 +19,21 @@ export function qty(value: number | string | null | undefined): string {
 export function dateTime(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const d = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 export function dateOnly(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const d = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(d);
+  return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(d);
 }
 
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if(m.includes("NO_SHORTAGE_USE_NORMAL_UNPACK"))return "Recorded stock is sufficient. Turn off the count override and use normal unpacking.";
+  if(m.includes("COUNT_AND_REASON_REQUIRED"))return "Enter the physical pack count and a reason. The count must cover the packs being unpacked.";
+  if(m.includes("EXPIRY_DATE_REQUIRED"))return "Enter the expiry date for the newly counted stock.";
   if (m.includes("CREDIT_EXCEEDS_AVAILABLE")) return "This amount exceeds unused return credit or the target invoice balance.";
   if (m.includes("CREDIT_SOURCE_EQUALS_TARGET")) return "Choose a different invoice to use this return credit.";
   if (m.includes("RETURN_EXCEEDS_SOLD_QUANTITY")) return "This quantity exceeds what was sold, including earlier pending or approved returns.";

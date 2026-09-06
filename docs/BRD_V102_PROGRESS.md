@@ -103,11 +103,30 @@ Implemented on `codex/brd-v102-reports-notifications`:
 | C | Implemented locally; staging acceptance and browser verification remain before rollout. |
 | E | Codes and statement convention implemented; Excel/PDF/email and further list sorting complete with F/G. |
 | F | Implemented locally. Email credentials, Edge deployment and scheduler activation remain deployment prerequisites. |
-| G | Imports, global back navigation, barcode copy, list filters and business logo upload. |
+| G | Excel imports, global back navigation, barcode copy, stock/credit filters and private business logos are implemented. |
 
 The full v1.02 release remains in progress. Apply migrations 0013–0016 before
 deploying the Operations app version; apply 0017–0018 for Payments/Credit. Explicitly
 assign existing multi-store staff as described in DEPLOYMENT.md.
+
+## Imports and interface change set
+
+Implemented on `codex/brd-v102-imports-ux` in five commits:
+
+- Product, supplier and credit-customer templates, editable record downloads,
+  atomic previews, confirmation and request-safe retries (migration 0028).
+- Stock quantity imports record adjustments and expiry-batch changes. A changed
+  record, quantity or credit limit requires a fresh preview.
+- Back controls on application and authentication screens, barcode copying,
+  stock statuses, and paginated credit status filters and sorting.
+- Private business logo upload and owner/member Storage policies (0029).
+- Manager-confirmed physical count correction and bulk unpacking together (0030).
+- Whole-day South African report filtering, including transactions near midnight.
+
+The detailed BRD review identified additional acceptance work beyond the handover
+epics: Products-tab import/export shortcuts, invoice reference/payment filters,
+supplier/return/stock-take reports, password recovery and existing stock-count
+expiry handling. These are being completed before the final release review.
 
 ## Open business decisions
 

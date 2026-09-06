@@ -18,6 +18,7 @@
 -- Transfer stock RPC cases are in transfers.sql (run by test-db-local.mjs).
 -- Bulk conversion and unpack RPC cases are in unpacking.sql.
 -- Card/EFT, idempotent sales and receipt expiry checks are in card_payments.sql.
+-- Import quantities and manager count overrides: imports.sql and bulk_count_override.sql.
 -- =====================================================================
 do $$
 declare

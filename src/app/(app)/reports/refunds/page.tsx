@@ -1,9 +1,90 @@
-import {redirect} from "next/navigation";
-import {getSession} from "@/lib/session";
-import {createClient} from "@/lib/supabase/server";
-import {PageHeader} from "@/components/shell/page-header";
-import {DateFilter} from "@/features/reports/date-filter";
-import {ExportButton} from "@/features/reports/export-button";
-import {Table,THead,TBody,TR,TH,TD} from "@/components/ui/table";
-import {money,dateTime} from "@/lib/format";
-export default async function RefundsReport({searchParams}:{searchParams:Promise<{from?:string;to?:string}>}){const sp=await searchParams;const session=await getSession();if(!session?.activeStore)redirect("/onboarding");const store=session.activeStore;const db=await createClient();let query=db.from("customer_refunds").select("*").eq("store_id",store.id);if(sp.from)query=query.gte("created_at",sp.from);if(sp.to)query=query.lte("created_at",`${sp.to}T23:59:59.999999`);const {data,error}=await query.order("created_at",{ascending:false}).limit(1000);if(error)throw error;const rows=(data??[]).map(r=>({reference:r.reference,return_id:r.return_id,date:dateTime(r.created_at),amount:Number(r.amount),method:r.method,slip:r.payment_reference??"",reason:r.reason}));return <><PageHeader title="Refund Report" description="Approved return refunds recorded as paid, with method, reference and reason." crumbs={[{label:"Reports",href:"/reports"},{label:"Refunds"}]} actions={<><DateFilter/><ExportButton rows={rows} columns={[{key:"reference",label:"Refund"},{key:"return_id",label:"Return ID"},{key:"date",label:"Date"},{key:"amount",label:"Amount"},{key:"method",label:"Method"},{key:"slip",label:"Payment reference"},{key:"reason",label:"Reason"}]} filename="refunds"/></>}/>{rows.length===1000&&<p className="text-warning">Latest 1,000 refunds; narrow the date range for a complete report.</p>}<Table><THead><TR><TH>Reference</TH><TH>Date</TH><TH>Amount</TH><TH>Method</TH><TH>Reason</TH></TR></THead><TBody>{rows.map(r=><TR key={r.reference}><TD>{r.reference}</TD><TD>{r.date}</TD><TD>{money(r.amount,store.currency)}</TD><TD>{r.method}</TD><TD>{r.reason}</TD></TR>)}</TBody></Table></>;}
+import { businessDayStart, businessDayAfter } from "@/lib/business-date";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/shell/page-header";
+import { DateFilter } from "@/features/reports/date-filter";
+import { ExportButton } from "@/features/reports/export-button";
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { money, dateTime } from "@/lib/format";
+export default async function RefundsReport({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string }>;
+}) {
+  const sp = await searchParams;
+  const session = await getSession();
+  if (!session?.activeStore) redirect("/onboarding");
+  const store = session.activeStore;
+  const db = await createClient();
+  let query = db.from("customer_refunds").select("*").eq("store_id", store.id);
+  if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
+  if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  const rows = (data ?? []).map((r) => ({
+    reference: r.reference,
+    return_id: r.return_id,
+    date: dateTime(r.created_at),
+    amount: Number(r.amount),
+    method: r.method,
+    slip: r.payment_reference ?? "",
+    reason: r.reason,
+  }));
+  return (
+    <>
+      <PageHeader
+        title="Refund Report"
+        description="Approved return refunds recorded as paid, with method, reference and reason."
+        crumbs={[{ label: "Reports", href: "/reports" }, { label: "Refunds" }]}
+        actions={
+          <>
+            <DateFilter />
+            <ExportButton
+              rows={rows}
+              columns={[
+                { key: "reference", label: "Refund" },
+                { key: "return_id", label: "Return ID" },
+                { key: "date", label: "Date" },
+                { key: "amount", label: "Amount" },
+                { key: "method", label: "Method" },
+                { key: "slip", label: "Payment reference" },
+                { key: "reason", label: "Reason" },
+              ]}
+              filename="refunds"
+            />
+          </>
+        }
+      />
+      {rows.length === 1000 && (
+        <p className="text-warning">
+          Latest 1,000 refunds; narrow the date range for a complete report.
+        </p>
+      )}
+      <Table>
+        <THead>
+          <TR>
+            <TH>Reference</TH>
+            <TH>Date</TH>
+            <TH>Amount</TH>
+            <TH>Method</TH>
+            <TH>Reason</TH>
+          </TR>
+        </THead>
+        <TBody>
+          {rows.map((r) => (
+            <TR key={r.reference}>
+              <TD>{r.reference}</TD>
+              <TD>{r.date}</TD>
+              <TD>{money(r.amount, store.currency)}</TD>
+              <TD>{r.method}</TD>
+              <TD>{r.reason}</TD>
+            </TR>
+          ))}
+        </TBody>
+      </Table>
+    </>
+  );
+}
