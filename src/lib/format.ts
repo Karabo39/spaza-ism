@@ -31,6 +31,9 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("RETURN_REASON_NOT_CONFIGURED")) return "Choose a current return reason from the list. Refresh if the owner changed the choices.";
+  if (m.includes("RETURN_REASON_DETAIL_REQUIRED")) return "Add an explanation when choosing Other as the return reason.";
+  if (m.includes("INVALID_RETURN_REASONS")) return "Use 1–20 distinct return reasons without colons, each up to 80 characters.";
   if(m.includes("STOCK_CHANGED_RECOUNT"))return "Stock changed after this count was prepared. Refresh the stock and count it again before approval.";
   if(m.includes("SELECTED_BATCH_QUANTITY_MISSING"))return "The selected or expired batches do not contain enough stock for this adjustment.";
   if(m.includes("LOSS_MUST_DECREASE_STOCK"))return "Damage, expiry, missing stock and theft must reduce the quantity. Use Count correction for added stock.";

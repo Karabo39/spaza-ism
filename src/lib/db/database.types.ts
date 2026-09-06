@@ -241,6 +241,7 @@ export type Database = {
       invoice_summary: { Args: { p_store: string }; Returns: Json }
       invoice_monthly_reconciliation: { Args: { p_store: string; p_month: string }; Returns: Json }
       set_billing_settings: { Args: { p_business: string; p_tax: number; p_return_approval: boolean }; Returns: undefined }
+      set_return_reasons: { Args: { p_business: string; p_reasons: string[] }; Returns: undefined }
       create_sales_order: { Args: { p_store: string; p_customer: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
       process_sales_order: { Args: { p_order: string; p_action: string; p_reason?: string }; Returns: string }
       create_sales_invoice: { Args: { p_order: string; p_due: string; p_terms: string; p_discount?: number; p_note?: string }; Returns: string }
@@ -324,6 +325,7 @@ export type BillingSettings = {
   business_id: string;
   tax_percent: number;
   return_approval_required: boolean;
+  return_reasons: string[];
 };
 
 export type SalesOrder = {
