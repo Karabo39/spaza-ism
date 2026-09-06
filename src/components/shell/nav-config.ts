@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, PackagePlus, PackageMinus, Search, Tag, Users, SlidersHorizontal,
   ClipboardList, TriangleAlert, Boxes, Truck, BarChart3, UserCog, Settings, ScrollText,
-  CalendarClock, ArrowRightLeft,
+  CalendarClock, ArrowRightLeft, FileSpreadsheet,
   type LucideIcon,
 } from "lucide-react";
 import type { MembershipRole } from "@/lib/db/database.types";
@@ -45,6 +45,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/products", label: "Products", icon: Boxes },
       { href: "/suppliers", label: "Suppliers", icon: Truck },
+      { href: "/imports", label: "Excel imports", icon: FileSpreadsheet, minRole: "manager" },
     ],
   },
   {
