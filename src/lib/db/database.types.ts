@@ -10,6 +10,16 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      billing_settings: { Row: BillingSettings; Insert: never; Update: never; Relationships: [] }
+      sales_orders: { Row: SalesOrder; Insert: never; Update: never; Relationships: [] }
+      sales_order_items: { Row: SalesOrderItem; Insert: never; Update: never; Relationships: [] }
+      sales_invoices: { Row: SalesInvoice; Insert: never; Update: never; Relationships: [] }
+      sales_invoice_items: { Row: SalesInvoiceItem; Insert: never; Update: never; Relationships: [] }
+      invoice_entries: { Row: InvoiceEntry; Insert: never; Update: never; Relationships: [] }
+      goods_returns: { Row: GoodsReturn; Insert: never; Update: never; Relationships: [] }
+      goods_return_items: { Row: GoodsReturnItem; Insert: never; Update: never; Relationships: [] }
+      return_dispositions: { Row: ReturnDisposition; Insert: never; Update: never; Relationships: [] }
+      customer_refunds: { Row: CustomerRefund; Insert: never; Update: never; Relationships: [] }
       bulk_conversions: {
         Row: { id: string; business_id: string; store_id: string; pack_product_id: string; unit_product_id: string; pack_name: string; unit_name: string; units_per_pack: number; updated_by: string; updated_at: string }
         Insert: never
@@ -186,6 +196,7 @@ export type Database = {
       }
     }
     Views: {
+      v_invoice_balances: { Row: InvoiceBalance; Relationships: [] }
       v_product_stock: {
         Row: {
           id: string; business_id: string; store_id: string; name: string; sku: string | null; unit: string;
@@ -208,6 +219,18 @@ export type Database = {
       }
     }
     Functions: {
+      set_billing_settings: { Args: { p_business: string; p_tax: number; p_return_approval: boolean }; Returns: undefined }
+      create_sales_order: { Args: { p_store: string; p_customer: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
+      process_sales_order: { Args: { p_order: string; p_action: string; p_reason?: string }; Returns: string }
+      create_sales_invoice: { Args: { p_order: string; p_due: string; p_terms: string; p_discount?: number; p_note?: string }; Returns: string }
+      issue_sales_invoice: { Args: { p_invoice: string }; Returns: string }
+      post_invoice_entry: { Args: { p_invoice: string; p_kind: string; p_amount: number; p_request: string; p_method?: string; p_reference?: string; p_reason?: string }; Returns: string }
+      issue_invoice_goods: { Args: { p_invoice: string; p_override?: boolean; p_override_token?: string }; Returns: string }
+      cancel_sales_invoice: { Args: { p_invoice: string; p_reason: string }; Returns: string }
+      submit_goods_return: { Args: { p_source_type: string; p_source: string; p_items: Json; p_reason: string; p_inspection: string; p_request: string }; Returns: string }
+      process_goods_return: { Args: { p_return: string; p_approve: boolean; p_reason?: string }; Returns: string }
+      resolve_return_quarantine: { Args: { p_item: string; p_action: string; p_reason: string; p_expiry?: string }; Returns: string }
+      record_customer_refund: { Args: { p_return: string; p_amount: number; p_method: string; p_reason: string; p_request: string; p_reference?: string }; Returns: string }
       transfer_history: { Args: { p_business: string; p_source?: string; p_destination?: string; p_status?: string; p_product?: string; p_user?: string; p_from?: string; p_to?: string }; Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][] }
       set_bulk_conversion: { Args: { p_pack: string; p_unit: string; p_ratio: number }; Returns: string }
       unpack_stock: { Args: { p_conversion: string; p_packs: number; p_reason: string; p_request: string }; Returns: string }
@@ -274,3 +297,163 @@ export type CreditCustomer = {
 export type Tables<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Row"]
 export type TablesInsert<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Insert"]
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Update"]
+
+
+export type BillingSettings = {
+  business_id: string;
+  tax_percent: number;
+  return_approval_required: boolean;
+};
+
+export type SalesOrder = {
+  id: string;
+  business_id: string;
+  store_id: string;
+  customer_id: string;
+  reference: string;
+  status: string;
+  customer_name: string;
+  note: string | null;
+  created_by: string;
+  created_at: string;
+  confirmed_at: string | null;
+  cancellation_reason: string | null;
+  request_id: string;
+  request_payload: Json;
+};
+
+export type SalesOrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  unit: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+};
+
+export type SalesInvoice = {
+  id: string;
+  business_id: string;
+  store_id: string;
+  order_id: string;
+  customer_id: string;
+  customer_name: string;
+  business_name: string;
+  store_name: string;
+  currency: string;
+  salesperson: string;
+  created_by: string;
+  reference: string;
+  state: string;
+  terms: string;
+  subtotal: number;
+  discount: number;
+  tax_percent: number;
+  tax_amount: number;
+  total: number;
+  due_date: string;
+  note: string | null;
+  cancellation_reason: string | null;
+  created_at: string;
+  issued_at: string | null;
+  goods_issued_at: string | null;
+  goods_issued_by: string | null;
+  authorized_by: string | null;
+};
+
+export type SalesInvoiceItem = {
+  id: string;
+  invoice_id: string;
+  product_id: string;
+  product_name: string;
+  unit: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  net_total: number;
+  cost_price: number;
+  batches: Json;
+};
+
+export type InvoiceEntry = {
+  id: string;
+  invoice_id: string;
+  business_id: string;
+  store_id: string;
+  reference: string;
+  kind: string;
+  amount: number;
+  method: string | null;
+  payment_reference: string | null;
+  reason: string | null;
+  performed_by: string;
+  created_at: string;
+  request_id: string;
+  request_payload: Json;
+};
+
+export type GoodsReturn = {
+  id: string;
+  business_id: string;
+  store_id: string;
+  invoice_id: string | null;
+  sale_id: string | null;
+  customer_id: string | null;
+  reference: string;
+  status: string;
+  reason: string;
+  inspection: string;
+  amount: number;
+  credit_entry_id: string | null;
+  created_by: string;
+  approved_by: string | null;
+  created_at: string;
+  processed_at: string | null;
+  decision_reason: string | null;
+  request_id: string;
+  request_payload: Json;
+};
+
+export type GoodsReturnItem = {
+  id: string;
+  return_id: string;
+  invoice_item_id: string | null;
+  sale_item_id: string | null;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  amount: number;
+  condition: string;
+  inventory_action: string;
+  expiry_date: string | null;
+};
+
+export type ReturnDisposition = {
+  id: string;
+  return_item_id: string;
+  action: string;
+  reason: string;
+  expiry_date: string | null;
+  performed_by: string;
+  created_at: string;
+};
+
+export type CustomerRefund = {
+  id: string;
+  return_id: string;
+  business_id: string;
+  store_id: string;
+  reference: string;
+  amount: number;
+  method: string;
+  payment_reference: string | null;
+  reason: string;
+  performed_by: string;
+  created_at: string;
+  request_id: string;
+  request_payload: Json;
+};
+
+export type InvoiceBalance = SalesInvoice & { debits: number; credits: number; paid: number; outstanding: number; status: string; };

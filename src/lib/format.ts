@@ -31,6 +31,20 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("RETURN_EXCEEDS_SOLD_QUANTITY")) return "This quantity exceeds what was sold, including earlier pending or approved returns.";
+  if (m.includes("REASON_AND_INSPECTION_REQUIRED")) return "Enter both the reason for return and the inspection findings.";
+  if (m.includes("RETURN_REQUIRES_QUARANTINE")) return "Only goods in good condition with a valid expiry date may return to saleable stock.";
+  if (m.includes("REFUND_EXCEEDS_AVAILABLE_CREDIT")) return "The refund exceeds the approved, unrefunded credit available after other amounts owed.";
+  if (m.includes("RETURN_APPROVAL_REQUIRED")) return "A manager must approve this return before a refund can be recorded.";
+  if (m.includes("SELECT_INVOICE_FOR_PAYMENT")) return "This customer has unpaid invoices. Open Invoices and allocate the payment to an invoice.";
+  if (m.includes("PAYMENT_EXCEEDS_OUTSTANDING")) return "The payment is more than the amount outstanding.";
+  if (m.includes("CREDIT_EXCEEDS_INVOICE")) return "This credit exceeds the invoice's remaining value. Check earlier credit notes.";
+  if (m.includes("INVOICE_PAYMENT_REQUIRED")) return "Record the full payment before releasing these goods.";
+  if (m.includes("CREDITED_INVOICE_CANNOT_ISSUE_GOODS")) return "This invoice has a credit note. Reconcile or replace it before releasing goods.";
+  if (m.includes("ORDER_NOT_CONFIRMED")) return "Confirm the order before creating an invoice.";
+  if (m.includes("INVOICE_EXISTS")) return "This order already has an invoice. Open Invoices to continue.";
+  if (m.includes("USE_CREDIT_NOTE_OR_RETURN")) return "This invoice has payments, notes or released goods. Use a credit note or return to correct it.";
+  if (m.includes("INVALID_DISCOUNT")) return "The discount must be between zero and the order subtotal.";
   if (m.includes("INVALID_OVERRIDE_CODE_FORMAT")) return "Use a personal code of 6–12 digits.";
   if (m.includes("INVALID_OVERRIDE_CODE")) return "The manager or approval code is incorrect.";
   if (m.includes("OVERRIDE_RATE_LIMITED")) return "Too many incorrect codes. Try again in 15 minutes.";

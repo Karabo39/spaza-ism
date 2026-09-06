@@ -85,3 +85,10 @@ body {
   100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent); }
 }
 .scan-active { animation: pulse-ring 1.6s infinite; }
+
+@media print {
+  body:has(#receipt) * { visibility: hidden; }
+  #receipt, #receipt * { visibility: visible !important; }
+  #receipt { position: absolute; inset: 0; max-width: none; margin: 0; padding: 12mm; color: black; background: white; }
+  #receipt tr { break-inside: avoid; }
+}
