@@ -10,6 +10,7 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      import_batches: { Row: { id: string; business_id: string; store_id: string; kind: string; request_id: string; request_payload: Json; result: Json; performed_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
       product_price_history: { Row: { id: string; business_id: string; store_id: string; product_id: string; product_name: string; old_cost: number | null; new_cost: number | null; old_selling: number | null; new_selling: number | null; reason: string; performed_by: string | null; created_at: string }; Insert: never; Update: never; Relationships: [] }
       notification_preferences: { Row: { id: string; business_id: string; store_id: string; user_id: string; kind: string; enabled: boolean; delivery_hour: number; last_sent_at: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
       notification_deliveries: { Row: { id: string; preference_id: string; period: string; state: string; recipient: string; payload: Json; attempts: number; created_at: string; claimed_at: string; completed_at: string | null; provider_id: string | null; error: string | null }; Insert: never; Update: never; Relationships: [] }
@@ -224,6 +225,7 @@ export type Database = {
       }
     }
     Functions: {
+      import_excel: { Args: { p_store: string; p_kind: string; p_rows: Json; p_request: string; p_preview?: boolean }; Returns: Json }
       profit_summary: { Args: { p_store: string; p_from: string; p_to: string }; Returns: Json }
       set_notification_preference: { Args: { p_store: string; p_kind: string; p_enabled: boolean; p_hour?: number }; Returns: string }
       prepare_report_email: { Args: { p_store: string; p_request: string; p_hash: string; p_recipient: string }; Returns: Json }

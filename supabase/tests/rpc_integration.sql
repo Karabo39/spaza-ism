@@ -98,6 +98,8 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub',uC,'role','authenticated')::text, true);
   ok:=false; begin perform public.adjust_stock(storeA,pidBread,10,'OTHER',null); exception when others then ok:=true; end;
   if not ok then raise exception 'ASSERT employee adjust forbidden'; end if;
+  ok:=false; begin perform public.import_excel(storeA,'products','[{"name":"Forbidden import","quantity":5}]',gen_random_uuid(),false); exception when others then ok:=sqlerrm='FORBIDDEN'; end;
+  if not ok then raise exception 'ASSERT employee stock import forbidden'; end if;
   ok:=false; begin perform public.complete_sale(storeA,'CREDIT',custJohn,jsonb_build_array(jsonb_build_object('product_id',pidBread,'quantity',3)),true,null); exception when others then ok:=true; end;
   if not ok then raise exception 'ASSERT employee override forbidden'; end if;
 
