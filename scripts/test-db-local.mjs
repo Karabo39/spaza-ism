@@ -14,6 +14,15 @@ try {
   if (rows[0].n !== 0) throw new Error("Refusing to bootstrap a non-empty database. Create a fresh local database.");
   await client.query(await readFile("supabase/tests/local_bootstrap.sql", "utf8"));
   for (const name of (await readdir("supabase/migrations")).filter((n) => n.endsWith(".sql")).sort()) {
+    if (name === "0024_reporting_history.sql") {
+      await client.query("begin");
+      await client.query(await readFile("supabase/tests/price_history_upgrade_before.sql", "utf8"));
+      await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
+      await client.query(await readFile("supabase/migrations/0026_preserve_price_history.sql", "utf8"));
+      await client.query(await readFile("supabase/tests/price_history_upgrade_after.sql", "utf8"));
+      await client.query("rollback");
+      console.log("Passed existing price-history upgrade (rolled back)");
+    }
     if (name === "0013_location_access.sql") {
       await client.query("begin");
       await client.query(await readFile("supabase/tests/location_upgrade_before.sql", "utf8"));

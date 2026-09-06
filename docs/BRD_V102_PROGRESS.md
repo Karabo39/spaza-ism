@@ -77,13 +77,32 @@ Implemented on `codex/brd-v102-invoicing`:
 
 ## Remaining implementation
 
+## Reports and notification change set
+
+Implemented on `codex/brd-v102-reports-notifications`:
+
+- Shared report controls export Excel, paginated PDF and safe CSV files, and send
+  an attachment through an authenticated, location-checked email endpoint.
+- Email requests have daily limits, audit records and provider retry keys.
+- Warehouse, transfer, unpacking, payment, valuation, movers, price history,
+  gross profit, credit, invoice ageing and refund reporting are connected.
+- Original price history is preserved on upgrade. Future stock movements record
+  cost snapshots; profit reports label missing historical costs as estimates.
+- Owner/manager notification preferences default off. The Edge worker claims live
+  data, checks current role/location access, skips empty operational reports and
+  preserves delivery IDs through retries. A Vault-based hourly schedule is supplied.
+- Email and worker tests mock delivery; no live email or schedule was enabled.
+  Configure the delivery secrets and staging verification in EMAIL_NOTIFICATIONS.md.
+
+## Remaining implementation
+
 | Epic | Remaining work |
 | --- | --- |
 | B | Implemented; Supabase staging and authenticated browser verification remain before rollout. Export formats are completed with Epic F. |
 | D | Implemented, including invoice payments, store-credit allocations and refunds. |
 | C | Implemented locally; staging acceptance and browser verification remain before rollout. |
 | E | Codes and statement convention implemented; Excel/PDF/email and further list sorting complete with F/G. |
-| F | Additional reports and Excel/PDF/email exports, scheduled notification delivery. |
+| F | Implemented locally. Email credentials, Edge deployment and scheduler activation remain deployment prerequisites. |
 | G | Imports, global back navigation, barcode copy, list filters and business logo upload. |
 
 The full v1.02 release remains in progress. Apply migrations 0013–0016 before
@@ -96,3 +115,4 @@ Authentication is retained. The schema supports multiple warehouses; no
 warehouse is auto-created. Existing money formatting uses ZAR and two decimal
 places. Confirmation remains open for tax scope, the notification email
 provider, any required changes to money rounding, and the ambiguous auth line.
+
