@@ -56,7 +56,7 @@ export type Database = {
         Relationships: []
       }
       businesses: {
-        Row: { created_at: string; created_by: string | null; currency: string; id: string; name: string; slug: string | null; updated_at: string }
+        Row: { created_at: string; created_by: string | null; currency: string; id: string; name: string; slug: string | null; updated_at: string; logo_path: string | null }
         Insert: { created_at?: string; created_by?: string | null; currency?: string; id?: string; name: string; slug?: string | null; updated_at?: string }
         Update: Partial<Database["public"]["Tables"]["businesses"]["Insert"]>
         Relationships: []
@@ -225,6 +225,7 @@ export type Database = {
       }
     }
     Functions: {
+      set_business_logo: { Args: { p_business: string; p_path: string | null }; Returns: undefined }
       import_excel: { Args: { p_store: string; p_kind: string; p_rows: Json; p_request: string; p_preview?: boolean }; Returns: Json }
       profit_summary: { Args: { p_store: string; p_from: string; p_to: string }; Returns: Json }
       set_notification_preference: { Args: { p_store: string; p_kind: string; p_enabled: boolean; p_hour?: number }; Returns: string }
@@ -471,3 +472,4 @@ export type CustomerRefund = {
 };
 
 export type InvoiceBalance = SalesInvoice & { debits: number; credits: number; paid: number; outstanding: number; status: string; };
+

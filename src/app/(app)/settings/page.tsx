@@ -7,6 +7,7 @@ import { LocationsManager } from "@/features/settings/locations-manager";
 import { OverrideCodeSettings } from "@/features/credit/override-approval";
 import { BillingPreferences } from "@/features/billing/billing-preferences";
 import { NotificationPreferences } from "@/features/settings/notification-preferences";
+import { BusinessLogoSettings } from "@/features/settings/business-logo";
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -33,6 +34,7 @@ export default async function SettingsPage() {
         business={{ id: business?.id ?? store.businessId, name: business?.name ?? store.businessName, currency: business?.currency ?? "ZAR" }}
       />
       <LocationsManager />
+      <BusinessLogoSettings />
       <OverrideCodeSettings />
       <BillingPreferences key={store.businessId} tax={Number(billing?.tax_percent??0)} returnApproval={billing?.return_approval_required??true}/>
       <NotificationPreferences key={`${store.id}:${session.userId}`} initial={notifications??[]}/>

@@ -11,8 +11,8 @@ import { GlobalSearch } from "./global-search";
 import { OfflineIndicator } from "./offline-indicator";
 import { useOffline } from "@/lib/offline/offline-context";
 import { BackButton } from "./back-button";
-
-
+import Link from "next/link";
+import { BusinessLogo } from "@/features/settings/business-logo";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
@@ -33,6 +33,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur">
       <BackButton />
+      <Link href="/" aria-label={`${store.businessName} home`} className="focus-ring lg:hidden"><BusinessLogo/></Link>
       <button className="text-muted hover:text-foreground lg:hidden" onClick={onMenu} aria-label="Open menu">
         <MenuIcon className="size-5" />
       </button>
@@ -101,4 +102,3 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     </header>
   );
 }
-

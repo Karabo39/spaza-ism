@@ -2,7 +2,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck, X } from "lucide-react";
+import { X } from "lucide-react";
+import { BusinessLogo } from "@/features/settings/business-logo";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store-context";
 import { NAV, itemVisible } from "./nav-config";
@@ -34,16 +35,14 @@ export function Sidebar({
         )}
       >
         <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <ShieldCheck className="size-4" />
-            </div>
+          <Link href="/" aria-label={`${store.businessName} home`} onClick={onClose} className="flex items-center gap-2.5">
+            <BusinessLogo />
             <div className="leading-tight">
               <p className="text-sm font-semibold">Spaza ISM</p>
               <p className="text-[10px] text-muted">Inventory Control</p>
             </div>
           </Link>
-          <button className="text-muted hover:text-foreground lg:hidden" onClick={onClose}>
+          <button aria-label="Close menu" className="text-muted hover:text-foreground lg:hidden" onClick={onClose}>
             <X className="size-5" />
           </button>
         </div>
