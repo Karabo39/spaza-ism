@@ -10,6 +10,9 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      product_price_history: { Row: { id: string; business_id: string; store_id: string; product_id: string; product_name: string; old_cost: number | null; new_cost: number; old_selling: number | null; new_selling: number; reason: string; performed_by: string | null; created_at: string }; Insert: never; Update: never; Relationships: [] }
+      notification_preferences: { Row: { id: string; business_id: string; store_id: string; user_id: string; kind: string; enabled: boolean; delivery_hour: number; last_sent_at: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
+      notification_deliveries: { Row: { id: string; preference_id: string; period: string; state: string; recipient: string; payload: Json; attempts: number; created_at: string; claimed_at: string; completed_at: string | null; provider_id: string | null; error: string | null }; Insert: never; Update: never; Relationships: [] }
       store_credit_allocations: { Row: { id: string; return_id: string; invoice_id: string; business_id: string; store_id: string; amount: number; payment_entry_id: string; performed_by: string; created_at: string; request_id: string; request_payload: Json }; Insert: never; Update: never; Relationships: [] }
       billing_settings: { Row: BillingSettings; Insert: never; Update: never; Relationships: [] }
       sales_orders: { Row: SalesOrder; Insert: never; Update: never; Relationships: [] }
@@ -221,6 +224,8 @@ export type Database = {
       }
     }
     Functions: {
+      profit_summary: { Args: { p_store: string; p_from: string; p_to: string }; Returns: Json }
+      set_notification_preference: { Args: { p_store: string; p_kind: string; p_enabled: boolean; p_hour?: number }; Returns: string }
       prepare_report_email: { Args: { p_store: string; p_request: string; p_hash: string; p_recipient: string }; Returns: Json }
       complete_report_email: { Args: { p_job: string; p_provider: string }; Returns: undefined }
       allocate_return_credit: { Args: { p_return: string; p_invoice: string; p_amount: number; p_request: string }; Returns: string }

@@ -8,6 +8,7 @@ import { StockStatusBadge } from "@/features/stock/status-badge";
 import { qty } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
 import { RestockListButton } from "@/features/low-stock/restock-list-button";
+import { ExportButton } from "@/features/reports/export-button";
 
 export default async function LowStockPage() {
   const session = await getSession();
@@ -29,7 +30,7 @@ export default async function LowStockPage() {
     <>
       <PageHeader title="Low Stock" crumbs={[{ label: "Stock Control" }, { label: "Low Stock" }]}
         description="Products at or below their minimum or reorder level."
-        actions={rows.length > 0 ? <RestockListButton items={rows.map(r => ({ name: r.name, qty: Number(r.suggested_reorder) || 0, supplier: r.supplier_name }))} /> : undefined} />
+        actions={<><ExportButton rows={rows} columns={[{key:"name",label:"Product"},{key:"supplier_name",label:"Supplier"},{key:"quantity",label:"Quantity"},{key:"stock_status",label:"Status"},{key:"suggested_reorder",label:"Suggested reorder"}]} filename="low-stock"/>{rows.length > 0 ? <RestockListButton items={rows.map(r => ({ name: r.name, qty: Number(r.suggested_reorder) || 0, supplier: r.supplier_name }))} /> : null}</>} />
 
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (

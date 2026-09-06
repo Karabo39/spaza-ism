@@ -30,6 +30,7 @@ export default async function AdjustmentsReport({ searchParams }: { searchParams
   return (
     <>
       <PageHeader title="Stock Adjustments" crumbs={[{ label: "Reports", href: "/reports" }, { label: "Adjustments" }]}
+        description="Stock corrections, damage and losses with reasons and quantity changes."
         actions={<><DateFilter /><ExportButton rows={exportRows} columns={columns} filename="adjustments" /></>} />
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? <EmptyState icon={SlidersHorizontal} title="No adjustments in this range" /> : (

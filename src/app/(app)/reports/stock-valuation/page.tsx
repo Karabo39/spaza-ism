@@ -29,6 +29,7 @@ export default async function StockValuationReport() {
   return (
     <>
       <PageHeader title="Stock Valuation" crumbs={[{ label: "Reports", href: "/reports" }, { label: "Stock Valuation" }]}
+        description="Current stock quantities valued at recorded cost and selling prices."
         actions={<ExportButton rows={exportRows} columns={columns} filename="stock-valuation" />} />
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card><CardContent className="p-4"><p className="text-xs text-muted">Value at cost</p><p className="mt-1 text-xl font-semibold tabular-nums">{money(totalCost, store.currency)}</p></CardContent></Card>

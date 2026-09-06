@@ -6,6 +6,11 @@ import {
 } from "lucide-react";
 
 const REPORTS = [
+  { href: "/operations/warehouse", label: "Warehouse Stock", desc: "Stock held separately in permitted warehouses", icon: Boxes },
+  { href: "/operations/transfers", label: "Transfers", desc: "Transfer lifecycle and linked location movements", icon: ArrowLeftRight },
+  { href: "/reports/unpacking", label: "Unpacking", desc: "Bulk conversions, quantities and reasons", icon: PackagePlus },
+  { href: "/reports/price-history", label: "Price History", desc: "Cost and selling-price changes", icon: TrendingUp },
+  { href: "/reports/profit", label: "Gross Profit", desc: "Sales less returns and stock cost", icon: Wallet },
   { href: "/invoices", label: "Invoices", desc: "Issued, paid and outstanding invoices", icon: ClipboardList },
   { href: "/reports/ageing", label: "Invoice Ageing", desc: "Outstanding balances by overdue period", icon: CalendarClock },
   { href: "/reports/reconciliation", label: "Monthly Reconciliation", desc: "Invoice ledger totals and cash received", icon: Wallet },

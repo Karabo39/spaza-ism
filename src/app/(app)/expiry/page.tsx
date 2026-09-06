@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/misc";
 import { Badge } from "@/components/ui/badge";
 import { qty, dateOnly } from "@/lib/format";
 import { CalendarClock } from "lucide-react";
+import { ExportButton } from "@/features/reports/export-button";
 
 export default async function ExpiryPage() {
   const session = await getSession();
@@ -36,7 +37,8 @@ export default async function ExpiryPage() {
   return (
     <>
       <PageHeader title="Expiry" crumbs={[{ label: "Stock Control" }, { label: "Expiry" }]}
-        description="Batches approaching or past expiry. Write off expired stock via Adjust Stock (Expired)." />
+        description="Batches approaching or past expiry. Write off expired stock via Adjust Stock (Expired)."
+        actions={<ExportButton rows={rows.map(r=>({product:r.products?.name??"",batch:r.batch_ref??"",quantity:r.quantity,expiry:r.expiry_date,status:statusFor(r.expiry_date).label}))} columns={[{key:"product",label:"Product"},{key:"batch",label:"Batch"},{key:"quantity",label:"Quantity"},{key:"expiry",label:"Expiry date"},{key:"status",label:"Status"}]} filename="expiry"/>}/>
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
           <EmptyState icon={CalendarClock} title="No expiry-tracked batches"

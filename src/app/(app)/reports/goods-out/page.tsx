@@ -34,6 +34,7 @@ export default async function GoodsOutReport({ searchParams }: { searchParams: P
   return (
     <>
       <PageHeader title="Goods Out" crumbs={[{ label: "Reports", href: "/reports" }, { label: "Goods Out" }]}
+        description="Checkout sales by payment type and customer; invoice transactions appear in Payment Report."
         actions={<><DateFilter /><ExportButton rows={exportRows} columns={columns} filename="goods-out" /></>} />
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card><CardContent className="p-4"><p className="text-xs text-muted">Cash sales</p><p className="mt-1 text-xl font-semibold tabular-nums text-accent">{money(cash, store.currency)}</p></CardContent></Card>

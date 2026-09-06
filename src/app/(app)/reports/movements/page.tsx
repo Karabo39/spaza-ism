@@ -39,6 +39,7 @@ export default async function MovementsReport({
   return (
     <>
       <PageHeader title="Stock Movements" crumbs={[{ label: "Reports", href: "/reports" }, { label: "Stock Movements" }]}
+        description="Append-only stock changes for the active location, with source references and balances."
         actions={<><DateFilter /><ExportButton rows={exportRows} columns={columns} filename="stock-movements" /></>} />
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? <EmptyState icon={ArrowLeftRight} title="No movements in this range" /> : (
