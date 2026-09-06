@@ -52,13 +52,36 @@ Implemented on `codex/brd-v102-payments-credit`:
 - Local migration and RPC tests cover payment retry, debt/stock reconciliation,
   code permissions, incorrect-code throttling and approval reuse prevention.
 
+## Orders, invoicing and returns change set
+
+Implemented on `codex/brd-v102-invoicing`:
+
+- Orders are captured as drafts and confirmed before invoice creation. Invoice
+  snapshots retain business/customer/item names, salesperson, prices, discounts,
+  configurable tax and due dates. Issued invoices cannot be edited or deleted.
+- Invoice issue posts the receivable; a separate goods-release RPC checks payment
+  or account credit and consumes stock/expiry batches once.
+- Partial and multiple payments, debit/credit notes, voids and return credits use
+  immutable entries. All account-affecting entries also post to the customer ledger.
+- Receipts include salesperson and payment history, with print/save-PDF support.
+- Returns reference original invoice or checkout lines and require a reason,
+  condition, inspection and inventory action. Manager approval defaults on.
+  Quarantine stays out of saleable stock until separately resolved.
+- Refunds are capped by approved, unspent credit. Store credit can be allocated
+  to another invoice with paired entries that preserve customer net debt.
+- Invoicing dashboard, status/date/customer filters, ageing, monthly reconciliation,
+  payment activity and refund reports include the new workflow.
+- Database tests cover order/invoice retries, tax/discount calculations, payment
+  allocation, role and tenant isolation, goods release, return/refund caps,
+  quarantine, expiry batches and both stock and customer reconciliation.
+
 ## Remaining implementation
 
 | Epic | Remaining work |
 | --- | --- |
 | B | Implemented; Supabase staging and authenticated browser verification remain before rollout. Export formats are completed with Epic F. |
-| D | Implemented for checkout; invoice payments join this report with Epic C. |
-| C | Orders, invoices, payments, goods issue, receipts, credit/debit notes, returns, refunds and reconciliation. |
+| D | Implemented, including invoice payments, store-credit allocations and refunds. |
+| C | Implemented locally; staging acceptance and browser verification remain before rollout. |
 | E | Codes and statement convention implemented; Excel/PDF/email and further list sorting complete with F/G. |
 | F | Additional reports and Excel/PDF/email exports, scheduled notification delivery. |
 | G | Imports, global back navigation, barcode copy, list filters and business logo upload. |

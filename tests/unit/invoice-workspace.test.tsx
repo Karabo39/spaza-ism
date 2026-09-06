@@ -8,6 +8,7 @@ vi.mock("@/lib/supabase/client",()=>({createClient:()=>({rpc:mock.rpc})}));
 vi.mock("@/features/billing/use-billing-action",()=>({useBillingAction:()=>({online:mock.online,busy:false,request:()=>"request",run:(action:()=>unknown)=>action()})}));
 vi.mock("@/features/credit/override-approval",()=>({OverrideApproval:()=>null}));
 vi.mock("@/features/reports/export-button",()=>({ExportButton:()=>null}));
+vi.mock("@/features/billing/allocate-credit",()=>({AllocateCredit:()=>null}));
 const invoice={id:"invoice",customer_id:"customer",customer_name:"Customer",reference:"INV-1",state:"ISSUED",status:"UNPAID",terms:"CASH",outstanding:100,total:100,paid:0,credits:0,debits:0,subtotal:100,discount:0,tax_percent:0,tax_amount:0,due_date:"2028-01-01",currency:"ZAR",salesperson:"Salesperson"} as InvoiceBalance;
 beforeEach(()=>{cleanup();mock.online=true;mock.manager=false;mock.rpc.mockReset();mock.rpc.mockResolvedValue({data:"payment",error:null});});
 it("blocks unpaid cash goods release and posts a referenced partial card payment",async()=>{

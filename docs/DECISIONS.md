@@ -156,3 +156,26 @@ private app schema. Approval returns a single-use token scoped to cashier,
 location, customer and maximum amount, with two-minute expiry. Failed-code
 counters return a denial result so the counter commits rather than rolling back.
 These online-only approvals preserve current direct manager authorization.
+# BRD v1.02 invoice and return ledgers
+
+Orders and issued invoice snapshots are separate from append-only financial
+entries. Issuing an invoice creates a customer receivable but does not release
+stock. Cash/Card-EFT terms require full settlement before release; credit terms
+check the complete current customer balance and support audited manager approval.
+Invoice payment method CREDIT means allocated return credit; an unpaid credit
+arrangement is never recorded as cash received.
+
+Invoices allocate their discounted, tax-inclusive total across line snapshots
+using differences of rounded cumulative values. Returns credit this allocated
+value. Pending returns reserve quantities until approved or rejected.
+
+Refunds settle available account credit; they are separate cash flows and do not
+reopen an invoice as customer debt. Store-credit allocation moves credit between
+invoices with paired entries. For checkout returns without a named customer, the
+return reference serves as the store-credit record and may be allocated to an
+invoice in the same location.
+
+Return actions other than return-to-stock never increase saleable stock. A later
+manager inspection can clear an entire quarantined line to stock, send it to the
+supplier or write it off. Tax defaults to zero and is configurable by the owner.
+Return approval defaults to required.

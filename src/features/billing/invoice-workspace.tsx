@@ -11,6 +11,7 @@ import { money,dateOnly,dateTime } from "@/lib/format";
 import { OverrideApproval } from "@/features/credit/override-approval";
 import { ExportButton } from "@/features/reports/export-button";
 import { useBillingAction } from "./use-billing-action";
+import { AllocateCredit } from "./allocate-credit";
 import type { InvoiceBalance,SalesInvoiceItem,InvoiceEntry } from "@/lib/db/database.types";
 export function InvoiceWorkspace({invoice:i,items,entries,account}:{invoice:InvoiceBalance;items:SalesInvoiceItem[];entries:InvoiceEntry[];account:{balance:number;credit_limit:number}}){
   const {can}=useStore();const {online,busy,request,run}=useBillingAction();
@@ -38,6 +39,7 @@ export function InvoiceWorkspace({invoice:i,items,entries,account}:{invoice:Invo
       {token&&<p className="text-sm text-success">Approved. Release goods within two minutes.</p>}
       <Button loading={busy} disabled={!online||(i.terms!=="CREDIT"&&Number(i.outstanding)>0)||Number(i.credits)>0} onClick={()=>run(()=>createClient().rpc("issue_invoice_goods",{p_invoice:i.id,p_override:override,...(token?{p_override_token:token}:{})}),"Goods released")}>Release invoice goods</Button>
     </section>}
+    {i.state==="ISSUED"&&Number(i.outstanding)>0&&<AllocateCredit invoiceId={i.id} customerId={i.customer_id}/>}
     {i.goods_issued_at&&<p className="text-success">Goods released on {dateTime(i.goods_issued_at)}.</p>}
     {can("manager")&&(i.state==="DRAFT"||i.state==="ISSUED")&&!i.goods_issued_at&&<div className="flex gap-3"><Input aria-label="Invoice cancellation reason" placeholder="Reason for cancellation / void" value={reason} onChange={e=>setReason(e.target.value)}/><Button variant="secondary" disabled={!online||busy||!reason.trim()} onClick={()=>run(()=>createClient().rpc("cancel_sales_invoice",{p_invoice:i.id,p_reason:reason}),"Invoice cancelled / voided")}>Cancel / void</Button></div>}
     <div className="flex justify-between"><h2 className="font-semibold">Invoice ledger</h2><ExportButton rows={entries.map(e=>({date:dateTime(e.created_at),reference:e.reference,kind:e.kind,amount:e.amount,method:e.method??"",note:e.reason??""}))} columns={[{key:"date",label:"Date"},{key:"reference",label:"Reference"},{key:"kind",label:"Type"},{key:"amount",label:"Amount"},{key:"method",label:"Method"},{key:"note",label:"Note"}]} filename={i.reference}/></div>

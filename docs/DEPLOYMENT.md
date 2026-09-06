@@ -120,3 +120,11 @@ production deployment. Do not run `local_bootstrap.sql` on Supabase.
   database directly; direct edits bypass the ledger and break reconciliation.
 - **Expired/damaged stock:** write it off through Adjust Stock with the matching
   reason so it lands in reports and the audit trail.
+# BRD v1.02 invoicing rollout
+
+The stacked invoicing branch requires migrations 0013 through 0022 in order.
+Do not deploy that app build against the old schema. Validate the stack in a
+Supabase staging project before production rollout, including authenticated
+employee/manager/owner flows, expired approvals, partial payments, returns,
+refunds, store-credit allocation and reconciliation. The local PostgreSQL suite
+uses minimal Supabase Auth contracts and is not a replacement for staging.

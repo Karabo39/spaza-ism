@@ -10,6 +10,7 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      store_credit_allocations: { Row: { id: string; return_id: string; invoice_id: string; business_id: string; store_id: string; amount: number; payment_entry_id: string; performed_by: string; created_at: string; request_id: string; request_payload: Json }; Insert: never; Update: never; Relationships: [] }
       billing_settings: { Row: BillingSettings; Insert: never; Update: never; Relationships: [] }
       sales_orders: { Row: SalesOrder; Insert: never; Update: never; Relationships: [] }
       sales_order_items: { Row: SalesOrderItem; Insert: never; Update: never; Relationships: [] }
@@ -196,6 +197,7 @@ export type Database = {
       }
     }
     Views: {
+      v_payment_activity: { Row: { id: string; store_id: string; business_id: string; created_at: string; method: string; amount: number; reference: string; payment_reference: string | null; source: string; document_id: string }; Relationships: [] }
       v_invoice_balances: { Row: InvoiceBalance; Relationships: [] }
       v_product_stock: {
         Row: {
@@ -219,6 +221,9 @@ export type Database = {
       }
     }
     Functions: {
+      allocate_return_credit: { Args: { p_return: string; p_invoice: string; p_amount: number; p_request: string }; Returns: string }
+      invoice_summary: { Args: { p_store: string }; Returns: Json }
+      invoice_monthly_reconciliation: { Args: { p_store: string; p_month: string }; Returns: Json }
       set_billing_settings: { Args: { p_business: string; p_tax: number; p_return_approval: boolean }; Returns: undefined }
       create_sales_order: { Args: { p_store: string; p_customer: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
       process_sales_order: { Args: { p_order: string; p_action: string; p_reason?: string }; Returns: string }

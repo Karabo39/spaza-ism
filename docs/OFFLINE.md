@@ -78,3 +78,10 @@ home screen (Add to Home Screen), so it launches full-screen like a native app.
   a connection to validate current access.
 - Credit offline, offline Goods In, and background-sync (Web Background Sync API)
   are candidates for a later phase.
+# BRD v1.02 billing operations
+
+Orders, invoicing, invoice payments, goods release, returns, refunds and store-credit
+allocation require a connection. Their controls disable offline and their money/
+stock RPCs use request identifiers or locked lifecycle transitions for safe retries.
+After an uncertain response, retry the unchanged form. A confirmed response renews
+the request identity so a later, intentionally identical payment is a new payment.

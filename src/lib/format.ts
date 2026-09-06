@@ -31,6 +31,8 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("CREDIT_EXCEEDS_AVAILABLE")) return "This amount exceeds unused return credit or the target invoice balance.";
+  if (m.includes("CREDIT_SOURCE_EQUALS_TARGET")) return "Choose a different invoice to use this return credit.";
   if (m.includes("RETURN_EXCEEDS_SOLD_QUANTITY")) return "This quantity exceeds what was sold, including earlier pending or approved returns.";
   if (m.includes("REASON_AND_INSPECTION_REQUIRED")) return "Enter both the reason for return and the inspection findings.";
   if (m.includes("RETURN_REQUIRES_QUARANTINE")) return "Only goods in good condition with a valid expiry date may return to saleable stock.";

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { MOVEMENT_META } from "@/features/stock/movement-meta";
 import { LocationOverview } from "@/features/dashboard/location-overview";
+import { InvoiceSummary } from "@/features/billing/invoice-summary";
 
 type Summary = {
   stock_value: number; retail_value: number; product_count: number;
@@ -55,6 +56,7 @@ export default async function DashboardPage() {
         <QuickActions />
       </section>
       <LocationOverview />
+      <InvoiceSummary storeId={store.id} currency={store.currency}/>
 
       <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Stock value" value={money(s.stock_value, store.currency)}

@@ -6,6 +6,10 @@ import {
 } from "lucide-react";
 
 const REPORTS = [
+  { href: "/invoices", label: "Invoices", desc: "Issued, paid and outstanding invoices", icon: ClipboardList },
+  { href: "/reports/ageing", label: "Invoice Ageing", desc: "Outstanding balances by overdue period", icon: CalendarClock },
+  { href: "/reports/reconciliation", label: "Monthly Reconciliation", desc: "Invoice ledger totals and cash received", icon: Wallet },
+  { href: "/reports/refunds", label: "Refund Report", desc: "Approved refunds and payment references", icon: PackageMinus },
   { href: "/reports/payments", label: "Payment Report", desc: "Cash, Card/EFT and Credit reconciliation", icon: Wallet },
   { href: "/reports/stock-valuation", label: "Stock Valuation", desc: "Current stock value by product", icon: Boxes },
   { href: "/reports/movements", label: "Stock Movements", desc: "Full stock ledger with filters", icon: ArrowLeftRight },
