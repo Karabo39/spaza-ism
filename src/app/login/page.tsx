@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck } from "lucide-react";
+import { safeAuthPath } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
   return (
@@ -37,7 +38,7 @@ function LoginInner() {
       setError(error.message);
       return;
     }
-    router.replace(params.get("next") || "/");
+    router.replace(safeAuthPath(params.get("next")));
     router.refresh();
   }
 
@@ -70,6 +71,7 @@ function LoginInner() {
             </div>
             {error ? <p className="text-xs text-danger">{error}</p> : null}
             <Button type="submit" className="w-full" loading={loading}>Sign in</Button>
+            <Link href="/forgot-password" className="block text-center text-xs text-accent">Forgot your password?</Link>
           </form>
         </div>
         <p className="mt-4 text-center text-xs text-muted">

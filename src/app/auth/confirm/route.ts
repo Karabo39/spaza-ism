@@ -1,11 +1,8 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeAuthPath } from "@/lib/auth-redirect";
 
-function safeNext(raw: string | null): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
-  return raw;
-}
 
 /**
  * Email confirmation / recovery links using the token-hash flow land here.
@@ -17,7 +14,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = safeNext(searchParams.get("next"));
+  const next = safeAuthPath(searchParams.get("next")??(type==="recovery"?"/reset-password":"/"));
 
   if (token_hash && type) {
     const supabase = await createClient();
