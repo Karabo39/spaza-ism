@@ -10,6 +10,18 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      stock_transfers: {
+        Row: { id: string; business_id: string; source_id: string; destination_id: string; reference: string; status: TransferStatus; note: string | null; cancellation_reason: string | null; created_by: string; dispatched_by: string | null; received_by: string | null; created_at: string; submitted_at: string | null; dispatched_at: string | null; received_at: string | null; cancelled_at: string | null; request_id: string; request_payload: Json }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      stock_transfer_items: {
+        Row: { id: string; transfer_id: string; source_product_id: string; destination_product_id: string; source_name: string; destination_name: string; quantity: number; unit_cost: number; batches: Json }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       audit_logs: {
         Row: { action: string; actor_id: string | null; after_data: Json | null; before_data: Json | null; business_id: string | null; created_at: string; entity_id: string | null; entity_type: string | null; id: string; store_id: string | null }
         Insert: { action: string; actor_id?: string | null; after_data?: Json | null; before_data?: Json | null; business_id?: string | null; created_at?: string; entity_id?: string | null; entity_type?: string | null; id?: string; store_id?: string | null }
@@ -184,6 +196,8 @@ export type Database = {
       }
     }
     Functions: {
+      create_stock_transfer: { Args: { p_source: string; p_destination: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
+      process_stock_transfer: { Args: { p_transfer: string; p_action: string; p_reason?: string }; Returns: TransferStatus }
       business_location_summary: { Args: { p_business: string }; Returns: { location_id: string; name: string; location_type: LocationType; product_count: number; stock_quantity: number; stock_value: number }[] }
       create_location: { Args: { p_business: string; p_name: string; p_type: LocationType; p_code?: string }; Returns: string }
       update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
@@ -210,6 +224,7 @@ export type Database = {
 
 export type MembershipRole = "owner" | "manager" | "employee"
 export type LocationType = "store" | "warehouse"
+export type TransferStatus = "DRAFT" | "SUBMITTED" | "DISPATCHED" | "RECEIVED" | "CANCELLED"
 export type MovementType =
   | "GOODS_IN" | "SALE_CASH" | "SALE_CREDIT" | "ADJUSTMENT_INCREASE"
   | "ADJUSTMENT_DECREASE" | "STOCK_TAKE" | "DAMAGED" | "EXPIRED"

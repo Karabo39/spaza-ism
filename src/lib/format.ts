@@ -31,6 +31,11 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("INVALID_TRANSFER_STATE")) return "This transfer has moved to another stage. Refresh its status before continuing.";
+  if (m.includes("REASON_REQUIRED")) return "Enter a reason before continuing.";
+  if (m.includes("PRODUCT_UNITS_MISMATCH")) return "The products must use matching units and expiry tracking.";
+  if (m.includes("BATCH_QUANTITY_MISSING")) return "Expiry batches do not cover this quantity. Ask a manager to check the source stock.";
+  if (m.includes("REQUEST_CONFLICT")) return "This request was already used with different details. Refresh before trying again.";
   if (m.includes("LOCATION_NOT_SALEABLE")) return "Warehouse stock cannot be sold. Switch to a selling store.";
   if (m.includes("INVALID_LOCATION")) return "Choose active locations belonging to this business.";
   if (m.includes("OWNER_HAS_ALL_LOCATIONS")) return "Owners already have access to every location.";
