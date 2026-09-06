@@ -40,6 +40,7 @@ export async function flushSaleQueue(storeId: string): Promise<FlushResult> {
       p_customer: null,
       p_items: sale.items,
       p_override: false,
+      p_request: sale.id,
     });
     if (!error) {
       await removeQueuedSale(sale.id);

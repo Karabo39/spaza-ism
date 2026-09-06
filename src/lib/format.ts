@@ -31,6 +31,7 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("EXPIRY_REQUIRED")) return "Enter an expiry date for products with expiry tracking.";
   if (m.includes("INVALID_TRANSFER_STATE")) return "This transfer has moved to another stage. Refresh its status before continuing.";
   if (m.includes("REASON_REQUIRED")) return "Enter a reason before continuing.";
   if (m.includes("PRODUCT_UNITS_MISMATCH")) return "The products must use matching units and expiry tracking.";

@@ -73,6 +73,7 @@ export function GoodsInConsole() {
     if (!online) { toast.error("Goods In requires a connection."); return; }
     if (lines.length === 0) return;
     for (const l of lines) if (l.quantity <= 0) { toast.error(`Enter a quantity for ${l.name}`); return; }
+    for (const l of lines) if (l.trackExpiry && !l.expiry) { toast.error(`Enter an expiry date for ${l.name}`); return; }
     setBusy(true);
     const supabase = createClient();
     const { data, error } = await supabase.rpc("receive_stock", {

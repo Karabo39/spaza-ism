@@ -7,6 +7,7 @@ export const MOVEMENT_META: Record<MovementType, { label: string; variant: Varia
   UNPACK_IN: { label: "Unpacked units", variant: "success" },
   UNPACK_OUT: { label: "Packs unpacked", variant: "warning" },
   SALE_CASH: { label: "Cash Sale", variant: "accent" },
+  SALE_CARD: { label: "Card/EFT Sale", variant: "accent" },
   SALE_CREDIT: { label: "Credit Sale", variant: "primary" },
   ADJUSTMENT_INCREASE: { label: "Adj +", variant: "neutral" },
   ADJUSTMENT_DECREASE: { label: "Adj −", variant: "neutral" },

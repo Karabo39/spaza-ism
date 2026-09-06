@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus, Minus, Banknote, HandCoins, UserPlus, PackageSearch, ShieldAlert } from "lucide-react";
+import { Trash2, Plus, Minus, Banknote, HandCoins, UserPlus, PackageSearch, ShieldAlert, CreditCard } from "lucide-react";
 import { ScanInput } from "@/features/scan/scan-input";
 import { ProductSearchDialog } from "@/features/scan/product-search-dialog";
 import { ProductRegisterDialog } from "@/features/products/product-register-dialog";
@@ -18,7 +18,8 @@ import { useOffline } from "@/lib/offline/offline-context";
 import { enqueueSale, localAdjustQuantity } from "@/lib/offline/db";
 import { money, qty, friendlyError } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { ProductStock, CreditCustomer } from "@/lib/db/database.types";
+import type { ProductStock, CreditCustomer, SaleType } from "@/lib/db/database.types";
+import { Label } from "@/components/ui/label";
 
 type Line = { productId: string; name: string; unit: string; quantity: number; unitPrice: number; stock: number };
 
@@ -32,7 +33,9 @@ export function GoodsOutConsole() {
   const { store, currency, can } = useStore();
   const { online, refresh: refreshOffline } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
-  const [saleType, setSaleType] = React.useState<"CASH" | "CREDIT">("CASH");
+  const [saleType, setSaleType] = React.useState<SaleType>("CASH");
+  const [paymentReference, setPaymentReference] = React.useState("");
+  const attempt = React.useRef<{ id: string; fingerprint: string } | null>(null);
   const [customer, setCustomer] = React.useState<CreditCustomer | null>(null);
   const [override, setOverride] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -47,7 +50,7 @@ export function GoodsOutConsole() {
   );
 
   const projectedBalance = (customer?.balance ?? 0) + total;
-  const wouldExceed = !!customer && customer.credit_limit > 0 && projectedBalance > customer.credit_limit;
+  const wouldExceed = !!customer && projectedBalance > customer.credit_limit;
 
   function addProduct(p: ProductStock) {
     setLines((prev) => {
@@ -86,11 +89,12 @@ export function GoodsOutConsole() {
 
   function resetCart() {
     setLines([]); setCustomer(null); setOverride(false); setSaleType("CASH");
+    setPaymentReference(""); attempt.current = null;
   }
 
   async function saveOffline() {
     await enqueueSale({
-      id: crypto.randomUUID(),
+      id: attempt.current?.id ?? crypto.randomUUID(),
       storeId: store.id,
       items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, unit_price: l.unitPrice })),
       total,
@@ -112,11 +116,13 @@ export function GoodsOutConsole() {
       toast.error("Over credit limit — enable override (manager) to proceed");
       return;
     }
+    const fingerprint = JSON.stringify({ lines, saleType, customer: customer?.customer_id, override, paymentReference });
+    if (attempt.current?.fingerprint !== fingerprint) attempt.current = { id: crypto.randomUUID(), fingerprint };
 
     // Offline: capture cash sales locally; credit needs the server (limit checks).
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      if (saleType === "CREDIT") {
-        toast.error("Credit sales need a connection. Use Cash, or complete this once you're back online.");
+      if (saleType !== "CASH") {
+        toast.error("Card/EFT and credit sales need a connection. Reconnect to record this sale.");
         return;
       }
       setBusy(true);
@@ -133,7 +139,9 @@ export function GoodsOutConsole() {
         p_sale_type: saleType,
         p_customer: saleType === "CREDIT" ? customer!.customer_id : null,
         p_items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, unit_price: l.unitPrice })),
-        p_override: override,
+        p_override: saleType === "CREDIT" && override,
+        p_request: attempt.current.id,
+        ...(saleType === "CARD_EFT" && paymentReference.trim() ? { p_payment_reference: paymentReference.trim() } : {}),
       });
       setBusy(false);
       if (error || !data) {
@@ -142,7 +150,7 @@ export function GoodsOutConsole() {
         return;
       }
       toast.success(
-        saleType === "CASH" ? `Cash sale complete — ${money(total, currency)}` : `Credit sale to ${customer?.name} — ${money(total, currency)}`,
+        saleType === "CREDIT" ? `Credit sale to ${customer?.name} — ${money(total, currency)}` : `${saleType === "CARD_EFT" ? "Card/EFT" : "Cash"} sale complete — ${money(total, currency)}`,
       );
       resetCart();
       router.refresh();
@@ -221,11 +229,16 @@ export function GoodsOutConsole() {
       <div className="lg:sticky lg:top-20 h-fit space-y-4 rounded-lg border border-border bg-surface p-4">
         <div>
           <p className="mb-2 text-xs font-medium text-muted">Payment type</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button onClick={() => setSaleType("CASH")}
               className={cn("flex items-center justify-center gap-2 rounded-md border py-2.5 text-sm font-medium transition-colors",
                 saleType === "CASH" ? "border-accent/50 bg-accent/15 text-accent" : "border-border hover:bg-surface-2")}>
               <Banknote className="size-4" /> Cash
+            </button>
+            <button disabled={!online} onClick={() => setSaleType("CARD_EFT")}
+              className={cn("flex items-center justify-center gap-1 rounded-md border py-2.5 text-sm font-medium disabled:opacity-50",
+                saleType === "CARD_EFT" ? "border-accent/50 bg-accent/15 text-accent" : "border-border hover:bg-surface-2")}>
+              <CreditCard className="size-4" /> Card/EFT
             </button>
             <button onClick={() => setSaleType("CREDIT")}
               className={cn("flex items-center justify-center gap-2 rounded-md border py-2.5 text-sm font-medium transition-colors",
@@ -271,6 +284,7 @@ export function GoodsOutConsole() {
             ) : null}
           </div>
         ) : null}
+        {saleType === "CARD_EFT" ? <div><Label htmlFor="card-reference">Card slip / EFT reference (optional)</Label><Input id="card-reference" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} /><p className="mt-1 text-xs text-muted">Record a payment already made on your card machine or by EFT.</p></div> : null}
 
         <div className="border-t border-border pt-3">
           <div className="flex items-end justify-between">
@@ -281,13 +295,13 @@ export function GoodsOutConsole() {
 
         {!online ? (
           <p className="rounded-md border border-warning/40 bg-warning/10 p-2 text-center text-xs text-warning">
-            Offline — cash sales are saved and synced automatically. Credit needs a connection.
+            Offline — cash sales are saved and synced automatically. Card/EFT and credit need a connection.
           </p>
         ) : null}
 
-        <Button className="w-full" size="lg" loading={busy} disabled={lines.length === 0 || (!online && saleType === "CREDIT")}
+        <Button className="w-full" size="lg" loading={busy} disabled={lines.length === 0 || (!online && saleType !== "CASH")}
           onClick={complete}>
-          {!online && saleType === "CASH" ? "Save cash sale offline" : saleType === "CASH" ? "Complete cash sale" : "Complete credit sale"}
+          {!online && saleType === "CASH" ? "Save cash sale offline" : saleType === "CASH" ? "Complete cash sale" : saleType === "CARD_EFT" ? "Record Card/EFT sale" : "Complete credit sale"}
         </Button>
       </div>
 

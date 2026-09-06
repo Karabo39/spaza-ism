@@ -26,6 +26,7 @@ export default async function GoodsOutReport({ searchParams }: { searchParams: P
 
   const cash = rows.filter((r) => r.sale_type === "CASH").reduce((s, r) => s + Number(r.total_amount), 0);
   const credit = rows.filter((r) => r.sale_type === "CREDIT").reduce((s, r) => s + Number(r.total_amount), 0);
+  const card = rows.filter((r) => r.sale_type === "CARD_EFT").reduce((s, r) => s + Number(r.total_amount), 0);
 
   const exportRows = rows.map((r) => ({ date: dateTime(r.created_at), type: r.sale_type, customer: r.customers?.name ?? "", items: r.goods_out_items?.length ?? 0, total: r.total_amount, override: r.credit_override ? "yes" : "" }));
   const columns = [{ key: "date", label: "Date" }, { key: "type", label: "Type" }, { key: "customer", label: "Customer" }, { key: "items", label: "Items" }, { key: "total", label: "Total" }, { key: "override", label: "Override" }];
@@ -34,10 +35,11 @@ export default async function GoodsOutReport({ searchParams }: { searchParams: P
     <>
       <PageHeader title="Goods Out" crumbs={[{ label: "Reports", href: "/reports" }, { label: "Goods Out" }]}
         actions={<><DateFilter /><ExportButton rows={exportRows} columns={columns} filename="goods-out" /></>} />
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card><CardContent className="p-4"><p className="text-xs text-muted">Cash sales</p><p className="mt-1 text-xl font-semibold tabular-nums text-accent">{money(cash, store.currency)}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-xs text-muted">Credit sales</p><p className="mt-1 text-xl font-semibold tabular-nums text-primary-hover">{money(credit, store.currency)}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-xs text-muted">Total</p><p className="mt-1 text-xl font-semibold tabular-nums">{money(cash + credit, store.currency)}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted">Card/EFT sales</p><p className="mt-1 text-xl font-semibold tabular-nums">{money(card, store.currency)}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted">Total</p><p className="mt-1 text-xl font-semibold tabular-nums">{money(cash + credit + card, store.currency)}</p></CardContent></Card>
       </div>
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? <EmptyState icon={PackageMinus} title="No sales in this range" /> : (

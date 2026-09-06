@@ -83,7 +83,7 @@ export type Database = {
         Relationships: []
       }
       goods_out: {
-        Row: { authorized_by: string | null; business_id: string; created_at: string; credit_override: boolean; customer_id: string | null; id: string; note: string | null; performed_by: string | null; sale_type: SaleType; store_id: string; total_amount: number }
+        Row: { authorized_by: string | null; business_id: string; created_at: string; credit_override: boolean; customer_id: string | null; id: string; note: string | null; performed_by: string | null; sale_type: SaleType; store_id: string; total_amount: number; payment_reference: string | null; request_id: string | null; request_payload: Json | null }
         Insert: { authorized_by?: string | null; business_id: string; created_at?: string; credit_override?: boolean; customer_id?: string | null; id?: string; note?: string | null; performed_by?: string | null; sale_type: SaleType; store_id: string; total_amount?: number }
         Update: Partial<Database["public"]["Tables"]["goods_out"]["Insert"]>
         Relationships: []
@@ -218,7 +218,7 @@ export type Database = {
       update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
       set_member_locations: { Args: { p_membership: string; p_stores: string[] }; Returns: undefined }
       adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string }; Returns: string }
-      complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string }; Returns: string }
+      complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string; p_request?: string; p_payment_reference?: string }; Returns: string }
       complete_stock_take: { Args: { p_stock_take: string }; Returns: undefined }
       create_business: { Args: { p_name: string; p_store_name?: string }; Returns: Json }
       add_member_by_email: { Args: { p_business: string; p_email: string; p_role: string }; Returns: string }
@@ -245,7 +245,8 @@ export type MovementType =
   | "ADJUSTMENT_DECREASE" | "STOCK_TAKE" | "DAMAGED" | "EXPIRED"
   | "TRANSFER_IN" | "TRANSFER_OUT" | "RETURN_IN" | "VOID_REVERSAL"
   | "UNPACK_IN" | "UNPACK_OUT"
-export type SaleType = "CASH" | "CREDIT"
+  | "SALE_CARD"
+export type SaleType = "CASH" | "CREDIT" | "CARD_EFT"
 export type AdjustmentReason = "DAMAGED" | "EXPIRED" | "MISSING" | "STOCK_COUNT_CORRECTION" | "THEFT" | "OTHER"
 export type CreditTxnType = "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT" | "OPENING_BALANCE"
 export type StockTakeStatus = "IN_PROGRESS" | "PENDING_APPROVAL" | "COMPLETED" | "CANCELLED"
