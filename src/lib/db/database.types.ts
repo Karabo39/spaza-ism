@@ -10,6 +10,18 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      bulk_conversions: {
+        Row: { id: string; business_id: string; store_id: string; pack_product_id: string; unit_product_id: string; pack_name: string; unit_name: string; units_per_pack: number; updated_by: string; updated_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      bulk_unpackings: {
+        Row: { id: string; reference: string; business_id: string; store_id: string; conversion_id: string; pack_product_id: string; unit_product_id: string; pack_name: string; unit_name: string; units_per_pack: number; packs: number; units: number; reason: string; performed_by: string; created_at: string; request_id: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       stock_transfers: {
         Row: { id: string; business_id: string; source_id: string; destination_id: string; reference: string; status: TransferStatus; note: string | null; cancellation_reason: string | null; created_by: string; dispatched_by: string | null; received_by: string | null; created_at: string; submitted_at: string | null; dispatched_at: string | null; received_at: string | null; cancelled_at: string | null; request_id: string; request_payload: Json }
         Insert: never
@@ -196,6 +208,9 @@ export type Database = {
       }
     }
     Functions: {
+      transfer_history: { Args: { p_business: string; p_source?: string; p_destination?: string; p_status?: string; p_product?: string; p_user?: string; p_from?: string; p_to?: string }; Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][] }
+      set_bulk_conversion: { Args: { p_pack: string; p_unit: string; p_ratio: number }; Returns: string }
+      unpack_stock: { Args: { p_conversion: string; p_packs: number; p_reason: string; p_request: string }; Returns: string }
       create_stock_transfer: { Args: { p_source: string; p_destination: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
       process_stock_transfer: { Args: { p_transfer: string; p_action: string; p_reason?: string }; Returns: TransferStatus }
       business_location_summary: { Args: { p_business: string }; Returns: { location_id: string; name: string; location_type: LocationType; product_count: number; stock_quantity: number; stock_value: number }[] }
@@ -229,6 +244,7 @@ export type MovementType =
   | "GOODS_IN" | "SALE_CASH" | "SALE_CREDIT" | "ADJUSTMENT_INCREASE"
   | "ADJUSTMENT_DECREASE" | "STOCK_TAKE" | "DAMAGED" | "EXPIRED"
   | "TRANSFER_IN" | "TRANSFER_OUT" | "RETURN_IN" | "VOID_REVERSAL"
+  | "UNPACK_IN" | "UNPACK_OUT"
 export type SaleType = "CASH" | "CREDIT"
 export type AdjustmentReason = "DAMAGED" | "EXPIRED" | "MISSING" | "STOCK_COUNT_CORRECTION" | "THEFT" | "OTHER"
 export type CreditTxnType = "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT" | "OPENING_BALANCE"
