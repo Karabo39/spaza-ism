@@ -31,6 +31,10 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if(m.includes("STOCK_CHANGED_RECOUNT"))return "Stock changed after this count was prepared. Refresh the stock and count it again before approval.";
+  if(m.includes("SELECTED_BATCH_QUANTITY_MISSING"))return "The selected or expired batches do not contain enough stock for this adjustment.";
+  if(m.includes("LOSS_MUST_DECREASE_STOCK"))return "Damage, expiry, missing stock and theft must reduce the quantity. Use Count correction for added stock.";
+  if(m.includes("STOCK_TAKE_CLOSED"))return "This stock take is closed. Start a new count to make corrections.";
   if(m.includes("NO_SHORTAGE_USE_NORMAL_UNPACK"))return "Recorded stock is sufficient. Turn off the count override and use normal unpacking.";
   if(m.includes("COUNT_AND_REASON_REQUIRED"))return "Enter the physical pack count and a reason. The count must cover the packs being unpacked.";
   if(m.includes("EXPIRY_DATE_REQUIRED"))return "Enter the expiry date for the newly counted stock.";

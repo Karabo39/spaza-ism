@@ -1,0 +1,15 @@
+import { beforeEach,expect,it,vi } from "vitest";
+import { cleanup,fireEvent,render,screen,waitFor } from "@testing-library/react";
+import { StockTakeCounter } from "@/features/stock-take/counter";
+const mock=vi.hoisted(()=>({rpc:vi.fn(),refetch:vi.fn(),online:true}));
+vi.mock("next/navigation",()=>({useRouter:()=>({refresh:vi.fn()})}));
+vi.mock("@/lib/supabase/client",()=>({createClient:()=>({rpc:mock.rpc})}));
+vi.mock("@/lib/store-context",()=>({useStore:()=>({can:()=>true})}));
+vi.mock("@/lib/offline/offline-context",()=>({useOffline:()=>({online:mock.online})}));
+vi.mock("@/components/shell/toolbar-search",()=>({ToolbarSearch:()=>null}));
+vi.mock("@/features/reports/export-button",()=>({ExportButton:()=>null}));
+vi.mock("sonner",()=>({toast:{success:vi.fn(),error:vi.fn()}}));
+vi.mock("@tanstack/react-query",()=>({useQuery:()=>({data:[{id:"line",product_id:"product",system_qty:4,counted_qty:4,counted:true,variance:0,counted_expiry:null,products:{name:"Milk",track_expiry:true}}],refetch:mock.refetch}),useQueryClient:()=>({invalidateQueries:vi.fn()})}));
+beforeEach(()=>{cleanup();mock.rpc.mockReset();mock.rpc.mockResolvedValue({error:null});mock.online=true;});
+it("requires saving edited counts and passes expiry to the guarded count RPC",async()=>{render(<StockTakeCounter stockTakeId="take" status="IN_PROGRESS"/>);fireEvent.change(screen.getByLabelText("Count Milk"),{target:{value:"6"}});fireEvent.change(screen.getByLabelText("Expiry Milk"),{target:{value:"2028-01-01"}});fireEvent.click(screen.getByRole("button",{name:"Approve & apply counts"}));expect(mock.rpc).not.toHaveBeenCalled();fireEvent.click(screen.getByRole("button",{name:"Save count"}));await waitFor(()=>expect(mock.rpc).toHaveBeenCalledWith("save_stock_take_count",{p_item:"line",p_quantity:6,p_expiry:"2028-01-01"}));});
+it("keeps cancelled counts read only",()=>{render(<StockTakeCounter stockTakeId="take" status="CANCELLED"/>);expect(screen.queryByRole("button",{name:"Save count"})).toBeNull();expect(screen.queryByRole("button",{name:"Approve & apply counts"})).toBeNull();});

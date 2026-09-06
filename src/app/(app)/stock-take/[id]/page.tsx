@@ -17,7 +17,7 @@ export default async function StockTakeDetailPage({
   if (!session?.activeStore) redirect("/onboarding");
   const supabase = await createClient();
 
-  const { data: take } = await supabase.from("stock_takes").select("id, status, created_at").eq("id", id).maybeSingle();
+  const { data: take } = await supabase.from("stock_takes").select("id, status, created_at").eq("id", id).eq("store_id",session.activeStore.id).maybeSingle();
   if (!take) notFound();
 
   return (

@@ -1,0 +1,31 @@
+do $$
+declare u uuid:=gen_random_uuid(); worker uuid:=gen_random_uuid(); biz uuid; loc uuid; p uuid; take uuid; item uuid; req uuid:=gen_random_uuid(); aid uuid; result jsonb;
+begin
+  insert into auth.users(id,email,raw_user_meta_data) values(u,'counts-owner@test.invalid','{}'),(worker,'counts-worker@test.invalid','{}');
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+  result:=public.create_business('Stock count tests','Shop');biz:=(result->>'business_id')::uuid;loc:=(result->>'store_id')::uuid;
+  p:=public.create_product(loc,'Milk',null,null,null,5,10,0,0,'each',true);
+  perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',3,'expiry_date','2020-01-01'),jsonb_build_object('product_id',p,'quantity',7,'expiry_date','2028-01-01')));
+  aid:=public.adjust_stock(loc,p,7,'EXPIRED','Expired batch',null,req,10);
+  if public.adjust_stock(loc,p,7,'EXPIRED','Expired batch',null,req,10)<>aid then raise exception 'ASSERT adjustment retry';end if;
+  if (select sum(quantity) from public.stock_batches where product_id=p and expiry_date='2020-01-01')<>0 or (select sum(quantity) from public.stock_batches where product_id=p)<>7 then raise exception 'ASSERT expired stock removed from correct batches';end if;
+  begin perform public.adjust_stock(loc,p,9,'STOCK_COUNT_CORRECTION','Missing expiry');raise exception 'ASSERT count expiry required';exception when others then if sqlerrm<>'EXPIRY_DATE_REQUIRED' then raise;end if;end;
+  take:=public.start_stock_take(loc);select id into item from public.stock_take_items where stock_take_id=take and product_id=p;
+  perform public.save_stock_take_count(item,8,'2028-02-01');
+  perform public.complete_sale(loc,'CASH',null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)));
+  begin perform public.complete_stock_take(take);raise exception 'ASSERT stale count denied';exception when others then if sqlerrm not like 'STOCK_CHANGED_RECOUNT%' then raise;end if;end;
+  if (select quantity from public.stock where product_id=p)<>6 then raise exception 'ASSERT stale count did not overwrite sale';end if;
+  perform public.save_stock_take_count(item,7,'2028-02-01');perform public.complete_stock_take(take);perform public.complete_stock_take(take);
+  if (select sum(quantity) from public.stock_batches where product_id=p)<>7 then raise exception 'ASSERT stock count added expiry batch';end if;
+  begin perform public.save_stock_take_count(item,2);raise exception 'ASSERT closed count read only';exception when others then if sqlerrm<>'STOCK_TAKE_CLOSED' then raise;end if;end;
+  begin update public.stock_take_items set counted_qty=100 where id=item;raise exception 'ASSERT direct count update denied';exception when insufficient_privilege then null;end;
+  take:=public.start_stock_take(loc);perform public.cancel_stock_take(take,'Abandoned count');
+  begin perform public.complete_stock_take(take);raise exception 'ASSERT cancelled take cannot post';exception when others then if sqlerrm<>'STOCK_TAKE_CLOSED' then raise;end if;end;
+  if exists(select 1 from public.reconcile_stock(loc) where diff<>0) then raise exception 'ASSERT counts reconcile';end if;
+  reset role;insert into public.memberships(business_id,user_id,role) values(biz,worker,'employee');insert into public.store_memberships(business_id,store_id,membership_id) select biz,loc,id from public.memberships where business_id=biz and user_id=worker;
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',worker,'role','authenticated')::text,true);set local role authenticated;
+  take:=public.start_stock_take(loc);select id into item from public.stock_take_items where stock_take_id=take and product_id=p;perform public.save_stock_take_count(item,6);
+  begin perform public.complete_stock_take(take);raise exception 'ASSERT employee cannot approve';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
+  perform public.cancel_stock_take(take,'Employee abandoned their own count');
+  reset role;raise exception 'TESTS_PASSED';
+end $$;

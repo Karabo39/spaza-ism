@@ -19,6 +19,7 @@
 -- Bulk conversion and unpack RPC cases are in unpacking.sql.
 -- Card/EFT, idempotent sales and receipt expiry checks are in card_payments.sql.
 -- Import quantities and manager count overrides: imports.sql and bulk_count_override.sql.
+-- Expiry adjustments, saved-count conflicts and stock-take approval: stock_counts.sql.
 -- =====================================================================
 do $$
 declare

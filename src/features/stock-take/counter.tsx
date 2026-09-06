@@ -1,136 +1,284 @@
 "use client";
-import * as React from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle2, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { LoadingRows, EmptyState } from "@/components/ui/misc";
+import { LoadingRows } from "@/components/ui/misc";
 import { ToolbarSearch } from "@/components/shell/toolbar-search";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
+import { useOffline } from "@/lib/offline/offline-context";
+import { ExportButton } from "@/features/reports/export-button";
 import { qty, friendlyError } from "@/lib/format";
-import { cn } from "@/lib/utils";
-
-type Item = { id: string; product_id: string; system_qty: number; counted_qty: number | null; counted: boolean; variance: number | null; products: { name: string } | null };
-
-export function StockTakeCounter({ stockTakeId, status, filter }: { stockTakeId: string; status: string; filter?: string }) {
-  const router = useRouter();
-  const { can } = useStore();
-  const completed = status === "COMPLETED";
-  const [busy, setBusy] = React.useState(false);
-  const [local, setLocal] = React.useState<Record<string, string>>({});
-
-  const { data, isLoading, refetch } = useQuery({
+type Item = {
+  id: string;
+  product_id: string;
+  system_qty: number;
+  counted_qty: number | null;
+  counted: boolean;
+  variance: number | null;
+  counted_expiry: string | null;
+  products: { name: string; track_expiry: boolean } | null;
+};
+export function StockTakeCounter({
+  stockTakeId,
+  status,
+  filter,
+}: {
+  stockTakeId: string;
+  status: string;
+  filter?: string;
+}) {
+  const router = useRouter(),
+    cache = useQueryClient(),
+    { can } = useStore(),
+    { online } = useOffline();
+  const closed = status !== "IN_PROGRESS";
+  const [busy, setBusy] = useState(false),
+    [saving, setSaving] = useState(0),
+    [local, setLocal] = useState<Record<string, string>>({}),
+    [expiry, setExpiry] = useState<Record<string, string>>({}),
+    [reason, setReason] = useState("");
+  const pending = useRef(0);
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["stock-take-items", stockTakeId],
+    enabled: online,
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
+      const { data, error } = await createClient()
         .from("stock_take_items")
-        .select("id, product_id, system_qty, counted_qty, counted, variance, products(name)")
+        .select(
+          "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,products(name,track_expiry)",
+        )
         .eq("stock_take_id", stockTakeId)
         .order("product_id");
       if (error) throw error;
       return data as unknown as Item[];
     },
   });
-
-  const items = (data ?? []).filter((i) =>
-    !filter ? true : (i.products?.name ?? "").toLowerCase().includes(filter.toLowerCase()),
+  const items = (data ?? []).filter(
+    (i) =>
+      !filter ||
+      (i.products?.name ?? "").toLowerCase().includes(filter.toLowerCase()),
   );
-  const countedCount = (data ?? []).filter((i) => i.counted).length;
-  const total = (data ?? []).length;
-
-  async function saveCount(item: Item, value: string) {
-    const counted = value.trim() === "" ? null : Number(value);
-    const supabase = createClient();
-    const variance = counted === null ? null : counted - Number(item.system_qty);
-    const { error } = await supabase.from("stock_take_items")
-      .update({ counted_qty: counted, counted: counted !== null, variance })
-      .eq("id", item.id);
-    if (error) toast.error(friendlyError(error.message));
-    else refetch();
+  const counted = (data ?? []).filter((i) => i.counted).length;
+  async function save(item: Item) {
+    const value = local[item.id] ?? String(item.counted_qty ?? ""),
+      n = value.trim() === "" ? null : Number(value),
+      date = expiry[item.id] ?? item.counted_expiry ?? "";
+    if (n !== null && (!Number.isFinite(n) || n < 0)) {
+      toast.error("Enter a non-negative count.");
+      return;
+    }
+    pending.current++;
+    setSaving(pending.current);
+    try {
+      const { error } = await createClient().rpc("save_stock_take_count", {
+        p_item: item.id,
+        p_quantity: n,
+        ...(date ? { p_expiry: date } : {}),
+      });
+      if (error) throw error;
+      await refetch();
+      setLocal((old) => {
+        const next = { ...old };
+        delete next[item.id];
+        return next;
+      });
+      toast.success("Count saved.");
+    } catch (error) {
+      toast.error(friendlyError((error as Error).message));
+    } finally {
+      pending.current--;
+      setSaving(pending.current);
+    }
   }
-
-  async function complete() {
+  async function finish(cancel = false) {
+    if (!online || busy || pending.current) return;
+    if (!cancel && Object.keys(local).length) {
+      toast.error("Save each edited count before approving the stock take.");
+      return;
+    }
     setBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.rpc("complete_stock_take", { p_stock_take: stockTakeId });
-    setBusy(false);
-    if (error) { toast.error(friendlyError(error.message)); return; }
-    toast.success("Stock take completed — variances applied to stock");
-    router.refresh();
+    try {
+      const db = createClient();
+      const { error } = cancel
+        ? await db.rpc("cancel_stock_take", {
+            p_stock_take: stockTakeId,
+            p_reason: reason,
+          })
+        : await db.rpc("complete_stock_take", { p_stock_take: stockTakeId });
+      if (error) throw error;
+      toast.success(cancel ? "Stock take cancelled." : "Stock take completed.");
+      router.refresh();
+      await cache.invalidateQueries();
+    } catch (error) {
+      toast.error(friendlyError((error as Error).message));
+    } finally {
+      setBusy(false);
+    }
   }
-
-  if (isLoading) return <div className="rounded-lg border border-border bg-surface"><LoadingRows cols={5} /></div>;
-
+  if (isLoading) return <LoadingRows cols={6} />;
+  const exportRows = items.map((i) => ({
+    name: i.products?.name,
+    system: Number(i.system_qty),
+    counted: i.counted_qty === null ? "" : Number(i.counted_qty),
+    variance: i.variance === null ? "" : Number(i.variance),
+    status: i.counted ? "Counted" : "Pending",
+    expiry: i.counted_expiry ?? "",
+  }));
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted">
+        Count and save one product at a time. Pause movements while counting.
+        Stock changes after a saved count require a fresh count before approval.
+        Added tracked stock needs an expiry date.
+      </p>
+      {!online && (
+        <p className="text-warning">
+          Connect to count stock and approve changes.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-danger">
+          Could not load this stock take.
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Badge variant={completed ? "success" : "warning"}>{completed ? "Completed" : "In progress"}</Badge>
-          <span className="text-sm text-muted">{countedCount} of {total} counted</span>
+          <Badge variant={status === "COMPLETED" ? "success" : "neutral"}>
+            {status.replaceAll("_", " ")}
+          </Badge>
+          <span className="text-sm">
+            {counted} of {data?.length ?? 0} counted
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <ToolbarSearch placeholder="Filter products…" />
-          {!completed && can("manager") ? (
-            <Button loading={busy} onClick={complete} disabled={countedCount === 0}>
-              <ClipboardCheck className="size-4" /> Complete &amp; apply
-            </Button>
-          ) : null}
-        </div>
+        <ToolbarSearch placeholder="Filter products…" />
+        <ExportButton
+          filename="stock-take-variance"
+          rows={exportRows}
+          columns={[
+            { key: "name", label: "Product" },
+            { key: "system", label: "System at count" },
+            { key: "counted", label: "Physical count" },
+            { key: "variance", label: "Variance" },
+            { key: "status", label: "Count status" },
+            { key: "expiry", label: "Added stock expiry" },
+          ]}
+        />
       </div>
-
       <div className="rounded-lg border border-border bg-surface">
-        {items.length === 0 ? (
-          <EmptyState icon={CheckCircle2} title="No products to count" />
-        ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>Product</TH>
-                <TH className="text-right">System qty</TH>
-                <TH className="text-right w-40">Counted</TH>
-                <TH className="text-right">Variance</TH>
-                <TH>Status</TH>
+        <Table>
+          <THead>
+            <TR>
+              <TH>Product</TH>
+              <TH>System at count</TH>
+              <TH>Physical count</TH>
+              <TH>Added stock expiry</TH>
+              <TH>Variance</TH>
+              <TH>Save / status</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {items.map((item) => (
+              <TR key={item.id}>
+                <TD>{item.products?.name ?? "—"}</TD>
+                <TD>{qty(item.system_qty)}</TD>
+                <TD>
+                  {closed ? (
+                    qty(item.counted_qty)
+                  ) : (
+                    <Input
+                      aria-label={`Count ${item.products?.name}`}
+                      className="w-28"
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      disabled={busy || saving > 0 || !online}
+                      value={local[item.id] ?? item.counted_qty ?? ""}
+                      onChange={(e) =>
+                        setLocal((old) => ({
+                          ...old,
+                          [item.id]: e.target.value,
+                        }))
+                      }
+                    />
+                  )}
+                </TD>
+                <TD>
+                  {!closed && item.products?.track_expiry ? (
+                    <Input
+                      aria-label={`Expiry ${item.products.name}`}
+                      type="date"
+                      className="w-40"
+                      disabled={busy || saving > 0 || !online}
+                      value={expiry[item.id] ?? item.counted_expiry ?? ""}
+                      onChange={(e) => {
+                        setExpiry((old) => ({
+                          ...old,
+                          [item.id]: e.target.value,
+                        }));
+                        setLocal((old) => ({
+                          ...old,
+                          [item.id]:
+                            old[item.id] ?? String(item.counted_qty ?? ""),
+                        }));
+                      }}
+                    />
+                  ) : (
+                    (item.counted_expiry ?? "—")
+                  )}
+                </TD>
+                <TD>{item.variance === null ? "—" : qty(item.variance)}</TD>
+                <TD>
+                  {closed ? (
+                    <span>{item.counted ? "Counted" : "Pending"}</span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={busy || saving > 0 || !online}
+                      onClick={() => save(item)}
+                    >
+                      Save count
+                    </Button>
+                  )}
+                </TD>
               </TR>
-            </THead>
-            <TBody>
-              {items.map((i) => {
-                const v = i.counted && i.counted_qty !== null ? Number(i.counted_qty) - Number(i.system_qty) : null;
-                return (
-                  <TR key={i.id}>
-                    <TD className="font-medium">{i.products?.name ?? "—"}</TD>
-                    <TD className="text-right tabular-nums text-muted-foreground">{qty(i.system_qty)}</TD>
-                    <TD className="text-right">
-                      {completed ? (
-                        <span className="tabular-nums">{i.counted_qty !== null ? qty(i.counted_qty) : "—"}</span>
-                      ) : (
-                        <Input
-                          type="number" step="0.001" min="0"
-                          defaultValue={i.counted_qty ?? ""}
-                          value={local[i.id] ?? (i.counted_qty ?? "")}
-                          onChange={(e) => setLocal((s) => ({ ...s, [i.id]: e.target.value }))}
-                          onBlur={(e) => saveCount(i, e.target.value)}
-                          className="h-8 w-28 text-right ml-auto"
-                          placeholder="count"
-                        />
-                      )}
-                    </TD>
-                    <TD className={cn("text-right tabular-nums", v && v > 0 ? "text-success" : v && v < 0 ? "text-danger" : "text-muted")}>
-                      {v === null ? "—" : `${v > 0 ? "+" : ""}${qty(v)}`}
-                    </TD>
-                    <TD>{i.counted ? <Badge variant="success">Counted</Badge> : <Badge variant="neutral">Pending</Badge>}</TD>
-                  </TR>
-                );
-              })}
-            </TBody>
-          </Table>
-        )}
+            ))}
+          </TBody>
+        </Table>
       </div>
+      {!closed && (
+        <div className="flex flex-wrap items-center gap-3">
+          {can("manager") && (
+            <Button
+              loading={busy}
+              disabled={!online || saving > 0 || !counted}
+              onClick={() => finish()}
+            >
+              Approve &amp; apply counts
+            </Button>
+          )}
+          <Input
+            className="max-w-sm"
+            aria-label="Stock take cancellation reason"
+            placeholder="Reason to abandon this count"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <Button
+            variant="secondary"
+            disabled={!online || busy || saving > 0 || !reason.trim()}
+            onClick={() => finish(true)}
+          >
+            Cancel stock take
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

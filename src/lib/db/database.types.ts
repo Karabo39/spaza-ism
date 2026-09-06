@@ -164,7 +164,7 @@ export type Database = {
         Relationships: []
       }
       stock_take_items: {
-        Row: { counted: boolean; counted_qty: number | null; id: string; product_id: string; stock_take_id: string; system_qty: number; variance: number | null }
+        Row: { counted: boolean; counted_qty: number | null; id: string; product_id: string; stock_take_id: string; system_qty: number; variance: number | null; counted_expiry: string | null; counted_at: string | null; counted_by: string | null }
         Insert: { counted?: boolean; counted_qty?: number | null; id?: string; product_id: string; stock_take_id: string; system_qty?: number; variance?: number | null }
         Update: Partial<Database["public"]["Tables"]["stock_take_items"]["Insert"]>
         Relationships: []
@@ -225,6 +225,8 @@ export type Database = {
       }
     }
     Functions: {
+      save_stock_take_count: { Args: { p_item: string; p_quantity: number | null; p_expiry?: string }; Returns: undefined }
+      cancel_stock_take: { Args: { p_stock_take: string; p_reason: string }; Returns: undefined }
       unpack_stock_with_count: { Args: { p_conversion: string; p_packs: number; p_counted: number; p_reason: string; p_request: string; p_expiry?: string }; Returns: string }
       set_business_logo: { Args: { p_business: string; p_path: string | null }; Returns: undefined }
       import_excel: { Args: { p_store: string; p_kind: string; p_rows: Json; p_request: string; p_preview?: boolean }; Returns: Json }
@@ -256,7 +258,7 @@ export type Database = {
       create_location: { Args: { p_business: string; p_name: string; p_type: LocationType; p_code?: string }; Returns: string }
       update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
       set_member_locations: { Args: { p_membership: string; p_stores: string[] }; Returns: undefined }
-      adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string }; Returns: string }
+      adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string; p_expiry?: string; p_request?: string; p_expected?: number }; Returns: string }
       complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string; p_request?: string; p_payment_reference?: string; p_override_token?: string }; Returns: string }
       set_credit_override_code: { Args: { p_business: string; p_code: string }; Returns: undefined }
       credit_override_authorizers: { Args: { p_store: string }; Returns: { user_id: string; name: string }[] }
