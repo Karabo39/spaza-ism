@@ -1,0 +1,3 @@
+[functions.scheduled-notifications]
+# The worker validates a dedicated random secret; never expose it to a browser.
+verify_jwt = false

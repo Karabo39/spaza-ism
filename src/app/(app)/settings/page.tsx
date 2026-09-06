@@ -6,6 +6,7 @@ import { SettingsForm } from "@/features/settings/settings-form";
 import { LocationsManager } from "@/features/settings/locations-manager";
 import { OverrideCodeSettings } from "@/features/credit/override-approval";
 import { BillingPreferences } from "@/features/billing/billing-preferences";
+import { NotificationPreferences } from "@/features/settings/notification-preferences";
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -14,6 +15,8 @@ export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: billing, error: billingError } = await supabase.from("billing_settings").select("*").eq("business_id",store.businessId).maybeSingle();
   if (billingError) throw billingError;
+  const {data:notifications,error:notificationsError}=await supabase.from("notification_preferences").select("*").eq("store_id",store.id);
+  if(notificationsError)throw notificationsError;
 
   const [{ data: profile }, { data: storeRow }, { data: business }] = await Promise.all([
     supabase.from("profiles").select("full_name, phone").eq("id", session.userId).maybeSingle(),
@@ -32,6 +35,7 @@ export default async function SettingsPage() {
       <LocationsManager />
       <OverrideCodeSettings />
       <BillingPreferences key={store.businessId} tax={Number(billing?.tax_percent??0)} returnApproval={billing?.return_approval_required??true}/>
+      <NotificationPreferences key={`${store.id}:${session.userId}`} initial={notifications??[]}/>
     </>
   );
 }
