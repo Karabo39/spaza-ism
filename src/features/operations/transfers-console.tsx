@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { LocationProductPicker } from "./product-picker";
+import { ExportButton } from "@/features/reports/export-button";
 import { dateTime, friendlyError, qty } from "@/lib/format";
 import type { ProductStock, TransferStatus } from "@/lib/db/database.types";
 
@@ -33,22 +34,32 @@ export function TransfersConsole({ receiving = false }: { receiving?: boolean })
   const [status, setStatus] = React.useState(receiving ? "DISPATCHED" : "all");
   const [filterSource, setFilterSource] = React.useState("");
   const [filterDestination, setFilterDestination] = React.useState("");
+  const [filterProduct, setFilterProduct] = React.useState("");
+  const [filterUser, setFilterUser] = React.useState("");
+  const [fromDate, setFromDate] = React.useState("");
+  const [toDate, setToDate] = React.useState("");
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [reason, setReason] = React.useState("");
   const request = React.useRef<string | null>(null);
   const locations = stores.filter((s) => s.businessId === store.businessId);
   const { data, error, isLoading } = useQuery({
-    queryKey: ["transfers", store.businessId, status, filterSource, filterDestination], enabled: online,
+    queryKey: ["transfers", store.businessId, status, filterSource, filterDestination, filterProduct, filterUser, fromDate, toDate], enabled: online,
     queryFn: async () => {
-      let query = createClient().from("stock_transfers").select("*").eq("business_id", store.businessId).order("created_at", { ascending: false }).limit(200);
-      if (status !== "all") query = query.eq("status", status as TransferStatus);
-      if (filterSource) query = query.eq("source_id", filterSource);
-      if (filterDestination) query = query.eq("destination_id", filterDestination);
-      const { data, error } = await query;
+      const { data, error } = await createClient().rpc("transfer_history", {
+        p_business: store.businessId, ...(status !== "all" ? { p_status: status } : {}),
+        ...(filterSource ? { p_source: filterSource } : {}), ...(filterDestination ? { p_destination: filterDestination } : {}),
+        ...(filterProduct ? { p_product: filterProduct } : {}), ...(filterUser ? { p_user: filterUser } : {}),
+        ...(fromDate ? { p_from: `${fromDate}T00:00:00+02:00` } : {}),
+        ...(toDate ? { p_to: new Date(new Date(`${toDate}T00:00:00+02:00`).getTime() + 86400000).toISOString() } : {}),
+      });
       if (error) throw error;
       return data;
     },
   });
+  const operators = useQuery({ queryKey: ["transfer-operators", store.businessId], enabled: online, queryFn: async () => {
+    const { data, error } = await createClient().from("profiles").select("id,full_name").order("full_name");
+    if (error) throw error; return data;
+  } });
   async function refresh() {
     await qc.invalidateQueries({ queryKey: ["transfers"] });
     await qc.invalidateQueries({ queryKey: ["operation-products"] });
@@ -106,6 +117,13 @@ export function TransfersConsole({ receiving = false }: { receiving?: boolean })
         <div><Label htmlFor="filter-source">From location</Label><select id="filter-source" className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm" value={filterSource} onChange={(e) => setFilterSource(e.target.value)}><option value="">All sources</option>{locationOptions}</select></div>
         <div><Label htmlFor="filter-destination">To location</Label><select id="filter-destination" className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm" value={filterDestination} onChange={(e) => setFilterDestination(e.target.value)}><option value="">All destinations</option>{locationOptions}</select></div>
       </div>
+      <div className="grid gap-3 md:grid-cols-4">
+        <div><Label htmlFor="transfer-product-filter">Product name</Label><Input id="transfer-product-filter" value={filterProduct} onChange={(e) => setFilterProduct(e.target.value)} /></div>
+        <div><Label htmlFor="transfer-operator">Operator</Label><select id="transfer-operator" className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm" value={filterUser} onChange={(e) => setFilterUser(e.target.value)}><option value="">All operators</option>{operators.data?.map((p) => <option key={p.id} value={p.id}>{p.full_name || "Team member"}</option>)}</select></div>
+        <div><Label htmlFor="transfer-from-date">From date</Label><Input id="transfer-from-date" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></div>
+        <div><Label htmlFor="transfer-to-date">Through date</Label><Input id="transfer-to-date" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} /></div>
+      </div>
+      <ExportButton filename="stock-transfers" rows={(data ?? []).map((t) => ({ ...t, source: locationName(t.source_id), destination: locationName(t.destination_id) }))} columns={[{ key: "reference", label: "Reference" }, { key: "source", label: "Source" }, { key: "destination", label: "Destination" }, { key: "status", label: "Status" }, { key: "created_at", label: "Created" }, { key: "dispatched_at", label: "Dispatched" }, { key: "received_at", label: "Received" }]} />
       {error ? <p role="alert" className="text-danger">{friendlyError(error.message)}</p> : isLoading ? <p>Loading…</p> : (data ?? []).length === 0 ? <p className="text-sm text-muted">No matching transfers.</p> : (data ?? []).map((t) => <div key={t.id} className="rounded-md border border-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="font-medium">{locationName(t.source_id)} → {locationName(t.destination_id)}</p><p className="break-all text-xs text-muted">{t.reference} · {dateTime(t.created_at)}</p><p className="mt-1 text-xs">{t.status}</p></div><div className="flex flex-wrap gap-2">
           {ACTIONS[t.status] ? <Button size="sm" disabled={!online || busy} onClick={() => process(t.id, ACTIONS[t.status]!.action)}>{ACTIONS[t.status]!.label}</Button> : null}

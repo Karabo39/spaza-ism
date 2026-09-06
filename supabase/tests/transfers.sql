@@ -45,9 +45,12 @@ begin
   begin perform public.process_stock_transfer(t,'submit'); exception when others then if sqlerrm<>'INSUFFICIENT_STOCK' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT shortage denied'; end if;
   mid:=public.add_member_by_email(biz,'transfers-staff@test.invalid','employee');
+  select count(*) into n from public.transfer_history(biz,p_status=>'RECEIVED',p_product=>'Milk');
+  if n<>1 then raise exception 'ASSERT transfer status/product filter'; end if;
   perform public.set_member_locations(mid,array[dest]);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
   if exists(select 1 from public.stock_transfers) then raise exception 'ASSERT one-sided transfer hidden'; end if;
+  if exists(select 1 from public.transfer_history(biz)) then raise exception 'ASSERT history RPC follows assignments'; end if;
   blocked:=false;
   begin perform public.create_stock_transfer(src,dest,payload,gen_random_uuid()); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT unassigned transfer blocked'; end if;

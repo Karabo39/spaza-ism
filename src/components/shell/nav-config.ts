@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, PackagePlus, PackageMinus, Search, Tag, Users, SlidersHorizontal,
   ClipboardList, TriangleAlert, Boxes, Truck, BarChart3, UserCog, Settings, ScrollText,
-  CalendarClock,
+  CalendarClock, ArrowRightLeft,
   type LucideIcon,
 } from "lucide-react";
 import type { MembershipRole } from "@/lib/db/database.types";
@@ -20,6 +20,7 @@ export const NAV: NavGroup[] = [
     label: "Operations",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/operations", label: "Operations", icon: ArrowRightLeft },
       { href: "/goods-in", label: "Goods In", icon: PackagePlus },
       { href: "/goods-out", label: "Goods Out", icon: PackageMinus },
       { href: "/check-stock", label: "Check Stock", icon: Search },

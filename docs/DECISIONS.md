@@ -39,6 +39,24 @@ Migration 0013 was tested on an isolated local PostgreSQL database, including
 upgrade backfill, ledger preservation, authenticated allow/deny paths and
 cross-business isolation. It has not been applied to the live Supabase project.
 
+## BRD v1.02 Operations (0014–0016)
+
+Transfers explicitly map the same physical product in two location catalogs,
+requiring matching units and expiry tracking. Drafts and submitted transfers
+do not reserve stock; dispatch rechecks and removes it under stock-row locks.
+Receipt adds stock at the destination. Cancellation before receipt requires a
+reason and restores dispatched quantities to the source. Request IDs make
+creation retries safe; repeated dispatch/receipt/cancel cannot post twice.
+Both locations must remain accessible to the caller at every stage.
+
+Expiry allocations travel with a transfer and are restored if cancelled.
+Insufficient recorded expiry batches block dispatch/unpacking so dates cannot
+silently disappear. Managers configure pack ratios; any assigned user can
+unpack. The unpacking ledger stores the ratio used at posting time. Units stay
+at the pack's location. Negative-stock overrides are not enabled. Current unit
+cost follows pack cost divided by the ratio, following Goods In's last-cost
+valuation convention; historical movement costs remain in the ledger.
+
 The BRD is a business document, not a technical spec. This records the
 ambiguities, gaps and risks found while reading it critically, and the safe,
 production-minded interpretation chosen for each. Where the BRD was silent or

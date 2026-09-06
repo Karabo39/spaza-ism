@@ -46,6 +46,10 @@ it can never corrupt stock the way a naive offline system would.
   replay still checks live location access; a revoked assignment produces a
   reviewable failure. Cached data already on a disconnected device cannot be
   remotely revoked until it reconnects.
+- Transfers, transfer receipt and bulk unpacking require a connection. Their
+  screens say so and disable posting offline; no separate stock outbox is used.
+  Transfer creation and unpacking have server-validated request IDs, so an
+  uncertain network response can be retried without duplicating a stock posting.
 
 ### Sync & conflicts
 - A top-bar indicator shows **Offline**, **N to sync**, or **N to review**.
