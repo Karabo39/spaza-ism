@@ -17,12 +17,14 @@ import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
 import { money, friendlyError } from "@/lib/format";
 import type { ProductStock } from "@/lib/db/database.types";
+import { useOffline } from "@/lib/offline/offline-context";
 
 type Line = { productId: string; name: string; unit: string; quantity: number; unitCost: number; trackExpiry: boolean; expiry: string };
 
 export function GoodsInConsole() {
   const router = useRouter();
-  const { store, currency } = useStore();
+  const { store, stores, currency, setStore } = useStore();
+  const { online } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [suppliers, setSuppliers] = React.useState<{ id: string; name: string }[]>([]);
   const [supplierId, setSupplierId] = React.useState<string>("none");
@@ -68,6 +70,7 @@ export function GoodsInConsole() {
   const remove = (id: string) => setLines((prev) => prev.filter((l) => l.productId !== id));
 
   async function complete() {
+    if (!online) { toast.error("Goods In requires a connection."); return; }
     if (lines.length === 0) return;
     for (const l of lines) if (l.quantity <= 0) { toast.error(`Enter a quantity for ${l.name}`); return; }
     setBusy(true);
@@ -129,7 +132,7 @@ export function GoodsInConsole() {
                     </TD>
                     <TD>
                       <Input value={l.quantity} onChange={(e) => patch(l.productId, { quantity: Number(e.target.value) || 0 })}
-                        type="number" step="0.001" min="0" className="h-8 w-20 text-center mx-auto" />
+                        type="number" step="1" min="0" className="h-8 w-20 text-center mx-auto" />
                     </TD>
                     <TD className="text-right">
                       <Input value={l.unitCost} onChange={(e) => patch(l.productId, { unitCost: Number(e.target.value) || 0 })}
@@ -151,6 +154,13 @@ export function GoodsInConsole() {
 
       <div className="lg:sticky lg:top-20 h-fit space-y-4 rounded-lg border border-border bg-surface p-4">
         <div>
+          <Label htmlFor="receiving-location">Receiving destination</Label>
+          <select id="receiving-location" value={store.id} disabled={!online || lines.length > 0 || busy} onChange={(e) => setStore(e.target.value)} className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm">
+            {stores.filter((s) => s.businessId === store.businessId).map((s) => <option key={s.id} value={s.id}>{s.name} · {s.locationType === "warehouse" ? "Warehouse" : "Store"}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-muted">{lines.length ? "Clear the items before changing destination." : "Choose a destination before scanning. Goods In requires a connection."}</p>
+        </div>
+        <div>
           <Label htmlFor="supplier">Supplier (optional)</Label>
           <Select value={supplierId} onValueChange={setSupplierId}>
             <SelectTrigger id="supplier"><SelectValue placeholder="Select supplier" /></SelectTrigger>
@@ -170,7 +180,7 @@ export function GoodsInConsole() {
             <span className="text-2xl font-semibold tabular-nums">{money(total, currency)}</span>
           </div>
         </div>
-        <Button className="w-full" size="lg" loading={busy} disabled={lines.length === 0} onClick={complete}>
+        <Button className="w-full" size="lg" loading={busy} disabled={!online || lines.length === 0} onClick={complete}>
           Confirm &amp; add to stock
         </Button>
       </div>

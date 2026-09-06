@@ -31,6 +31,9 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("LOCATION_NOT_SALEABLE")) return "Warehouse stock cannot be sold. Switch to a selling store.";
+  if (m.includes("INVALID_LOCATION")) return "Choose active locations belonging to this business.";
+  if (m.includes("OWNER_HAS_ALL_LOCATIONS")) return "Owners already have access to every location.";
   if (m.includes("INSUFFICIENT_STOCK")) return "Not enough stock to complete this sale.";
   if (m.includes("CREDIT_LIMIT_EXCEEDED")) return "This sale exceeds the customer's credit limit.";
   if (m.includes("OVERRIDE_NOT_AUTHORIZED")) return "Only a manager or owner can override the credit limit.";

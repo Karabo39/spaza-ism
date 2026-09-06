@@ -37,7 +37,7 @@ export function SettingsForm({
   async function saveStore(e: React.FormEvent) {
     e.preventDefault(); setBusy("store");
     const supabase = createClient();
-    const { error } = await supabase.from("stores").update({ name: s.name.trim(), code: s.code.trim() || null }).eq("id", s.id);
+    const { error } = await supabase.rpc("update_location", { p_store: s.id, p_name: s.name.trim(), p_code: s.code.trim() });
     setBusy(null);
     if (error) toast.error(friendlyError(error.message));
     else { toast.success("Store saved"); router.refresh(); }

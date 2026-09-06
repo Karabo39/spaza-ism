@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/shell/page-header";
 import { SettingsForm } from "@/features/settings/settings-form";
+import { LocationsManager } from "@/features/settings/locations-manager";
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
         storeInfo={{ id: storeRow?.id ?? store.id, name: storeRow?.name ?? store.name, code: storeRow?.code ?? "" }}
         business={{ id: business?.id ?? store.businessId, name: business?.name ?? store.businessName, currency: business?.currency ?? "ZAR" }}
       />
+      <LocationsManager />
     </>
   );
 }

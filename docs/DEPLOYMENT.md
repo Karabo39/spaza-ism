@@ -87,6 +87,33 @@ any recovery.
 
 ## 6. Operating notes
 
+### BRD v1.02 foundation rollout
+
+Apply `0013_location_access.sql` before deploying the matching app changes.
+The migration is additive and preserves existing stock/ledger IDs. It adds
+product/location foreign keys; any pre-existing mismatches must be investigated
+before rollout rather than bypassing the constraints.
+
+Single-store staff assignments are backfilled automatically. For a business with
+multiple active stores, arrange owner access to **Users → Assign locations**
+immediately after migration; managers and employees cannot resume until assigned.
+New staff also need assignments. Owners create additional selling stores and
+warehouses in **Settings → Stores & warehouses**. The location switcher opens
+each location's own inventory; warehouses cannot record Goods Out.
+
+Local database regression tests can run on a disposable empty PostgreSQL DB:
+
+```powershell
+$env:BRD_TEST_DATABASE_URL = 'postgresql://postgres@127.0.0.1:55439/EMPTY_TEST_DATABASE'
+node scripts/test-db-local.mjs
+```
+
+This runner refuses non-local hosts and non-empty databases. It bootstraps only
+the auth contracts needed for RLS tests, applies migrations, verifies upgrade
+backfill and runs the stock/credit and location tests with rollback. It does not
+replace testing against Supabase's actual Auth and PostgREST services before
+production deployment. Do not run `local_bootstrap.sql` on Supabase.
+
 - **Adding staff:** the person signs up, then an owner adds them by email under
   **Users** (`add_member_by_email`). Role changes and deactivation are immediate.
 - **Fixing a stock discrepancy:** use **Adjust Stock** (audited) — never edit the

@@ -136,9 +136,15 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["stock_takes"]["Insert"]>
         Relationships: []
       }
+      store_memberships: {
+        Row: { membership_id: string; store_id: string; business_id: string; assigned_by: string | null; created_at: string }
+        Insert: { membership_id: string; store_id: string; business_id: string; assigned_by?: string | null; created_at?: string }
+        Update: Partial<Database["public"]["Tables"]["store_memberships"]["Insert"]>
+        Relationships: []
+      }
       stores: {
-        Row: { address: string | null; business_id: string; code: string | null; created_at: string; id: string; is_active: boolean; name: string; timezone: string; updated_at: string }
-        Insert: { address?: string | null; business_id: string; code?: string | null; created_at?: string; id?: string; is_active?: boolean; name: string; timezone?: string; updated_at?: string }
+        Row: { address: string | null; business_id: string; code: string | null; created_at: string; id: string; is_active: boolean; name: string; timezone: string; updated_at: string; location_type: LocationType }
+        Insert: { address?: string | null; business_id: string; code?: string | null; created_at?: string; id?: string; is_active?: boolean; name: string; timezone?: string; updated_at?: string; location_type?: LocationType }
         Update: Partial<Database["public"]["Tables"]["stores"]["Insert"]>
         Relationships: []
       }
@@ -178,6 +184,10 @@ export type Database = {
       }
     }
     Functions: {
+      business_location_summary: { Args: { p_business: string }; Returns: { location_id: string; name: string; location_type: LocationType; product_count: number; stock_quantity: number; stock_value: number }[] }
+      create_location: { Args: { p_business: string; p_name: string; p_type: LocationType; p_code?: string }; Returns: string }
+      update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
+      set_member_locations: { Args: { p_membership: string; p_stores: string[] }; Returns: undefined }
       adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string }; Returns: string }
       complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string }; Returns: string }
       complete_stock_take: { Args: { p_stock_take: string }; Returns: undefined }
@@ -199,6 +209,7 @@ export type Database = {
 }
 
 export type MembershipRole = "owner" | "manager" | "employee"
+export type LocationType = "store" | "warehouse"
 export type MovementType =
   | "GOODS_IN" | "SALE_CASH" | "SALE_CREDIT" | "ADJUSTMENT_INCREASE"
   | "ADJUSTMENT_DECREASE" | "STOCK_TAKE" | "DAMAGED" | "EXPIRED"

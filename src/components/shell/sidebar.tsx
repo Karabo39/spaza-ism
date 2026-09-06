@@ -49,7 +49,7 @@ export function Sidebar({
         </div>
 
         <div className="border-b border-border px-4 py-3">
-          <p className="text-[10px] uppercase tracking-wide text-muted">Active store</p>
+          <p className="text-[10px] uppercase tracking-wide text-muted">Active {store.locationType === "warehouse" ? "warehouse" : "store"}</p>
           <p className="truncate text-sm font-medium">{store.name}</p>
           <p className="truncate text-xs text-muted">{store.businessName}</p>
         </div>

@@ -28,6 +28,11 @@ credit** — with a database that guarantees stock and credit integrity.
 
 ## Documentation
 
+BRD v1.02 work starts with the multi-store and warehouse foundation. See
+[implementation status](docs/BRD_V102_PROGRESS.md) for delivered and remaining
+scope, and the [rollout notes](docs/DEPLOYMENT.md#brd-v102-foundation-rollout)
+before applying migration 0013. The full v1.02 release is not complete yet.
+
 | Doc | What's in it |
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, request lifecycle, why the database is the security boundary, concurrency. |

@@ -41,6 +41,11 @@ it can never corrupt stock the way a naive offline system would.
   disables Credit while offline and tells the operator why.
 - Goods In, adjustments, stock takes — authoritative multi-step operations kept
   online in v1.
+- Location creation, staff assignment and location switching require a connection
+  as of v1.02. Warehouse Goods Out is unavailable online and offline. Cash-sale
+  replay still checks live location access; a revoked assignment produces a
+  reviewable failure. Cached data already on a disconnected device cannot be
+  remotely revoked until it reconnects.
 
 ### Sync & conflicts
 - A top-bar indicator shows **Offline**, **N to sync**, or **N to review**.
@@ -65,7 +70,7 @@ it can never corrupt stock the way a naive offline system would.
 home screen (Add to Home Screen), so it launches full-screen like a native app.
 
 ### Limitations / future work
-- Offline is scoped to the **active store** mirror; switching stores offline is
-  limited to already-mirrored data.
+- Offline is scoped to the **active store** mirror; switching locations requires
+  a connection to validate current access.
 - Credit offline, offline Goods In, and background-sync (Web Background Sync API)
   are candidates for a later phase.

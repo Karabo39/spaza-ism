@@ -1,5 +1,44 @@
 # Requirements interrogation & design decisions
 
+## BRD v1.02 foundation (0013)
+
+These decisions supersede the v1.0 all-store access assumption below.
+
+- **Stable location identity.** `stores` now represents physical stock locations,
+  distinguished by `location_type = store | warehouse`. Keeping the existing
+  IDs means historical receiving, stock takes, stock balances and append-only
+  ledgers do not need rewriting. A warehouse has its own product catalog, stock
+  and stock take; `goods_out` rejects warehouse locations in the database.
+  Existing store-scoped product IDs remain distinct. Transfers must explicitly
+  map source and destination products; do not merge products by name or barcode.
+- **Roles and assignments.** The existing `owner` role represents Owner/Admin;
+  `employee` represents Standard User. Owners can access all active locations
+  within their business. Managers and employees need explicit
+  `store_memberships` entries, including warehouses. Both RLS and RPC role
+  helpers enforce assignments. Global business stock summaries are owner-only.
+- **Upgrade without guessing.** Existing single-active-store businesses retain
+  their store and their staff access through an assignment backfill. For a
+  business with multiple active stores, the owner must assign staff locations
+  before staff resume work. New memberships start with no location access.
+  There is no automatic assignment to future stores or warehouses.
+- **Warehouse count.** The model permits multiple warehouses. No warehouse is
+  created automatically, and no existing store becomes a warehouse. The owner
+  chooses which physical locations to create in Settings. Location type cannot
+  be changed after creation through the app.
+- **Online management.** Location creation, assignments and switching locations
+  require a connection. Existing cash-sale queues still use their original
+  store IDs and RPC validation. Rejected replay after access removal remains
+  available for review. Switching locations remounts workflow forms so a cart
+  cannot silently migrate to a different location.
+- **Authentication retained.** BRD §6.1 does not authorize removing working
+  authentication. Existing business members without assignments see an access
+  message, not a new-business setup form. Tax, email delivery provider and any
+  change to existing ZAR rounding remain open decisions for later epics.
+
+Migration 0013 was tested on an isolated local PostgreSQL database, including
+upgrade backfill, ledger preservation, authenticated allow/deny paths and
+cross-business isolation. It has not been applied to the live Supabase project.
+
 The BRD is a business document, not a technical spec. This records the
 ambiguities, gaps and risks found while reading it critically, and the safe,
 production-minded interpretation chosen for each. Where the BRD was silent or

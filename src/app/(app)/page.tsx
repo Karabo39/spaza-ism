@@ -13,6 +13,7 @@ import {
   Wallet, TriangleAlert, PackageX, Users, CalendarClock, Boxes, Activity,
 } from "lucide-react";
 import { MOVEMENT_META } from "@/features/stock/movement-meta";
+import { LocationOverview } from "@/features/dashboard/location-overview";
 
 type Summary = {
   stock_value: number; retail_value: number; product_count: number;
@@ -53,6 +54,7 @@ export default async function DashboardPage() {
       <section className="mb-6">
         <QuickActions />
       </section>
+      <LocationOverview />
 
       <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Stock value" value={money(s.stock_value, store.currency)}

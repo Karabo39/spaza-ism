@@ -8,10 +8,10 @@ import { AppShell } from "@/components/shell/app-shell";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (!session.activeStore) redirect("/onboarding");
+  if (!session.activeStore) redirect(session.hasMembership ? "/access-pending" : "/onboarding");
 
   return (
-    <StoreProvider session={{ ...session, activeStore: session.activeStore }}>
+    <StoreProvider key={`${session.userId}:${session.activeStore.id}:${session.activeStore.role}`} session={{ ...session, activeStore: session.activeStore }}>
       <OfflineProvider>
         <AppShell>{children}</AppShell>
       </OfflineProvider>

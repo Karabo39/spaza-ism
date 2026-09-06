@@ -9,11 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { GlobalSearch } from "./global-search";
 import { OfflineIndicator } from "./offline-indicator";
+import { useOffline } from "@/lib/offline/offline-context";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
   const { user, store, stores, role, setStore } = useStore();
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const { online } = useOffline();
 
   async function signOut() {
     const supabase = createClient();
@@ -53,10 +55,10 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
               <ChevronsUpDown className="size-3.5 text-muted" />
             </MenuTrigger>
             <MenuContent>
-              <MenuLabel>Switch store</MenuLabel>
+              <MenuLabel>{online ? "Switch location" : "Connect to switch locations"}</MenuLabel>
               {stores.map((s) => (
-                <MenuItem key={s.id} onSelect={() => setStore(s.id)}>
-                  <span className="flex-1 truncate">{s.name}</span>
+                <MenuItem key={s.id} disabled={!online} onSelect={() => setStore(s.id)}>
+                  <span className="flex-1 truncate">{s.name}{s.locationType === "warehouse" ? " · Warehouse" : ""}</span>
                   <span className="text-xs text-muted">{s.businessName}</span>
                   {s.id === store.id ? <Check className="size-4 text-primary-hover" /> : null}
                 </MenuItem>

@@ -30,10 +30,12 @@ export function StoreProvider({
 
   const setStore = React.useCallback(
     (id: string) => {
+      if (!session.stores.some((store) => store.id === id)) return;
+      if (!navigator.onLine) return;
       document.cookie = `${ACTIVE_STORE_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
       router.refresh();
     },
-    [router],
+    [router, session.stores],
   );
 
   const value = React.useMemo<StoreContextValue>(

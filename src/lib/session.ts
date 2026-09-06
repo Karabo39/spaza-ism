@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import type { MembershipRole } from "@/lib/db/database.types";
+import type { MembershipRole, LocationType } from "@/lib/db/database.types";
 import { ACTIVE_STORE_COOKIE } from "@/lib/constants";
 
 export { ACTIVE_STORE_COOKIE };
@@ -12,6 +12,7 @@ export type SessionStore = {
   businessName: string;
   role: MembershipRole;
   currency: string;
+  locationType: LocationType;
 };
 
 export type Session = {
@@ -20,6 +21,7 @@ export type Session = {
   fullName: string | null;
   stores: SessionStore[];
   activeStore: SessionStore | null;
+  hasMembership: boolean;
 };
 
 /**
@@ -35,8 +37,8 @@ export async function getSession(): Promise<Session | null> {
   if (!user) return null;
 
   const [{ data: memberships }, { data: stores }, { data: profile }] = await Promise.all([
-    supabase.from("memberships").select("business_id, role, businesses(name, currency)").eq("is_active", true),
-    supabase.from("stores").select("id, name, business_id").eq("is_active", true).order("name"),
+    supabase.from("memberships").select("business_id, role, businesses(name, currency)").eq("user_id", user.id).eq("is_active", true).throwOnError(),
+    supabase.from("stores").select("id, name, business_id, location_type").eq("is_active", true).order("location_type").order("name").throwOnError(),
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
@@ -61,6 +63,7 @@ export async function getSession(): Promise<Session | null> {
         businessName: b.name,
         role: b.role,
         currency: b.currency,
+        locationType: s.location_type,
       };
     });
 
@@ -75,6 +78,7 @@ export async function getSession(): Promise<Session | null> {
     fullName: profile?.full_name ?? user.email ?? null,
     stores: sessionStores,
     activeStore,
+    hasMembership: (memberships ?? []).length > 0,
   };
 }
 

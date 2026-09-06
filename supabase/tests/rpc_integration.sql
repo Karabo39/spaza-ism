@@ -91,6 +91,7 @@ begin
   if not ok then raise exception 'ASSERT duplicate barcode blocked'; end if;
 
   insert into public.memberships(business_id,user_id,role) values (bizA,uC,'employee');
+  perform public.set_member_locations((select id from public.memberships where business_id=bizA and user_id=uC), array[storeA]);
   perform set_config('request.jwt.claims', json_build_object('sub',uC,'role','authenticated')::text, true);
   ok:=false; begin perform public.adjust_stock(storeA,pidBread,10,'OTHER',null); exception when others then ok:=true; end;
   if not ok then raise exception 'ASSERT employee adjust forbidden'; end if;

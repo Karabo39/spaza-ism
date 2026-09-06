@@ -105,6 +105,7 @@ export function GoodsOutConsole() {
   }
 
   async function complete() {
+    if (store.locationType === "warehouse") { toast.error("Warehouse stock cannot be sold."); return; }
     if (lines.length === 0) return;
     if (saleType === "CREDIT" && !customer) { toast.error("Select a customer for credit sale"); return; }
     if (saleType === "CREDIT" && wouldExceed && !override) {

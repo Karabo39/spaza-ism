@@ -16,9 +16,10 @@ numbered in apply order. Everything below is created by those migrations.
 | Table | Purpose |
 |---|---|
 | `businesses` | The SaaS customer (a shop-owning business). |
-| `stores` | A physical shop/branch under a business. |
+| `stores` | Stable physical location ID; `location_type` distinguishes saleable stores from warehouses. |
 | `profiles` | App profile mirror of `auth.users` (name, phone). |
 | `memberships` | user × business × role (`owner`/`manager`/`employee`), `is_active`. |
+| `store_memberships` | Explicit assigned locations for managers/employees, constrained to the membership's business; RPC-writable only. |
 
 ### Catalog
 | Table | Purpose |
@@ -79,6 +80,10 @@ UPDATE/DELETE RLS policy.
 | `start_stock_take(store, note)` | store member | Session + snapshot of active products. |
 | `complete_stock_take(id)` | manager+ | Apply per-item variances as adjustments+movements; mark completed. |
 | `add_member_by_email(business, email, role)` | owner | Add an existing account to the business. |
+| `create_location(business, name, type, code)` | owner | Create a store or warehouse, audited. |
+| `update_location(store, name, code)` | assigned manager+ | Update location metadata, audited. |
+| `set_member_locations(membership, stores[])` | owner | Atomically replace assigned locations, audited; reject foreign or inactive locations. |
+| `business_location_summary(business)` | owner | Separate stock quantities and cost values per active store/warehouse. |
 | `reconcile_stock(store)` → rows | store member | Compare `stock` vs ledger sum (drift check). |
 | `dashboard_summary(store)` → json | store member | Counters for the dashboard in one call. |
 | `customer_statement(customer)` → rows | store member | Full credit ledger with running balance. |
@@ -87,6 +92,12 @@ UPDATE/DELETE RLS policy.
 Internal helpers in `app`: `apply_stock_delta` (the movement primitive — lock,
 validate, update, append), `audit`, `is_business_member`, `has_business_role`,
 `has_store_access`, `has_store_role`, `business_role`, `shares_business`.
+
+Migration 0013 makes location assignments authoritative in `has_store_access`
+and `has_store_role`; only owners bypass assignments. `stores` writes now use
+audited RPCs. Internal ledger/audit primitives are not executable by API clients.
+Composite product/location foreign keys prevent stock, batch, barcode or
+movement rows being attached to a product in a different location.
 
 ## RLS model (summary)
 

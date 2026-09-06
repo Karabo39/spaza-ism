@@ -70,9 +70,12 @@ Business ──< Store ──< Products ──< Stock / Batches / Barcodes
    └──< Memberships (user × business × role)
 ```
 
-MVP: a membership grants access to **all stores** in its business. The schema is
-already store-scoped, so per-store access lists and multi-store transfers are an
-additive change, not a rewrite.
+As of migration 0013, `stores` identifies physical locations with a `store` or
+`warehouse` type. Owners have business-wide access; managers and employees have
+explicit `store_memberships` assignments. The same helpers enforce both RLS and
+RPC access. Warehouse stock and stock takes remain separate, and warehouse
+sales are rejected by the database. Products remain location-scoped, so future
+transfers must map source and destination product IDs explicitly.
 
 ## Frontend structure
 
