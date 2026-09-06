@@ -221,6 +221,8 @@ export type Database = {
       }
     }
     Functions: {
+      prepare_report_email: { Args: { p_store: string; p_request: string; p_hash: string; p_recipient: string }; Returns: Json }
+      complete_report_email: { Args: { p_job: string; p_provider: string }; Returns: undefined }
       allocate_return_credit: { Args: { p_return: string; p_invoice: string; p_amount: number; p_request: string }; Returns: string }
       invoice_summary: { Args: { p_store: string }; Returns: Json }
       invoice_monthly_reconciliation: { Args: { p_store: string; p_month: string }; Returns: Json }
