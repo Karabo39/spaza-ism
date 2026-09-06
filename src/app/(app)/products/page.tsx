@@ -13,6 +13,8 @@ import { AddProductButton } from "@/features/products/add-product-button";
 import { money, qty } from "@/lib/format";
 import { Boxes } from "lucide-react";
 import { ListFilter } from "@/components/shell/list-filter";
+import { ImportLink } from "@/features/imports/import-link";
+import { ExportButton } from "@/features/reports/export-button";
 
 const PAGE_SIZE = 20;
 
@@ -57,9 +59,30 @@ export default async function ProductsPage({
           <>
             <ToolbarSearch placeholder="Search products…" />
             <AddProductButton />
+            <ImportLink kind="products" />
           </>
         }
       />
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted">
+          Export the {rows.length} products on this page. Filters apply to the
+          export.
+        </p>
+        <ExportButton
+          filename="products"
+          rows={rows}
+          columns={[
+            { key: "id", label: "Product ID" },
+            { key: "name", label: "Product" },
+            { key: "unit", label: "Unit" },
+            { key: "quantity", label: "Quantity" },
+            { key: "cost_price", label: "Cost" },
+            { key: "selling_price", label: "Selling" },
+            { key: "stock_status", label: "Status" },
+          ]}
+        />
+      </div>
 
       <div className="mb-4">
         <ListFilter

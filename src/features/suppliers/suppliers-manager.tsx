@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Pencil, Truck } from "lucide-react";
@@ -54,7 +55,7 @@ export function SuppliersManager() {
                   <TD className="text-muted">{s.contact_name ?? "—"}</TD>
                   <TD className="text-muted">{s.phone ?? "—"}</TD>
                   <TD>{s.is_active ? <Badge variant="success">Active</Badge> : <Badge variant="neutral">Inactive</Badge>}</TD>
-                  <TD><Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(s)}><Pencil className="size-4" /></Button></TD>
+                  <TD><Link href={`/reports/goods-in?supplier=${s.id}`} className="mr-3 text-xs text-accent">Purchase history</Link><Button aria-label={`Edit ${s.name}`} variant="ghost" size="icon" className="size-7" onClick={() => openEdit(s)}><Pencil className="size-4" /></Button></TD>
                 </TR>
               ))}
             </TBody>

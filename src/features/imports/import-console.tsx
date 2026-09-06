@@ -39,12 +39,12 @@ function save(blob: Blob, filename: string) {
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function ImportConsole() {
+export function ImportConsole({initialKind="products"}:{initialKind?:ImportKind}) {
   const { store, can } = useStore(),
     { online } = useOffline(),
     router = useRouter(),
     cache = useQueryClient();
-  const [kind, setKind] = useState<ImportKind>("products"),
+  const [kind, setKind] = useState<ImportKind>(initialKind),
     [busy, setBusy] = useState(false),
     [search, setSearch] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null),

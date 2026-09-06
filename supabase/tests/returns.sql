@@ -48,6 +48,7 @@ begin
   rid:=public.submit_goods_return('sale',sale,jsonb_build_array(jsonb_build_object('item_id',line,'quantity',1,'condition','DAMAGED','action','SUPPLIER_RETURN')),'Faulty','Supplier defect',gen_random_uuid());
   if (select status from public.goods_returns where id=rid)<>'APPROVED' then raise exception 'ASSERT configured autoapproval'; end if;
   perform public.record_customer_refund(rid,10,'CARD_EFT','Reversal',gen_random_uuid(),'REVERSAL-1');
+  if (select refunded from public.v_return_report where id=rid)<>10 or (select items from public.v_return_report where id=rid) not like '%Milk%' then raise exception 'ASSERT returned item and refund report';end if;
   if (select quantity from public.stock where product_id=p)<>7 then raise exception 'ASSERT supplier return does not add saleable stock'; end if;
   if exists(select 1 from public.reconcile_stock(loc) where diff<>0) then raise exception 'ASSERT returns stock reconciles'; end if;
   select sum(amount) into q from public.credit_transactions where business_id=biz;

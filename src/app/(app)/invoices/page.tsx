@@ -17,6 +17,11 @@ export default async function InvoicesPage({
     sort?: string;
     from?: string;
     to?: string;
+    reference?: string;
+    method?: string;
+    paidMethod?: string;
+    referenceFrom?: string;
+    referenceTo?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -25,10 +30,17 @@ export default async function InvoicesPage({
   const store = session.activeStore;
   const db = await createClient();
   let query = db
-    .from("v_invoice_balances")
+    .from("v_invoice_payment_report")
     .select("*")
     .eq("store_id", store.id);
   if (sp.q) query = query.ilike("customer_name", `%${sp.q}%`);
+  if (sp.reference) query = query.ilike("reference", `%${sp.reference}%`);
+  if (sp.referenceFrom) query = query.gte("reference", sp.referenceFrom);
+  if (sp.referenceTo) query = query.lte("reference", sp.referenceTo);
+  if (sp.method && ["CASH", "CARD_EFT", "CREDIT"].includes(sp.method))
+    query = query.eq("terms", sp.method);
+  if (sp.paidMethod && ["CASH", "CARD_EFT", "CREDIT"].includes(sp.paidMethod))
+    query = query.contains("payment_methods", [sp.paidMethod]);
   if (sp.status) query = query.eq("status", sp.status);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
   if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
@@ -60,11 +72,54 @@ export default async function InvoicesPage({
       <form className="mb-5 flex flex-wrap gap-3">
         <input
           className="rounded border border-border bg-input px-3 py-2"
+          name="reference"
+          aria-label="Invoice number"
+          placeholder="Invoice number"
+          defaultValue={sp.reference}
+        />
+        <input
+          className="rounded border border-border bg-input px-3 py-2"
+          name="referenceFrom"
+          aria-label="Invoice number from"
+          placeholder="Invoice number from"
+          defaultValue={sp.referenceFrom}
+        />
+        <input
+          className="rounded border border-border bg-input px-3 py-2"
+          name="referenceTo"
+          aria-label="Invoice number to"
+          placeholder="Invoice number to"
+          defaultValue={sp.referenceTo}
+        />
+        <select
+          className="rounded border border-border bg-input px-3 py-2"
+          name="method"
+          aria-label="Invoice payment terms"
+          defaultValue={sp.method ?? ""}
+        >
+          <option value="">All payment terms</option>
+          <option value="CASH">Cash</option>
+          <option value="CARD_EFT">Card/EFT</option>
+          <option value="CREDIT">Credit</option>
+        </select>
+        <input
+          className="rounded border border-border bg-input px-3 py-2"
           name="q"
           aria-label="Customer name"
           placeholder="Customer name"
           defaultValue={sp.q}
         />
+        <select
+          name="paidMethod"
+          aria-label="Actual payment method"
+          defaultValue={sp.paidMethod ?? ""}
+          className="rounded border border-border bg-input px-3 py-2"
+        >
+          <option value="">All receipt methods</option>
+          <option value="CASH">Paid in cash</option>
+          <option value="CARD_EFT">Paid by Card/EFT</option>
+          <option value="CREDIT">Store credit applied</option>
+        </select>
         <select
           className="rounded border border-border bg-input px-3 py-2"
           name="status"
@@ -128,6 +183,8 @@ export default async function InvoicesPage({
             reference: r.reference,
             customer: r.customer_name,
             status: r.status,
+            terms: r.terms,
+            methods: r.payment_methods.join(", "),
             due: r.due_date,
             total: r.total,
             paid: r.paid,
@@ -139,6 +196,8 @@ export default async function InvoicesPage({
             { key: "reference", label: "Invoice" },
             { key: "customer", label: "Customer" },
             { key: "status", label: "Status" },
+            { key: "terms", label: "Payment terms" },
+            { key: "methods", label: "Receipt methods" },
             { key: "due", label: "Due" },
             { key: "total", label: "Total" },
             { key: "paid", label: "Payments" },

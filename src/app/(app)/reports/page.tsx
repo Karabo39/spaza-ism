@@ -6,6 +6,9 @@ import {
 } from "lucide-react";
 
 const REPORTS = [
+  { href: "/reports/returns", label: "Returned Stock", desc: "Returned items, inventory action and refunds paid", icon: PackageMinus },
+  { href: "/reports/stock-take", label: "Stock-take Variance", desc: "Physical counts and posted stock differences", icon: ClipboardList },
+  { href: "/reports/goods-in", label: "Supplier Purchases", desc: "Purchases by supplier, date and delivery reference", icon: PackagePlus },
   { href: "/operations/warehouse", label: "Warehouse Stock", desc: "Stock held separately in permitted warehouses", icon: Boxes },
   { href: "/operations/transfers", label: "Transfers", desc: "Transfer lifecycle and linked location movements", icon: ArrowLeftRight },
   { href: "/reports/unpacking", label: "Unpacking", desc: "Bulk conversions, quantities and reasons", icon: PackagePlus },

@@ -16,6 +16,7 @@ begin
   begin perform public.complete_stock_take(take);raise exception 'ASSERT stale count denied';exception when others then if sqlerrm not like 'STOCK_CHANGED_RECOUNT%' then raise;end if;end;
   if (select quantity from public.stock where product_id=p)<>6 then raise exception 'ASSERT stale count did not overwrite sale';end if;
   perform public.save_stock_take_count(item,7,'2028-02-01');perform public.complete_stock_take(take);perform public.complete_stock_take(take);
+  if (select variance from public.v_stock_take_variance where id=item)<>1 then raise exception 'ASSERT stock take variance report';end if;
   if (select sum(quantity) from public.stock_batches where product_id=p)<>7 then raise exception 'ASSERT stock count added expiry batch';end if;
   begin perform public.save_stock_take_count(item,2);raise exception 'ASSERT closed count read only';exception when others then if sqlerrm<>'STOCK_TAKE_CLOSED' then raise;end if;end;
   begin update public.stock_take_items set counted_qty=100 where id=item;raise exception 'ASSERT direct count update denied';exception when insufficient_privilege then null;end;

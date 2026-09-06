@@ -15,6 +15,7 @@ import { NewCustomerButton } from "@/features/credit/new-customer-button";
 import { ListFilter } from "@/components/shell/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { ExportButton } from "@/features/reports/export-button";
+import { ImportLink } from "@/features/imports/import-link";
 
 export default async function CreditPage({
   searchParams,
@@ -73,6 +74,7 @@ export default async function CreditPage({
           <>
             <ToolbarSearch placeholder="Search customers…" />
             <NewCustomerButton />
+            <ImportLink kind="customers" />
           </>
         }
       />

@@ -34,6 +34,7 @@ begin
   blocked:=false; begin perform public.record_credit_payment(c,1); exception when others then if sqlerrm<>'SELECT_INVOICE_FOR_PAYMENT' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT invoice allocation required'; end if;
   perform public.post_invoice_entry(iid,'PAYMENT',53.50,gen_random_uuid(),'CASH');
+  if not exists(select 1 from public.v_invoice_payment_report where id=iid and payment_methods @> array['CASH','CARD_EFT']::text[] and terms='CASH') then raise exception 'ASSERT mixed receipt method filtering'; end if;
   perform public.issue_invoice_goods(iid); perform public.issue_invoice_goods(iid);
   if (select quantity from public.stock where product_id=p)<>10 then raise exception 'ASSERT stock issues once'; end if;
   if (select balance from public.credit_accounts where customer_id=c)<>0 then raise exception 'ASSERT paid invoice clears customer balance'; end if;
@@ -60,6 +61,7 @@ begin
   select sum(amount) into q from public.credit_transactions where business_id=biz;
   if q<>3 then raise exception 'ASSERT customer ledger reconciles'; end if;
   perform set_config('request.jwt.claims',jsonb_build_object('sub',otherowner,'role','authenticated')::text,true);
+  if exists(select 1 from public.v_invoice_payment_report) then raise exception 'ASSERT payment report tenant isolation'; end if;
   if exists(select 1 from public.sales_invoices) or exists(select 1 from public.invoice_entries) or exists(select 1 from public.sales_order_items) then raise exception 'ASSERT foreign invoice RLS'; end if;
   blocked:=false; begin perform public.issue_sales_invoice(iid); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT foreign RPC denied'; end if;

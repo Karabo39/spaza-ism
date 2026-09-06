@@ -201,8 +201,11 @@ export type Database = {
       }
     }
     Views: {
+      v_return_report: { Row: { id: string; business_id: string; store_id: string; reference: string; invoice_id: string | null; sale_id: string | null; customer_id: string | null; status: string; reason: string; inspection: string; created_at: string; amount: number; items: string; quantity: number; inventory_actions: string; refunded: number; allocated_credit: number }; Relationships: [] }
+      v_stock_take_variance: { Row: { id: string; stock_take_id: string; business_id: string; store_id: string; created_at: string; status: string; product_name: string; product_id: string; system_qty: number; counted_qty: number | null; variance: number | null; counted: boolean; counted_at: string | null; counted_expiry: string | null; counted_by: string | null }; Relationships: [] }
       v_payment_activity: { Row: { id: string; store_id: string; business_id: string; created_at: string; method: string; amount: number; reference: string; payment_reference: string | null; source: string; document_id: string }; Relationships: [] }
       v_invoice_balances: { Row: InvoiceBalance; Relationships: [] }
+      v_invoice_payment_report: { Row: InvoiceBalance & { payment_methods: string[] }; Relationships: [] }
       v_product_stock: {
         Row: {
           id: string; business_id: string; store_id: string; name: string; sku: string | null; unit: string;
