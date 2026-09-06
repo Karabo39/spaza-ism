@@ -15,6 +15,7 @@
 -- insufficient-stock block, manager-only adjustment, ledger⇄stock
 -- reconciliation, append-only ledger (RLS + trigger), duplicate barcode,
 -- employee authorization limits, cross-tenant RPC denial.
+-- Transfer stock RPC cases are in transfers.sql (run by test-db-local.mjs).
 -- =====================================================================
 do $$
 declare

@@ -25,7 +25,7 @@ try {
     await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
     console.log(`Applied ${name}`);
   }
-  for (const file of ["rpc_integration.sql", "location_access.sql"]) {
+  for (const file of ["rpc_integration.sql", "location_access.sql", "transfers.sql"]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
       throw new Error(`${file}: missing rollback sentinel`);
