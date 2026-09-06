@@ -1,0 +1,21 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { OverrideApproval, OverrideCodeSettings } from "@/features/credit/override-approval";
+const mock = vi.hoisted(() => ({ online: true, manager: false, rpc: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: mock.rpc }) }));
+vi.mock("@/lib/offline/offline-context", () => ({ useOffline: () => ({ online: mock.online }) }));
+vi.mock("@/lib/store-context", () => ({ useStore: () => ({ store: { id: "shop", businessId: "business" }, can: () => mock.manager }) }));
+beforeEach(() => { cleanup(); mock.online=true; mock.manager=false; mock.rpc.mockReset(); mock.rpc.mockImplementation((name) => Promise.resolve({ data: name === "credit_override_authorizers" ? [{ user_id: "manager", name: "Manager One" }] : { ok: true, token: "token" }, error: null })); });
+it("requests an amount-scoped approval and clears the secret", async () => {
+  const approved=vi.fn(); render(<OverrideApproval customerId="customer" amount={90} onApproved={approved} />);
+  await screen.findByRole("option", { name: "Manager One" });
+  fireEvent.change(screen.getByLabelText("Approving manager"), { target: { value: "manager" } });
+  fireEvent.change(screen.getByLabelText("Manager approval code"), { target: { value: "123456" } });
+  fireEvent.click(screen.getByRole("button", { name: "Approve this amount" }));
+  await waitFor(() => expect(approved).toHaveBeenCalledWith("token"));
+  expect(mock.rpc).toHaveBeenCalledWith("authorize_credit_override", { p_store:"shop",p_customer:"customer",p_manager:"manager",p_code:"123456",p_amount:90 });
+  expect((screen.getByLabelText("Manager approval code") as HTMLInputElement).value).toBe("");
+});
+it("does not expose code settings to cashiers", () => { render(<OverrideCodeSettings />); expect(screen.queryByText("Save approval code")).toBeNull(); });
+it("blocks offline code changes", () => { mock.manager=true; mock.online=false; render(<OverrideCodeSettings />); expect((screen.getByText("Save approval code") as HTMLButtonElement).disabled).toBe(true); });

@@ -7,6 +7,7 @@ import { ScanInput } from "@/features/scan/scan-input";
 import { ProductSearchDialog } from "@/features/scan/product-search-dialog";
 import { ProductRegisterDialog } from "@/features/products/product-register-dialog";
 import { CustomerPicker } from "@/features/credit/customer-picker";
+import { OverrideApproval } from "@/features/credit/override-approval";
 import { lookupByCode } from "@/features/scan/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export function GoodsOutConsole() {
   const attempt = React.useRef<{ id: string; fingerprint: string } | null>(null);
   const [customer, setCustomer] = React.useState<CreditCustomer | null>(null);
   const [override, setOverride] = React.useState(false);
+  const [approval, setApproval] = React.useState<{ key: string; token: string } | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -51,6 +53,8 @@ export function GoodsOutConsole() {
 
   const projectedBalance = (customer?.balance ?? 0) + total;
   const wouldExceed = !!customer && projectedBalance > customer.credit_limit;
+  const approvalKey = `${store.id}:${customer?.customer_id}:${total}`;
+  const approvalToken = approval?.key === approvalKey ? approval.token : undefined;
 
   function addProduct(p: ProductStock) {
     setLines((prev) => {
@@ -89,7 +93,7 @@ export function GoodsOutConsole() {
 
   function resetCart() {
     setLines([]); setCustomer(null); setOverride(false); setSaleType("CASH");
-    setPaymentReference(""); attempt.current = null;
+    setPaymentReference(""); setApproval(null); attempt.current = null;
   }
 
   async function saveOffline() {
@@ -112,8 +116,8 @@ export function GoodsOutConsole() {
     if (store.locationType === "warehouse") { toast.error("Warehouse stock cannot be sold."); return; }
     if (lines.length === 0) return;
     if (saleType === "CREDIT" && !customer) { toast.error("Select a customer for credit sale"); return; }
-    if (saleType === "CREDIT" && wouldExceed && !override) {
-      toast.error("Over credit limit — enable override (manager) to proceed");
+    if (saleType === "CREDIT" && wouldExceed && !override && !approvalToken) {
+      toast.error("Ask a manager to approve this amount before completing the sale.");
       return;
     }
     const fingerprint = JSON.stringify({ lines, saleType, customer: customer?.customer_id, override, paymentReference });
@@ -141,6 +145,7 @@ export function GoodsOutConsole() {
         p_items: lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, unit_price: l.unitPrice })),
         p_override: saleType === "CREDIT" && override,
         p_request: attempt.current.id,
+        ...(saleType === "CREDIT" && approvalToken ? { p_override_token: approvalToken } : {}),
         ...(saleType === "CARD_EFT" && paymentReference.trim() ? { p_payment_reference: paymentReference.trim() } : {}),
       });
       setBusy(false);
@@ -278,7 +283,7 @@ export function GoodsOutConsole() {
                     Authorize override
                   </label>
                 ) : (
-                  <p className="mt-2 text-danger">A manager must authorize this sale.</p>
+                  <>{approvalToken && <p className="mt-2 text-success">Approved for this amount. Approval expires after two minutes.</p>}<OverrideApproval key={approvalKey} customerId={customer!.customer_id} amount={total} onApproved={(token) => setApproval({ key: approvalKey, token })} /></>
                 )}
               </div>
             ) : null}

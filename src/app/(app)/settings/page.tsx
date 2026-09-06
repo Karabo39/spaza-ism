@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/shell/page-header";
 import { SettingsForm } from "@/features/settings/settings-form";
 import { LocationsManager } from "@/features/settings/locations-manager";
+import { OverrideCodeSettings } from "@/features/credit/override-approval";
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -26,6 +27,7 @@ export default async function SettingsPage() {
         business={{ id: business?.id ?? store.businessId, name: business?.name ?? store.businessName, currency: business?.currency ?? "ZAR" }}
       />
       <LocationsManager />
+      <OverrideCodeSettings />
     </>
   );
 }

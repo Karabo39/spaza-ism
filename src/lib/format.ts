@@ -31,6 +31,9 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (m.includes("INVALID_OVERRIDE_CODE_FORMAT")) return "Use a personal code of 6–12 digits.";
+  if (m.includes("INVALID_OVERRIDE_CODE")) return "The manager or approval code is incorrect.";
+  if (m.includes("OVERRIDE_RATE_LIMITED")) return "Too many incorrect codes. Try again in 15 minutes.";
   if (m.includes("EXPIRY_REQUIRED")) return "Enter an expiry date for products with expiry tracking.";
   if (m.includes("INVALID_TRANSFER_STATE")) return "This transfer has moved to another stage. Refresh its status before continuing.";
   if (m.includes("REASON_REQUIRED")) return "Enter a reason before continuing.";
@@ -42,7 +45,7 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("OWNER_HAS_ALL_LOCATIONS")) return "Owners already have access to every location.";
   if (m.includes("INSUFFICIENT_STOCK")) return "Not enough stock to complete this sale.";
   if (m.includes("CREDIT_LIMIT_EXCEEDED")) return "This sale exceeds the customer's credit limit.";
-  if (m.includes("OVERRIDE_NOT_AUTHORIZED")) return "Only a manager or owner can override the credit limit.";
+  if (m.includes("OVERRIDE_NOT_AUTHORIZED")) return "This approval has expired, was used, or does not cover the sale. Ask a manager or owner to approve again.";
   if (m.includes("PRODUCT_NOT_FOUND_OR_INACTIVE")) return "One of the products is unavailable or inactive.";
   if (m.includes("CUSTOMER_REQUIRED")) return "Select a customer for a credit sale.";
   if (m.includes("CREDIT_ACCOUNT_NOT_FOUND")) return "That customer has no credit account.";

@@ -218,7 +218,10 @@ export type Database = {
       update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
       set_member_locations: { Args: { p_membership: string; p_stores: string[] }; Returns: undefined }
       adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string }; Returns: string }
-      complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string; p_request?: string; p_payment_reference?: string }; Returns: string }
+      complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string; p_request?: string; p_payment_reference?: string; p_override_token?: string }; Returns: string }
+      set_credit_override_code: { Args: { p_business: string; p_code: string }; Returns: undefined }
+      credit_override_authorizers: { Args: { p_store: string }; Returns: { user_id: string; name: string }[] }
+      authorize_credit_override: { Args: { p_store: string; p_customer: string; p_manager: string; p_code: string; p_amount: number }; Returns: Json }
       complete_stock_take: { Args: { p_stock_take: string }; Returns: undefined }
       create_business: { Args: { p_name: string; p_store_name?: string }; Returns: Json }
       add_member_by_email: { Args: { p_business: string; p_email: string; p_role: string }; Returns: string }
