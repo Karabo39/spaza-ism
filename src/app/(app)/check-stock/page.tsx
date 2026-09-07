@@ -1,3 +1,4 @@
+import { StockExport } from "@/features/stock/stock-export";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -33,7 +34,7 @@ export default async function CheckStockPage({
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const page = Math.max(1, Number(sp.page) || 1);
-  const status = sp.status ?? "all";
+  const status = FILTERS.some(f=>f.key===sp.status) ? sp.status! : "all";
   const q = sp.q ?? "";
 
   const supabase = await createClient();
@@ -48,10 +49,11 @@ export default async function CheckStockPage({
   else if (status === "reorder" || status === "ok")
     query = query.eq("stock_status", status);
 
-  const { data, count } = await query
+  const { data, count, error } = await query
     .order("name")
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
+  if(error) throw error;
   const rows = data ?? [];
 
   return (
@@ -84,6 +86,7 @@ export default async function CheckStockPage({
         })}
       </div>
 
+      <StockExport key={`${store.id}:${status}:${q}:${page}`} status={status} search={q} currentRows={rows} />
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
           <EmptyState
