@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "@/lib/brand";
 import type { CellValue } from "exceljs";
 export type ImportKind = "products" | "suppliers" | "customers";
 export type ImportRow = Record<string, string | number | boolean>;
@@ -135,7 +136,7 @@ export async function importTemplate(
   const help = workbook.addWorksheet("Instructions");
   help.getColumn(1).width = 120;
   [
-    "Spaza ISM import · edit the Data sheet; maximum 200 non-empty rows.",
+    `${BRAND_NAME} import · edit the Data sheet; maximum 200 non-empty rows.`,
     "Keep headers unchanged. Blank cells preserve existing values. Zero is an explicit value.",
     "A blank ID creates a record. Products also match an existing active barcode at the selected location.",
     "Use the existing-records download for updates. Suppliers are shared across the business; products and customers belong to the selected location.",

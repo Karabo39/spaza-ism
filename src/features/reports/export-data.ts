@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "@/lib/brand";
 export type ExportColumn={key:string;label:string};
 export type ExportData={rows:Record<string,unknown>[];columns:ExportColumn[];title:string;subtitle?:string;createdAt?:string;fileId?:string};
 export function cellValue(value:unknown):string|number|boolean {
@@ -11,7 +12,7 @@ export function reportCsv({rows,columns}:ExportData):string {
   return "\ufeff"+[columns.map(c=>escape(c.label)).join(","),...rows.map(r=>columns.map(c=>escape(r[c.key])).join(","))].join("\r\n");
 }
 export async function reportXlsx(data:ExportData):Promise<ArrayBuffer>{
-  const {default:ExcelJS}=await import("exceljs");const workbook=new ExcelJS.Workbook();workbook.creator="Spaza ISM";const created=new Date(data.createdAt??Date.now());workbook.created=created;workbook.modified=created;
+  const {default:ExcelJS}=await import("exceljs");const workbook=new ExcelJS.Workbook();workbook.creator=BRAND_NAME;const created=new Date(data.createdAt??Date.now());workbook.created=created;workbook.modified=created;
   const sheet=workbook.addWorksheet("Report",{views:[{state:"frozen",ySplit:4}]});
   sheet.addRow([data.title]);sheet.addRow([data.subtitle??""]);sheet.addRow([]);sheet.addRow(data.columns.map(c=>c.label));
   sheet.getRow(1).font={bold:true,size:16,color:{argb:"FF182C4D"}};sheet.getRow(4).font={bold:true,color:{argb:"FFFFFFFF"}};sheet.getRow(4).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF182C4D"}};
@@ -27,7 +28,7 @@ export async function reportPdf(data:ExportData):Promise<ArrayBuffer>{
   const doc=new jsPDF({orientation:data.columns.length>5?"landscape":"portrait",unit:"mm",format:"a4"});
   if(data.createdAt)doc.setCreationDate(new Date(data.createdAt));if(data.fileId)doc.setFileId(data.fileId.replaceAll("-",""));
   doc.setFontSize(15);doc.text(data.title,14,16);doc.setFontSize(9);doc.text(data.subtitle??"",14,23,{maxWidth:doc.internal.pageSize.getWidth()-28});
-  autoTable(doc,{startY:31,margin:{top:18,bottom:18},head:[data.columns.map(c=>c.label)],body:data.rows.map(r=>data.columns.map(c=>String(cellValue(r[c.key])).replaceAll("−","-"))),styles:{fontSize:8,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[24,44,77]},alternateRowStyles:{fillColor:[243,246,249]},didDrawPage:()=>{doc.setFontSize(8);doc.text(`Spaza ISM · Page ${doc.getNumberOfPages()}`,14,doc.internal.pageSize.getHeight()-8);}});
+  autoTable(doc,{startY:31,margin:{top:18,bottom:18},head:[data.columns.map(c=>c.label)],body:data.rows.map(r=>data.columns.map(c=>String(cellValue(r[c.key])).replaceAll("−","-"))),styles:{fontSize:8,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[24,44,77]},alternateRowStyles:{fillColor:[243,246,249]},didDrawPage:()=>{doc.setFontSize(8);doc.text(`${BRAND_NAME} · Page ${doc.getNumberOfPages()}`,14,doc.internal.pageSize.getHeight()-8);}});
   return doc.output("arraybuffer");
 }
 export async function reportFile(data:ExportData,format:"xlsx"|"pdf"|"csv"):Promise<Blob>{

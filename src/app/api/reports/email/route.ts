@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "@/lib/brand";
 import {createHash} from "node:crypto";
 import {z} from "zod";
 import {getSession} from "@/lib/session";
@@ -18,7 +19,7 @@ export async function POST(request:Request){
   const job=data as {id:string;sent:boolean;created_at:string};if(job.sent)return Response.json({sent:true});
   try{
     const attachment=await reportFile({...body,createdAt:job.created_at,fileId:job.id},body.format);
-    const response=await fetch("https://api.resend.com/emails",{method:"POST",signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,"Content-Type":"application/json","Idempotency-Key":`report-${job.id}`},body:JSON.stringify({from:process.env.REPORT_EMAIL_FROM,to:[body.recipient],subject:`Spaza report: ${body.title}`,text:`${body.title}\n${body.subtitle??""}\n${body.rows.length} exported rows.`,attachments:[{filename:`${body.filename}.${body.format}`,content:Buffer.from(await attachment.arrayBuffer()).toString("base64")}]})});
+    const response=await fetch("https://api.resend.com/emails",{method:"POST",signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`,"Content-Type":"application/json","Idempotency-Key":`report-${job.id}`},body:JSON.stringify({from:process.env.REPORT_EMAIL_FROM,to:[body.recipient],subject:`${BRAND_NAME} report: ${body.title}`,text:`${body.title}\n${body.subtitle??""}\n${body.rows.length} exported rows.`,attachments:[{filename:`${body.filename}.${body.format}`,content:Buffer.from(await attachment.arrayBuffer()).toString("base64")}]})});
     if(!response.ok)return Response.json({error:"The email provider did not confirm delivery. Retry with the same details."},{status:502});
     const result=await response.json() as {id:string};const completed=await db.rpc("complete_report_email",{p_job:job.id,p_provider:result.id});
     if(completed.error)return Response.json({error:"Delivery was accepted but could not be recorded. Retry with the same details to reconcile it."},{status:502});
