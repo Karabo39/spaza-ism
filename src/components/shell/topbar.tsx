@@ -16,7 +16,7 @@ import { BusinessLogo } from "@/features/settings/business-logo";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
-  const { user, store, stores, role, setStore } = useStore();
+  const { user, store, stores, role, setStore, canModule } = useStore();
   const [searchOpen, setSearchOpen] = React.useState(false);
   const { online } = useOffline();
 
@@ -88,9 +88,9 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           <MenuContent>
             <MenuLabel>{user.email}</MenuLabel>
             <MenuSeparator />
-            <MenuItem onSelect={() => router.push("/settings")}>
+            {canModule("settings") && <MenuItem onSelect={() => router.push("/settings")}>
               <User className="size-4" /> Profile &amp; settings
-            </MenuItem>
+            </MenuItem>}
             <MenuItem onSelect={signOut} className="text-danger focus:text-danger">
               <LogOut className="size-4" /> Sign out
             </MenuItem>

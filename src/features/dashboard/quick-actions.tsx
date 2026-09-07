@@ -1,4 +1,7 @@
+"use client";
 import Link from "next/link";
+import { useStore } from "@/lib/store-context";
+import { moduleForPath } from "@/lib/modules";
 import { PackagePlus, PackageMinus, Search, Tag, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 
 const ACTIONS: { href: string; label: string; icon: LucideIcon; primary?: boolean }[] = [
@@ -11,9 +14,10 @@ const ACTIONS: { href: string; label: string; icon: LucideIcon; primary?: boolea
 ];
 
 export function QuickActions() {
+  const { canModule } = useStore();
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {ACTIONS.map((a) => {
+      {ACTIONS.filter((a) => canModule(moduleForPath(a.href)!)).map((a) => {
         const Icon = a.icon;
         return (
           <Link

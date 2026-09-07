@@ -14,7 +14,9 @@ type Result =
 
 export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const router = useRouter();
-  const { store } = useStore();
+  const { store, canModule } = useStore();
+  const productsAllowed = canModule("products");
+  const customersAllowed = canModule("credit");
   const [q, setQ] = React.useState("");
   const [results, setResults] = React.useState<Result[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -45,12 +47,12 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     const t = setTimeout(async () => {
       const supabase = createClient();
       const [prod, cust, byBarcode] = await Promise.all([
-        supabase.from("products").select("id, name, selling_price")
-          .eq("store_id", store.id).ilike("name", `%${term}%`).limit(6),
-        supabase.from("customers").select("id, name, phone")
-          .eq("store_id", store.id).ilike("name", `%${term}%`).limit(4),
-        supabase.from("product_barcodes").select("product_id, barcode, products(name, selling_price)")
-          .eq("store_id", store.id).eq("barcode", term).limit(3),
+        productsAllowed ? supabase.from("products").select("id, name, selling_price")
+          .eq("store_id", store.id).ilike("name", `%${term}%`).limit(6) : { data: [] },
+        customersAllowed ? supabase.from("customers").select("id, name, phone")
+          .eq("store_id", store.id).ilike("name", `%${term}%`).limit(4) : { data: [] },
+        productsAllowed ? supabase.from("product_barcodes").select("product_id, barcode, products(name, selling_price)")
+          .eq("store_id", store.id).eq("barcode", term).limit(3) : { data: [] },
       ]);
       if (cancelled) return;
       const out: Result[] = [];
@@ -65,7 +67,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
       setLoading(false);
     }, 220);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [q, store.id]);
+  }, [q, store.id, productsAllowed, customersAllowed]);
 
   function go(r: Result) {
     onOpenChange(false);

@@ -22,7 +22,7 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { role, store } = useStore();
+  const { role, store, canModule } = useStore();
 
   return (
     <>
@@ -56,7 +56,7 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {NAV.map((group) => {
-            const items = group.items.filter((i) => itemVisible(i, role));
+            const items = group.items.filter((i) => itemVisible(i, role, canModule));
             if (items.length === 0) return null;
             return (
               <div key={group.label} className="mb-4">

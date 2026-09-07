@@ -1,10 +1,11 @@
 import {
   LayoutDashboard, PackagePlus, PackageMinus, Search, Tag, Users, SlidersHorizontal,
   ClipboardList, TriangleAlert, Boxes, Truck, BarChart3, UserCog, Settings, ScrollText,
-  CalendarClock, ArrowRightLeft, FileSpreadsheet,
+  CalendarClock, ArrowRightLeft, FileSpreadsheet, Store, ShieldCheck, Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { MembershipRole } from "@/lib/db/database.types";
+import { moduleForPath, type ModuleKey } from "@/lib/modules";
 
 export type NavItem = {
   href: string;
@@ -29,6 +30,7 @@ export const NAV: NavGroup[] = [
       { href: "/check-stock", label: "Check Stock", icon: Search },
       { href: "/check-price", label: "Check Price", icon: Tag },
       { href: "/credit", label: "Credit Customers", icon: Users },
+      { href: "/cash-up", label: "Cash-up", icon: Wallet },
     ],
   },
   {
@@ -55,6 +57,8 @@ export const NAV: NavGroup[] = [
   {
     label: "Administration",
     items: [
+      { href: "/stores", label: "My Stores", icon: Store, minRole: "owner" },
+      { href: "/access-control", label: "Access Control", icon: ShieldCheck, minRole: "owner" },
       { href: "/users", label: "Users", icon: UserCog, minRole: "owner" },
       { href: "/audit", label: "Audit", icon: ScrollText, minRole: "manager" },
       { href: "/settings", label: "Settings", icon: Settings, minRole: "manager" },
@@ -63,6 +67,7 @@ export const NAV: NavGroup[] = [
 ];
 
 const RANK: Record<MembershipRole, number> = { employee: 1, manager: 2, owner: 3 };
-export function itemVisible(item: NavItem, role: MembershipRole): boolean {
-  return !item.minRole || RANK[role] >= RANK[item.minRole];
+export function itemVisible(item: NavItem, role: MembershipRole, canModule?: (module: ModuleKey) => boolean): boolean {
+  const moduleKey = moduleForPath(item.href);
+  return (!item.minRole || RANK[role] >= RANK[item.minRole]) && (!canModule || (!!moduleKey && canModule(moduleKey)));
 }
