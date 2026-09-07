@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "required": ["brd_v102", "module_access_v1", "cash_up_v1"]
+}
