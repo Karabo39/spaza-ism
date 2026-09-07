@@ -25,3 +25,5 @@ it("prevents offline invoice issuing",()=>{
   mock.online=false;render(<InvoiceWorkspace invoice={{...invoice,state:"DRAFT"}} items={[]} entries={[]} account={{balance:0,credit_limit:0}}/>);
   expect((screen.getByText("Issue invoice") as HTMLButtonElement).disabled).toBe(true);
 });
+
+vi.mock("@/features/billing/purchase-order", () => ({ PurchaseOrder: () => null }));

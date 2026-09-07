@@ -86,3 +86,5 @@ it("keeps the summary available for Orders-only staff without linking denied mod
     screen.queryByRole("link", { name: /invoice/i }),
   ).not.toBeInTheDocument();
 });
+
+vi.mock("@/features/billing/purchase-order", () => ({ PurchaseOrder: () => null }));

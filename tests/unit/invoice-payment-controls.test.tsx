@@ -110,3 +110,5 @@ it("blocks offline payments and amounts with fractions of a cent", () => {
   });
   expect(screen.getByRole("button", { name: "Record payment" })).toBeDisabled();
 });
+
+vi.mock("@/features/billing/purchase-order", () => ({ PurchaseOrder: () => null }));
