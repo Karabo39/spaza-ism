@@ -44,7 +44,9 @@ requires credentials or a verified recipient will be recorded explicitly.
   database adapter. Store creation/selection, per-store permissions, cash count
   submission and approval passed. Desktop and 390-pixel phone layouts were checked
   without horizontal overflow. This was not authenticated production testing.
-- GitHub checks are configured but have not run remotely for this release.
+- The first GitHub run found missing optional WebAssembly dependency entries in
+  the existing lock file. A follow-up fix regenerates those entries with npm
+  11.19.1; existing locked package versions are unchanged.
 - Error events will be recorded in hosting logs after deployment; no webhook
   destination has been provided or configured.
 
@@ -65,7 +67,10 @@ requires credentials or a verified recipient will be recorded explicitly.
   and store assignments matched the pre-migration checks. The live login page
   returned HTTP 200.
 - The complete implementation comprises 15 commits in three batches of five,
-  prepared on `codex/owner-controls-cash-up` for the authorized main release.
+  pushed to main at `c0724dc`, followed by the clean-install lock-file correction.
+- Vercel reported successful deployment of `c0724dc`. Production `/api/health`
+  returned HTTP 200 with `status: ready`; login returned 200 and the three new
+  module routes correctly redirected unauthenticated requests to login.
 
 Verify the hosted build and health endpoint after pushing to main. Do not reapply
 these migrations or alter existing hosted migration history. Production backup
