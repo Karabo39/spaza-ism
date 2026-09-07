@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { Session, SessionStore } from "@/lib/session";
 import type { MembershipRole } from "@/lib/db/database.types";
 import { ACTIVE_STORE_COOKIE } from "@/lib/constants";
+import type { ModuleKey } from "@/lib/modules";
 
 type StoreContextValue = {
   user: { id: string; email: string | null; fullName: string | null };
@@ -13,6 +14,7 @@ type StoreContextValue = {
   currency: string;
   setStore: (id: string) => void;
   can: (min: MembershipRole) => boolean;
+  canModule: (module: ModuleKey) => boolean;
 };
 
 const StoreContext = React.createContext<StoreContextValue | null>(null);
@@ -27,6 +29,13 @@ export function StoreProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  React.useEffect(() => {
+    const refresh = () => { if (navigator.onLine && document.visibilityState === "visible") router.refresh(); };
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const interval = window.setInterval(refresh, 60000);
+    return () => { window.removeEventListener("online", refresh); document.removeEventListener("visibilitychange", refresh); window.clearInterval(interval); };
+  }, [router]);
 
   const setStore = React.useCallback(
     (id: string) => {
@@ -47,6 +56,7 @@ export function StoreProvider({
       currency: session.activeStore.currency,
       setStore,
       can: (min) => RANK[session.activeStore.role] >= RANK[min],
+      canModule: (module) => session.activeStore.modules[module] === true,
     }),
     [session, setStore],
   );

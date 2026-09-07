@@ -10,6 +10,9 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      cash_ups: { Row: { id: string; business_id: string; store_id: string; business_date: string; opening_float: number; status: string; version: number; latest_submission: string | null; created_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
+      module_catalog: { Row: { key: string; label: string; minimum_role: MembershipRole }; Insert: never; Update: never; Relationships: [] }
+      store_module_access: { Row: { membership_id: string; store_id: string; permissions: Json; version: number; updated_by: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
       import_batches: { Row: { id: string; business_id: string; store_id: string; kind: string; request_id: string; request_payload: Json; result: Json; performed_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
       product_price_history: { Row: { id: string; business_id: string; store_id: string; product_id: string; product_name: string; old_cost: number | null; new_cost: number | null; old_selling: number | null; new_selling: number | null; reason: string; performed_by: string | null; created_at: string }; Insert: never; Update: never; Relationships: [] }
       notification_preferences: { Row: { id: string; business_id: string; store_id: string; user_id: string; kind: string; enabled: boolean; delivery_hour: number; last_sent_at: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
@@ -229,6 +232,16 @@ export type Database = {
       }
     }
     Functions: {
+      cash_up_summary: { Args: { p_store: string; p_day: string }; Returns: Json }
+      open_cash_up: { Args: { p_store: string; p_day: string; p_float: number }; Returns: string }
+      submit_cash_up: { Args: { p_cash_up: string; p_counted: number; p_denominations: Json; p_fingerprint: string; p_note: string; p_request: string }; Returns: string }
+      review_cash_up: { Args: { p_cash_up: string; p_submission: string; p_action: string; p_note: string }; Returns: undefined }
+      correct_cash_up_float: { Args: { p_cash_up: string; p_float: number; p_version: number; p_reason: string }; Returns: undefined }
+      record_cash_movement: { Args: { p_store: string; p_day: string; p_kind: string; p_amount: number; p_reason: string; p_request: string }; Returns: string }
+      record_credit_payment_tender: { Args: { p_customer: string; p_amount: number; p_method: string; p_request: string; p_note?: string }; Returns: string }
+      classify_credit_payment: { Args: { p_transaction: string; p_method: string }; Returns: undefined }
+      my_module_access: { Args: { p_store: string }; Returns: Json }
+      set_store_module_access: { Args: { p_membership: string; p_store: string; p_permissions: Json; p_expected: number }; Returns: number }
       save_stock_take_count: { Args: { p_item: string; p_quantity: number | null; p_expiry?: string }; Returns: undefined }
       cancel_stock_take: { Args: { p_stock_take: string; p_reason: string }; Returns: undefined }
       unpack_stock_with_count: { Args: { p_conversion: string; p_packs: number; p_counted: number; p_reason: string; p_request: string; p_expiry?: string }; Returns: string }
