@@ -1,4 +1,5 @@
 "use client";
+import { statusLabel } from "./status-label";
 import { PurchaseOrder } from "./purchase-order";
 import { amountCents } from "@/features/cash-up/cash-utils";
 import { useState } from "react";
@@ -114,7 +115,7 @@ export function InvoiceWorkspace({
       </div>
       <p className="text-sm text-muted">
         {i.customer_name} · {i.terms.replace("_", "/")} · Due{" "}
-        {dateOnly(i.due_date)} · {i.status.replaceAll("_", " ")} · Salesperson:{" "}
+        {dateOnly(i.due_date)} · {statusLabel(i.status)} · Salesperson:{" "}
         {i.salesperson}
       </p>
       <Table>
@@ -423,7 +424,7 @@ export function InvoiceWorkspace({
             <TR key={e.id}>
               <TD>{dateTime(e.created_at)}</TD>
               <TD>{e.reference}</TD>
-              <TD>{e.kind.replaceAll("_", " ")}</TD>
+              <TD>{statusLabel(e.kind)}</TD>
               <TD>{money(e.amount, i.currency)}</TD>
               <TD>
                 {[e.payment_reference, e.reason].filter(Boolean).join(" · ")}

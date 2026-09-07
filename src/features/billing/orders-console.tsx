@@ -1,4 +1,5 @@
 "use client";
+import { statusLabel } from "./status-label";
 import { PurchaseOrder } from "./purchase-order";
 import { useState } from "react";
 import Link from "next/link";
@@ -292,7 +293,7 @@ export function OrdersConsole({
                 </button>
               </TD>
               <TD>{o.customer_name}</TD>
-              <TD>{o.status.replaceAll("_", " ")}</TD>
+              <TD>{statusLabel(o.status)}</TD>
               <TD>{dateTime(o.created_at)}</TD>
             </TR>
           ))}
@@ -301,7 +302,7 @@ export function OrdersConsole({
       {current && (
         <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
           <h2 className="font-semibold">
-            {current.reference} · {current.status}
+            {current.reference} · {statusLabel(current.status)}
           </h2>
           <p>
             {current.customer_name} · {current.note}
@@ -319,7 +320,7 @@ export function OrdersConsole({
               <h3 className="font-semibold">Order summary</h3>
               <p className="break-all">Invoice {current.invoice.reference}</p>
               <p>
-                Payment: {current.invoice.status.replaceAll("_", " ")} ·{" "}
+                Payment: {statusLabel(current.invoice.status)} ·{" "}
                 {current.invoice.goods_issued_at
                   ? `Goods released ${dateTime(current.invoice.goods_issued_at)}`
                   : "Awaiting goods release"}
