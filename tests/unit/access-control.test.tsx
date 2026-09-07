@@ -36,3 +36,5 @@ describe("Access Control editor", () => {
     expect(screen.getByRole("button", { name: "Save access" })).toBeDisabled();
   });
 });
+
+vi.mock("@/features/users/return-access", () => ({ ReturnAccess: () => null }));

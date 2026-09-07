@@ -31,6 +31,14 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (/QUOTE_CHANGED_REFRESH|PO_CHANGED_REFRESH|ACCESS_CHANGED_REFRESH/.test(m)) return "Someone changed this record. Refresh to review the latest version before saving.";
+  if (m.includes("QUOTE_STOCK_CHANGED")) return "Stock availability changed. Refresh and review the quantities before converting.";
+  if (m.includes("QUOTE_ALREADY_CONVERTED")) return "This quotation already has an order. Open that order instead.";
+  if (/QUOTE_EXPIRED|QUOTE_VALIDITY_REQUIRED/.test(m)) return "Use a quotation with a current validity date. Expired or cancelled quotations cannot be converted.";
+  if (m.includes("QUOTE_NOT_DRAFT")) return "Only draft quotations can be edited. Sent quotations keep their original terms.";
+  if (m.includes("INVALID_PO_FILE")) return "Choose a PDF, PNG or JPEG purchase order up to 2 MB.";
+  if (m.includes("INVALID_PO_STATE")) return "Mark the purchase order as received before approving it.";
+
   if (m.includes("RETURN_REASON_NOT_CONFIGURED")) return "Choose a current return reason from the list. Refresh if the owner changed the choices.";
   if (m.includes("RETURN_REASON_DETAIL_REQUIRED")) return "Add an explanation when choosing Other as the return reason.";
   if (m.includes("INVALID_RETURN_REASONS")) return "Use 1–20 distinct return reasons without colons, each up to 80 characters.";
@@ -47,7 +55,7 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("REASON_AND_INSPECTION_REQUIRED")) return "Enter both the reason for return and the inspection findings.";
   if (m.includes("RETURN_REQUIRES_QUARANTINE")) return "Only goods in good condition with a valid expiry date may return to saleable stock.";
   if (m.includes("REFUND_EXCEEDS_AVAILABLE_CREDIT")) return "The refund exceeds the approved, unrefunded credit available after other amounts owed.";
-  if (m.includes("RETURN_APPROVAL_REQUIRED")) return "A manager must approve this return before a refund can be recorded.";
+  if (m.includes("RETURN_APPROVAL_REQUIRED")) return "An authorised approver must approve this return before a refund can be recorded.";
   if (m.includes("SELECT_INVOICE_FOR_PAYMENT")) return "This customer has unpaid invoices. Open Invoices and allocate the payment to an invoice.";
   if (m.includes("PAYMENT_EXCEEDS_OUTSTANDING")) return "The payment is more than the amount outstanding.";
   if (m.includes("CREDIT_EXCEEDS_INVOICE")) return "This credit exceeds the invoice's remaining value. Check earlier credit notes.";

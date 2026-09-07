@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { ReturnAccess } from "./return-access";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
@@ -201,6 +202,7 @@ export function PermissionEditor({ member }: { member: MemberAccess }) {
   }
   return (
     <section className="rounded-xl border border-border bg-surface">
+      {member.role === "employee" && <ReturnAccess membership={member.id} />}
       <div className="flex items-start gap-3 border-b border-border p-5">
         <ShieldCheck className="mt-1 size-5 shrink-0 text-primary-hover" />
         <div>

@@ -25,11 +25,11 @@ const actions = [
   "SUPPLIER_RETURN",
   "WRITE_OFF",
 ];
-export function ReturnsConsole({
-  initialInvoice,
-}: {
-  initialInvoice?: string;
-}) {
+export function ReturnsConsole(props: { initialInvoice?: string }) {
+  const { store } = useStore();
+  return <StoreReturnsConsole key={store.id} {...props} />;
+}
+function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
   const { store, currency, can } = useStore();
   const { online, busy, request, run } = useBillingAction();
   const [sourceType, setSourceType] = useState(
@@ -50,6 +50,42 @@ export function ReturnsConsole({
   const [method, setMethod] = useState("CASH");
   const [reference, setReference] = useState("");
   const [resolution, setResolution] = useState("WRITE_OFF");
+  function selectReturn(id: string) {
+    setSelected(id);
+    setAmount("");
+    setReference("");
+    setDecision("");
+    setMethod("CASH");
+  }
+  const access = useQuery({
+    queryKey: ["billing", "return-access", store.id],
+    queryFn: async () => {
+      const { data, error } = await createClient().rpc("my_return_access", {
+        p_store: store.id,
+      });
+      if (error) throw error;
+      return data as { approve: boolean; refund: boolean };
+    },
+  });
+  const summary = useQuery({
+    queryKey: ["billing", "refund-summary", store.id, selected],
+    enabled: !!selected,
+    queryFn: async () => {
+      const { data, error } = await createClient().rpc(
+        "return_refund_summary",
+        { p_return: selected },
+      );
+      if (error) throw error;
+      return data as {
+        approved: number;
+        refunded: number;
+        available: number;
+        reference: string;
+      };
+    },
+  });
+  const available = Number(summary.data?.available ?? 0);
+  const refundAmount = amount === "" ? available : Number(amount);
   const sources = useQuery({
     queryKey: ["billing", "return-sources", store.id, sourceType],
     queryFn: async () => {
@@ -75,9 +111,30 @@ export function ReturnsConsole({
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
+      const ids = (data ?? []).map((s) => s.id);
+      const { data: sold, error: soldError } = ids.length
+        ? await db
+            .from("goods_out_items")
+            .select("goods_out_id,product_id,quantity")
+            .in("goods_out_id", ids)
+        : { data: [], error: null };
+      if (soldError) throw soldError;
+      const productIds = [...new Set((sold ?? []).map((l) => l.product_id))];
+      const { data: names, error: namesError } = productIds.length
+        ? await db.from("products").select("id,name").in("id", productIds)
+        : { data: [], error: null };
+      if (namesError) throw namesError;
       return (data ?? []).map((s) => ({
         id: s.id,
-        label: `${dateTime(s.created_at)} · ${money(s.total_amount, currency)} · ${s.id}`,
+        label: `${dateTime(s.created_at)} · ${money(s.total_amount, currency)} · ${(
+          sold ?? []
+        )
+          .filter((l) => l.goods_out_id === s.id)
+          .map(
+            (l) =>
+              `${l.quantity} × ${names?.find((p) => p.id === l.product_id)?.name ?? "Product"}`,
+          )
+          .join(", ")} · ${s.id.slice(-6)}`,
       }));
     },
   });
@@ -420,7 +477,7 @@ export function ReturnsConsole({
                   ...payload,
                   p_request: request(payload),
                 });
-                if (res.data) setSelected(res.data);
+                if (res.data) selectReturn(res.data);
                 return res;
               },
               "Return submitted",
@@ -453,7 +510,7 @@ export function ReturnsConsole({
               <TD>
                 <button
                   className="text-accent"
-                  onClick={() => setSelected(r.id)}
+                  onClick={() => selectReturn(r.id)}
                 >
                   {r.reference}
                 </button>
@@ -549,7 +606,7 @@ export function ReturnsConsole({
                 )}
             </div>
           ))}
-          {can("manager") && current.status === "SUBMITTED" && (
+          {access.data?.approve && current.status === "SUBMITTED" && (
             <div className="space-y-3">
               <Input
                 aria-label="Return decision reason"
@@ -598,78 +655,101 @@ export function ReturnsConsole({
             <>
               <p className="text-sm">
                 Approved value: {money(current.amount, currency)}. Refunded:{" "}
-                {money(
-                  detail.data?.refunds.reduce(
-                    (sum, f) => sum + Number(f.amount),
-                    0,
-                  ) ?? 0,
-                  currency,
-                )}
-                . Customer account credit is reduced by refunds and any other
-                amounts owed.
+                {money(Number(summary.data?.refunded ?? 0), currency)}. Customer
+                account credit is reduced by refunds and any other amounts owed.
               </p>
-              {can("manager") && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold">Record refund paid</h3>
-                  <div className="flex flex-wrap gap-3">
-                    <Input
-                      aria-label="Refund amount"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder="Refund amount"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                    />
-                    <select
-                      aria-label="Refund method"
-                      className="rounded border border-border bg-input px-2"
-                      value={method}
-                      onChange={(e) => setMethod(e.target.value)}
+              {access.data?.refund &&
+                available > 0 &&
+                !summary.isFetching &&
+                !summary.error && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Record refund paid</h3>
+                    <div className="flex flex-wrap gap-3">
+                      <Input
+                        aria-label="Refund amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Refund amount"
+                        max={available}
+                        value={amount === "" ? available : amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
+                      <select
+                        aria-label="Refund method"
+                        className="rounded border border-border bg-input px-2"
+                        value={method}
+                        onChange={(e) => setMethod(e.target.value)}
+                      >
+                        <option value="CASH">Cash</option>
+                        <option value="CARD_EFT">Card/EFT</option>
+                      </select>
+                      <Input
+                        aria-label="Refund payment reference"
+                        placeholder="Payment reference"
+                        value={reference || summary.data?.reference || ""}
+                        onChange={(e) => setReference(e.target.value)}
+                      />
+                      <Input
+                        aria-label="Refund reason"
+                        placeholder="Refund reason"
+                        value={decision}
+                        onChange={(e) => setDecision(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      loading={busy}
+                      disabled={
+                        !online ||
+                        !Number.isFinite(refundAmount) ||
+                        refundAmount <= 0 ||
+                        refundAmount > available ||
+                        !decision.trim()
+                      }
+                      onClick={() => {
+                        const payload = {
+                          p_return: current.id,
+                          p_amount: refundAmount,
+                          p_method: method,
+                          p_reason: decision,
+                          p_reference:
+                            reference || summary.data?.reference || "",
+                        };
+                        void run(
+                          () =>
+                            createClient().rpc("record_customer_refund", {
+                              ...payload,
+                              p_request: request(payload),
+                            }),
+                          "Refund recorded",
+                          () => {
+                            setAmount("");
+                            setReference("");
+                            setDecision("");
+                          },
+                        );
+                      }}
                     >
-                      <option value="CASH">Cash</option>
-                      <option value="CARD_EFT">Card/EFT</option>
-                    </select>
-                    <Input
-                      aria-label="Refund payment reference"
-                      placeholder="Payment reference"
-                      value={reference}
-                      onChange={(e) => setReference(e.target.value)}
-                    />
-                    <Input
-                      aria-label="Refund reason"
-                      placeholder="Refund reason"
-                      value={decision}
-                      onChange={(e) => setDecision(e.target.value)}
-                    />
+                      Record refund
+                    </Button>
                   </div>
-                  <Button
-                    loading={busy}
-                    disabled={
-                      !online || Number(amount) <= 0 || !decision.trim()
-                    }
-                    onClick={() => {
-                      const payload = {
-                        p_return: current.id,
-                        p_amount: Number(amount),
-                        p_method: method,
-                        p_reason: decision,
-                        p_reference: reference,
-                      };
-                      void run(
-                        () =>
-                          createClient().rpc("record_customer_refund", {
-                            ...payload,
-                            p_request: request(payload),
-                          }),
-                        "Refund recorded",
-                        () => setAmount(""),
-                      );
-                    }}
-                  >
-                    Record refund
-                  </Button>
-                </div>
+                )}
+              {summary.error ? (
+                <p role="alert">
+                  Could not check the refundable balance.{" "}
+                  <Button onClick={() => summary.refetch()}>Retry</Button>
+                </p>
+              ) : (
+                summary.data && (
+                  <p className="rounded border border-border p-3">
+                    Remaining refundable: {money(available, currency)}.{" "}
+                    {Number(summary.data.refunded) >= Number(current.amount)
+                      ? "Fully refunded. Payment history is read-only."
+                      : available <= 0
+                        ? "No cash refund available. This return may have reduced customer debt or its credit may have been used."
+                        : "Refunds use the original transaction value, including discounts and tax."}
+                  </p>
+                )
               )}
               {detail.data?.refunds.map((f) => (
                 <p key={f.id} className="text-sm">

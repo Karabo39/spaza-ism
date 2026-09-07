@@ -10,6 +10,10 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      sales_quotes: { Row: SalesQuote; Insert: never; Update: never; Relationships: [] }
+      sales_purchase_orders: { Row: PurchaseOrder; Insert: never; Update: never; Relationships: [] }
+
+      store_return_access: { Row: { membership_id: string; store_id: string; approve: boolean; refund: boolean; version: number; updated_by: string | null }; Insert: never; Update: never; Relationships: [] }
       cash_ups: { Row: { id: string; business_id: string; store_id: string; business_date: string; opening_float: number; status: string; version: number; latest_submission: string | null; created_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
       module_catalog: { Row: { key: string; label: string; minimum_role: MembershipRole }; Insert: never; Update: never; Relationships: [] }
       store_module_access: { Row: { membership_id: string; store_id: string; permissions: Json; version: number; updated_by: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
@@ -232,6 +236,17 @@ export type Database = {
       }
     }
     Functions: {
+      save_quote: { Args: { p_store: string; p_customer: string; p_items: Json; p_valid: string; p_discount: number; p_note: string; p_request: string; p_quote?: string; p_expected?: number }; Returns: string }
+      set_quote_status: { Args: { p_quote: string; p_status: string; p_expected: number }; Returns: undefined }
+      convert_quote: { Args: { p_quote: string; p_items: Json; p_expected: number }; Returns: string }
+      save_purchase_order: { Args: { p_quote: string | null; p_order: string | null; p_received: boolean; p_approved: boolean; p_reference: string; p_filename: string | null; p_mime: string | null; p_content: string | null; p_expected: number }; Returns: undefined }
+      download_purchase_order: { Args: { p_id: string }; Returns: Json }
+
+      stock_export: { Args: { p_store: string; p_status?: string; p_search?: string }; Returns: Json }
+      my_return_access: { Args: { p_store: string }; Returns: Json }
+      return_refund_summary: { Args: { p_return: string }; Returns: Json }
+      set_store_return_access: { Args: { p_membership: string; p_store: string; p_approve: boolean; p_refund: boolean; p_expected: number }; Returns: number }
+
       order_workflow_summary: { Args: { p_store: string }; Returns: Json };
       cash_up_summary: { Args: { p_store: string; p_day: string }; Returns: Json }
       open_cash_up: { Args: { p_store: string; p_day: string; p_float: number }; Returns: string }
@@ -495,3 +510,7 @@ export type CustomerRefund = {
 };
 
 export type InvoiceBalance = SalesInvoice & { debits: number; credits: number; paid: number; outstanding: number; status: string; };
+
+export type QuoteLine = {product_id:string;name:string;unit:string;quantity:number;unit_price:number;line_total:number};
+export type SalesQuote = {id:string;business_id:string;store_id:string;customer_id:string;customer_name:string;reference:string;status:string;valid_until:string;items:QuoteLine[];subtotal:number;discount:number;tax_percent:number;tax_amount:number;total:number;note:string|null;version:number;created_by:string;created_at:string;order_id:string|null};
+export type PurchaseOrder = {id:string;store_id:string;quote_id:string|null;order_id:string|null;received:boolean;approved:boolean;reference:string|null;filename:string|null;mime:string|null;version:number;updated_by:string;updated_at:string;approved_by:string|null;approved_at:string|null};
