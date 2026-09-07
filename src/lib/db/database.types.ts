@@ -232,6 +232,7 @@ export type Database = {
       }
     }
     Functions: {
+      order_workflow_summary: { Args: { p_store: string }; Returns: Json };
       cash_up_summary: { Args: { p_store: string; p_day: string }; Returns: Json }
       open_cash_up: { Args: { p_store: string; p_day: string; p_float: number }; Returns: string }
       submit_cash_up: { Args: { p_cash_up: string; p_counted: number; p_denominations: Json; p_fingerprint: string; p_note: string; p_request: string }; Returns: string }
