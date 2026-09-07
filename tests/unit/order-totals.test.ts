@@ -18,3 +18,31 @@ it("rejects discounts beyond the order subtotal", () => {
   );
   expect(orderTotals([], Number.NaN, 0).valid).toBe(false);
 });
+it("rejects extra decimals and totals outside the database money range", () => {
+  expect(orderTotals([{ quantity: 1.0001, unit_price: 10 }], 0, 0).valid).toBe(
+    false,
+  );
+  expect(orderTotals([{ quantity: 1, unit_price: 10.001 }], 0, 0).valid).toBe(
+    false,
+  );
+  expect(orderTotals([{ quantity: 1, unit_price: 10 }], 0.001, 0).valid).toBe(
+    false,
+  );
+  expect(orderTotals([{ quantity: 1, unit_price: 10 }], 0, 15.001).valid).toBe(
+    false,
+  );
+  expect(
+    orderTotals([{ quantity: 1000000, unit_price: 1000000 }], 0, 0).valid,
+  ).toBe(false);
+});
+it("keeps common decimal cents and half-cent tax rounding accurate", () => {
+  expect(orderTotals([{ quantity: 1, unit_price: 0.29 }], 0, 0)).toMatchObject({
+    total: 0.29,
+    valid: true,
+  });
+  expect(orderTotals([{ quantity: 3, unit_price: 0.1 }], 0, 15)).toMatchObject({
+    tax: 0.05,
+    total: 0.35,
+    valid: true,
+  });
+});

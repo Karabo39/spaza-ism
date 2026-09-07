@@ -1,4 +1,7 @@
 "use client";
+import { amountCents } from "@/features/cash-up/cash-utils";
+import { statusLabel } from "./status-label";
+import { useReturnSources } from "./use-return-sources";
 import { useState } from "react";
 import Link from "next/link";
 import { DEFAULT_RETURN_REASONS, returnReasonText } from "./return-reasons";
@@ -85,59 +88,9 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     },
   });
   const available = Number(summary.data?.available ?? 0);
-  const refundAmount = amount === "" ? available : Number(amount);
-  const sources = useQuery({
-    queryKey: ["billing", "return-sources", store.id, sourceType],
-    queryFn: async () => {
-      const db = createClient();
-      if (sourceType === "invoice") {
-        const { data, error } = await db
-          .from("sales_invoices")
-          .select("*")
-          .eq("store_id", store.id)
-          .not("goods_issued_at", "is", null)
-          .order("created_at", { ascending: false })
-          .limit(100);
-        if (error) throw error;
-        return (data ?? []).map((i) => ({
-          id: i.id,
-          label: `${i.reference} · ${i.customer_name}`,
-        }));
-      }
-      const { data, error } = await db
-        .from("goods_out")
-        .select("*")
-        .eq("store_id", store.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      const ids = (data ?? []).map((s) => s.id);
-      const { data: sold, error: soldError } = ids.length
-        ? await db
-            .from("goods_out_items")
-            .select("goods_out_id,product_id,quantity")
-            .in("goods_out_id", ids)
-        : { data: [], error: null };
-      if (soldError) throw soldError;
-      const productIds = [...new Set((sold ?? []).map((l) => l.product_id))];
-      const { data: names, error: namesError } = productIds.length
-        ? await db.from("products").select("id,name").in("id", productIds)
-        : { data: [], error: null };
-      if (namesError) throw namesError;
-      return (data ?? []).map((s) => ({
-        id: s.id,
-        label: `${dateTime(s.created_at)} · ${money(s.total_amount, currency)} · ${(
-          sold ?? []
-        )
-          .filter((l) => l.goods_out_id === s.id)
-          .map(
-            (l) =>
-              `${l.quantity} × ${names?.find((p) => p.id === l.product_id)?.name ?? "Product"}`,
-          )
-          .join(", ")} · ${s.id.slice(-6)}`,
-      }));
-    },
-  });
+  const refundCents = amountCents(amount === "" ? String(available) : amount);
+  const refundAmount = refundCents === null ? Number.NaN : refundCents / 100;
+  const sources = useReturnSources(store, sourceType, currency);
   const sourceItems = useQuery({
     queryKey: ["billing", "return-source-items", sourceType, source],
     enabled: !!source,
@@ -146,7 +99,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
       if (sourceType === "invoice") {
         const { data, error } = await db
           .from("sales_invoice_items")
-          .select("*")
+          .select("id,product_name,quantity")
           .eq("invoice_id", source);
         if (error) throw error;
         return (data ?? []).map((l) => ({
@@ -157,7 +110,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
       }
       const { data, error } = await db
         .from("goods_out_items")
-        .select("*")
+        .select("id,product_id,quantity")
         .eq("goods_out_id", source);
       if (error) throw error;
       const products = await db
@@ -256,7 +209,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     setQuantity(1);
   }
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 break-words space-y-6">
       {!online && (
         <p className="text-warning">
           Returns, inspections and refunds require a connection.
@@ -269,7 +222,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <Label htmlFor="return-source-type">Original document</Label>
             <select
               id="return-source-type"
-              className="h-10 w-full rounded border border-border bg-input px-2"
+              className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
               value={sourceType}
               onChange={(e) => {
                 setSourceType(e.target.value);
@@ -288,7 +241,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             </Label>
             <select
               id="return-source"
-              className="h-10 w-full rounded border border-border bg-input px-2"
+              className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
               value={source}
               onChange={(e) => {
                 setSource(e.target.value);
@@ -334,7 +287,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <Label htmlFor="return-product">Product sold</Label>
             <select
               id="return-product"
-              className="h-10 w-full rounded border border-border bg-input px-2"
+              className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
               value={item}
               onChange={(e) => setItem(e.target.value)}
             >
@@ -361,7 +314,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <Label htmlFor="return-condition">Condition</Label>
             <select
               id="return-condition"
-              className="h-10 w-full rounded border border-border bg-input px-2"
+              className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
             >
@@ -374,13 +327,13 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <Label htmlFor="return-action">Inventory action</Label>
             <select
               id="return-action"
-              className="h-10 w-full rounded border border-border bg-input px-2"
+              className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
               value={action}
               onChange={(e) => setAction(e.target.value)}
             >
               {actions.map((s) => (
                 <option key={s} value={s}>
-                  {s.replaceAll("_", " ")}
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
@@ -409,8 +362,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             className="flex items-center justify-between border-b border-border py-2"
           >
             <p className="text-sm">
-              {l.quantity} × {l.name} · {l.condition} ·{" "}
-              {l.action.replaceAll("_", " ")}
+              {l.quantity} × {l.name} · {l.condition} · {statusLabel(l.action)}
             </p>
             <Button
               variant="ghost"
@@ -425,7 +377,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
         <Label htmlFor="return-reason">Reason for return</Label>
         <select
           id="return-reason"
-          className="h-10 w-full rounded border border-border bg-input px-2"
+          className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         >
@@ -515,7 +467,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                   {r.reference}
                 </button>
               </TD>
-              <TD>{r.status}</TD>
+              <TD>{statusLabel(r.status)}</TD>
               <TD>{r.reason}</TD>
               <TD>{money(r.amount, currency)}</TD>
             </TR>
@@ -525,7 +477,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
       {current && (
         <section className="rounded-lg border border-border bg-surface p-5 space-y-4">
           <h2 className="font-semibold">
-            {current.reference} · {current.status}
+            {current.reference} · {statusLabel(current.status)}
           </h2>
           <p>{current.inspection}</p>
           {current.status === "APPROVED" && (
@@ -540,14 +492,13 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <div key={l.id} className="border-b border-border py-3 text-sm">
               <p>
                 {l.quantity} × {l.product_name} · {l.condition} ·{" "}
-                {l.inventory_action.replaceAll("_", " ")} ·{" "}
-                {money(l.amount, currency)}
+                {statusLabel(l.inventory_action)} · {money(l.amount, currency)}
               </p>
               {detail.data?.dispositions
                 .filter((d) => d.return_item_id === l.id)
                 .map((d) => (
                   <p key={d.id}>
-                    Resolved: {d.action.replaceAll("_", " ")} · {d.reason}
+                    Resolved: {statusLabel(d.action)} · {d.reason}
                   </p>
                 ))}
               {can("manager") &&
@@ -567,7 +518,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                         .filter((a) => a !== "QUARANTINE")
                         .map((a) => (
                           <option key={a} value={a}>
-                            {a.replaceAll("_", " ")}
+                            {statusLabel(a)}
                           </option>
                         ))}
                     </select>
@@ -614,7 +565,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                 value={decision}
                 onChange={(e) => setDecision(e.target.value)}
               />
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   disabled={!online}
                   loading={busy}
@@ -664,6 +615,10 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                 !summary.error && (
                   <div className="space-y-3">
                     <h3 className="font-semibold">Record refund paid</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enter an amount with up to two decimal places, within the
+                      remaining refundable balance.
+                    </p>
                     <div className="flex flex-wrap gap-3">
                       <Input
                         aria-label="Refund amount"

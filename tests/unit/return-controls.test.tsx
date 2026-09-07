@@ -106,3 +106,18 @@ it("blocks an amount above the remaining credit", () => {
   });
   expect(screen.getByRole("button", { name: "Record refund" })).toBeDisabled();
 });
+it("requires whole cents for a partial refund", () => {
+  render(<ReturnsConsole />);
+  fireEvent.click(screen.getByText("RETURN-ONE"));
+  fireEvent.change(screen.getByLabelText("Refund reason"), {
+    target: { value: "Partial refund" },
+  });
+  fireEvent.change(screen.getByLabelText("Refund amount"), {
+    target: { value: "5.355" },
+  });
+  expect(screen.getByRole("button", { name: "Record refund" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Refund amount"), {
+    target: { value: "5.35" },
+  });
+  expect(screen.getByRole("button", { name: "Record refund" })).toBeEnabled();
+});

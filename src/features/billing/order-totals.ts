@@ -1,3 +1,13 @@
+function validPrecision(value: number, scale: number) {
+  const scaled = value * scale;
+  return (
+    Number.isFinite(value) &&
+    value >= 0 &&
+    Number.isSafeInteger(Math.round(scaled)) &&
+    Math.abs(scaled - Math.round(scaled)) < 0.000001
+  );
+}
+
 /** Display estimate only; the invoice RPC validates and calculates final totals. */
 export function orderTotals(
   lines: { quantity: number; unit_price: number }[],
@@ -9,8 +19,8 @@ export function orderTotals(
   if (
     lines.some(
       (l) =>
-        !Number.isFinite(l.quantity) ||
-        !Number.isFinite(l.unit_price) ||
+        !validPrecision(l.quantity, 1000) ||
+        !validPrecision(l.unit_price, 100) ||
         l.quantity < 0 ||
         l.unit_price < 0,
     )
@@ -27,10 +37,10 @@ export function orderTotals(
   );
   const subtotal = Number(cents) / 100;
   const valid =
-    Number.isFinite(discount) &&
+    validPrecision(discount, 100) &&
     discount >= 0 &&
     discount <= subtotal &&
-    Number.isFinite(taxPercent) &&
+    validPrecision(taxPercent, 100) &&
     taxPercent >= 0 &&
     taxPercent <= 100;
   const deductionCents = valid ? BigInt(Math.round(discount * 100)) : BigInt(0);
@@ -46,6 +56,6 @@ export function orderTotals(
     discount: deduction,
     tax,
     total: Number(cents - deductionCents + taxCents) / 100,
-    valid,
+    valid: valid && cents - deductionCents + taxCents <= BigInt(99999999999999),
   };
 }

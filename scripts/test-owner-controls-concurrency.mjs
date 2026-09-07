@@ -69,6 +69,25 @@ try {
   assert.equal(submits.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal(submits.find((r) => r.status === "rejected").reason.message, "CASH_UP_NOT_OPEN");
   console.log("Passed competing counts: one submission, no overwritten count");
+
+  const returned = await asUser(a, async (c) => {
+    const sale = await scalar(c, "select public.complete_sale($1,'CASH',null,$2)", [loc, JSON.stringify([{ product_id: product, quantity: 1 }])]);
+    const item = await scalar(c, "select id from public.goods_out_items where goods_out_id=$1", [sale]);
+    const id = await scalar(c, "select public.submit_goods_return('sale',$1,$2,'Unwanted','Checked',$3)", [sale, JSON.stringify([{ item_id: item, quantity: 1, condition: "GOOD", action: "RETURN_TO_STOCK" }]), randomUUID()]);
+    await c.query("select public.process_goods_return($1,true)", [id]);
+    return id;
+  });
+  const refundRequest = randomUUID();
+  const refunds = await Promise.all([a,b].map((c) => asUser(c, () => scalar(c, "select public.record_customer_refund($1,3.35,'CASH','Partial refund',$2)", [returned,refundRequest]))));
+  assert.equal(refunds[0], refunds[1]);
+  assert.equal(await scalar(admin,"select count(*)::int from public.customer_refunds where return_id=$1",[returned]),1);
+  console.log("Passed concurrent refund retries: one refund for R3.35");
+  const remaining = await Promise.allSettled([a,b].map((c) => asUser(c, () => scalar(c, "select public.record_customer_refund($1,6.65,'CASH','Remaining refund',$2)", [returned,randomUUID()]))));
+  assert.equal(remaining.filter((r) => r.status === "fulfilled").length,1);
+  assert.equal(remaining.find((r) => r.status === "rejected").reason.message,"REFUND_EXCEEDS_AVAILABLE_CREDIT");
+  assert.equal((await asUser(a, () => scalar(a,"select public.return_refund_summary($1)",[returned]))).available,0);
+  assert.equal(await scalar(admin,"select sum(amount)::text from public.customer_refunds where return_id=$1",[returned]),"10.00");
+  console.log("Passed competing partial refunds: exact settlement, no excess refund");
 } finally {
   // Fixtures remain only in this disposable database for the restore drill.
   await Promise.allSettled(clients.map(async (c) => { await c.query("rollback"); await c.end(); }));
