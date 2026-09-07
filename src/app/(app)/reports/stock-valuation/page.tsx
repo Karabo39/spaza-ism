@@ -10,7 +10,7 @@ import { money, qty } from "@/lib/format";
 import { Boxes } from "lucide-react";
 
 export default async function StockValuationReport() {
-  const session = await getSession();
+  const session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();

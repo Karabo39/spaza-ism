@@ -14,7 +14,7 @@ export default async function StockTakeReport({
   searchParams: Promise<{ from?: string; to?: string; status?: string }>;
 }) {
   const sp = await searchParams,
-    session = await getSession();
+    session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const db = await createClient();
   let query = db

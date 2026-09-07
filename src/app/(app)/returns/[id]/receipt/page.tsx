@@ -11,7 +11,7 @@ export default async function ReturnReceiptPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getSession();
+  const session = await getSession("returns");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const db = await createClient();

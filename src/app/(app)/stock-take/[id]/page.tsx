@@ -13,7 +13,7 @@ export default async function StockTakeDetailPage({
 }) {
   const { id } = await params;
   const { q } = await searchParams;
-  const session = await getSession();
+  const session = await getSession("stock_take");
   if (!session?.activeStore) redirect("/onboarding");
   const supabase = await createClient();
 

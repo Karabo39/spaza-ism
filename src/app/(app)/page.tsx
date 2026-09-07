@@ -24,7 +24,7 @@ type Summary = {
 };
 
 export default async function DashboardPage() {
-  const session = await getSession();
+  const session = await getSession("dashboard");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();
@@ -56,21 +56,21 @@ export default async function DashboardPage() {
         <QuickActions />
       </section>
       <LocationOverview />
-      <InvoiceSummary storeId={store.id} currency={store.currency}/>
+      <InvoiceSummary storeId={store.id} currency={store.currency} canOpen={store.modules.invoices}/>
 
       <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <MetricCard label="Stock value" value={money(s.stock_value, store.currency)}
-          sub={`${s.product_count} products`} icon={Boxes} href="/check-stock" />
+          sub={`${s.product_count} products`} icon={Boxes} href={store.modules.check_stock ? "/check-stock" : undefined} />
         <MetricCard label="Low stock" value={String(s.low_count)} sub="need restock soon"
-          icon={TriangleAlert} tone={s.low_count > 0 ? "warning" : "default"} href="/low-stock" />
+          icon={TriangleAlert} tone={s.low_count > 0 ? "warning" : "default"} href={store.modules.low_stock ? "/low-stock" : undefined} />
         <MetricCard label="Out of stock" value={String(s.out_count)} sub="unavailable"
-          icon={PackageX} tone={s.out_count > 0 ? "danger" : "default"} href="/check-stock?status=out" />
+          icon={PackageX} tone={s.out_count > 0 ? "danger" : "default"} href={store.modules.check_stock ? "/check-stock?status=out" : undefined} />
         <MetricCard label="Outstanding credit" value={money(s.outstanding_credit, store.currency)}
-          sub={`${s.credit_customers} customers`} icon={Wallet} tone="accent" href="/credit" />
+          sub={`${s.credit_customers} customers`} icon={Wallet} tone="accent" href={store.modules.credit ? "/credit" : undefined} />
         <MetricCard label="Over limit" value={String(s.over_limit)} sub="credit customers"
-          icon={Users} tone={s.over_limit > 0 ? "danger" : "default"} href="/credit?filter=over" />
+          icon={Users} tone={s.over_limit > 0 ? "danger" : "default"} href={store.modules.credit ? "/credit?filter=over" : undefined} />
         <MetricCard label="Expiring soon" value={String(s.expiring_30)} sub={`${s.expired} expired`}
-          icon={CalendarClock} tone={s.expired > 0 ? "danger" : s.expiring_30 > 0 ? "warning" : "default"} href="/expiry" />
+          icon={CalendarClock} tone={s.expired > 0 ? "danger" : s.expiring_30 > 0 ? "warning" : "default"} href={store.modules.expiry ? "/expiry" : undefined} />
       </section>
 
       <Card>

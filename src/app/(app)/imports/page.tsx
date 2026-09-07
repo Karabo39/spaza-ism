@@ -10,7 +10,7 @@ export default async function ImportsPage({
   const { kind } = await searchParams;
   const initialKind =
     kind === "customers" || kind === "suppliers" ? kind : "products";
-  const session = await getSession();
+  const session = await getSession("imports");
   if (!session?.activeStore) redirect("/onboarding");
   if (session.activeStore.role === "employee") redirect("/");
   return (

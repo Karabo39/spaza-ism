@@ -17,7 +17,7 @@ export default async function GoodsInReport({
   searchParams: Promise<{ from?: string; to?: string; supplier?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();

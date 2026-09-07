@@ -19,7 +19,7 @@ export default async function ExpiryPage({
   const sp = await searchParams;
   const page = Math.max(1, Math.floor(Number(sp.page) || 1));
   const pageSize = 100;
-  const session = await getSession();
+  const session = await getSession("expiry");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();

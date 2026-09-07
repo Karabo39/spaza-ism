@@ -25,7 +25,7 @@ export default async function InvoicesPage({
   }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("invoices");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const db = await createClient();

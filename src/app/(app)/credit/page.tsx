@@ -28,7 +28,7 @@ export default async function CreditPage({
   }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("credit");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();

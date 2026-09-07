@@ -17,7 +17,7 @@ export default async function AuditPage({
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("audit");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
 

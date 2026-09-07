@@ -4,7 +4,7 @@ import { getSession } from "@/lib/session";
 import Link from "next/link";
 
 export default async function GoodsOutPage() {
-  const session = await getSession();
+  const session = await getSession("goods_out");
   if (session?.activeStore?.locationType === "warehouse") return (
     <>
       <PageHeader title="Warehouse stock cannot be sold" description="Switch to a selling store to record Goods Out. Warehouse stock must first be transferred and received at that store." />

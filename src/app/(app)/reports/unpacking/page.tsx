@@ -13,7 +13,7 @@ export default async function UnpackingReport({
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const db = await createClient();
   let query = db

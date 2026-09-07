@@ -13,7 +13,7 @@ export default async function PaymentReport({
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const db = await createClient();

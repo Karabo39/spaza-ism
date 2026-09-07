@@ -9,6 +9,7 @@ const schema=z.object({storeId:z.string().uuid(),requestId:z.string().uuid(),rec
 export async function POST(request:Request){
   const origin=request.headers.get("origin");if(origin&&origin!==new URL(request.url).origin)return Response.json({error:"Invalid request origin."},{status:403});
   const session=await getSession();if(!session?.activeStore)return Response.json({error:"Sign in to email a report."},{status:401});
+  if(!session.activeStore.modules.reports)return Response.json({error:"You do not have Reports access at this store."},{status:403});
   if(!process.env.RESEND_API_KEY||!process.env.REPORT_EMAIL_FROM)return Response.json({error:"Report email is not configured yet. Your administrator must configure the sender and delivery key."},{status:503});
   const raw=await request.text();if(raw.length>2_000_000)return Response.json({error:"This report is too large to email. Narrow the filters or download it."},{status:413});
   let parsed;try{parsed=schema.safeParse(JSON.parse(raw));}catch{return Response.json({error:"Invalid report."},{status:400});}

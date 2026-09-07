@@ -6,7 +6,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { qty, money } from "@/lib/format";
 import { ExportButton } from "@/features/reports/export-button";
 export default async function WarehouseStockPage() {
-  const session = await getSession(); if (!session?.activeStore) redirect("/onboarding");
+  const session = await getSession("operations"); if (!session?.activeStore) redirect("/onboarding");
   const locations = session.stores.filter((s) => s.businessId === session.activeStore!.businessId && s.locationType === "warehouse");
   const supabase = await createClient();
   const { data, error } = locations.length ? await supabase.from("v_product_stock").select("*").in("store_id", locations.map((s) => s.id)).order("name").limit(1000) : { data: [], error: null };

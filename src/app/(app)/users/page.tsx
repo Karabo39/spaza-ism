@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/misc";
 import { Lock } from "lucide-react";
 
 export default async function UsersPage() {
-  const session = await getSession();
+  const session = await getSession("users");
   if (!session?.activeStore) redirect("/onboarding");
   const allowed = hasRole(session.activeStore.role, "owner");
 

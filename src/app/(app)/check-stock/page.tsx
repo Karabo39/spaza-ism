@@ -29,7 +29,7 @@ export default async function CheckStockPage({
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("check_stock");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const page = Math.max(1, Number(sp.page) || 1);

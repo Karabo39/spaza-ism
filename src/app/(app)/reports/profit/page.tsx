@@ -12,7 +12,7 @@ export default async function ProfitReport({
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   if (store.role === "employee") redirect("/reports");

@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/shell/page-header";
 import { SettingsForm } from "@/features/settings/settings-form";
-import { LocationsManager } from "@/features/settings/locations-manager";
+import Link from "next/link";
 import { OverrideCodeSettings } from "@/features/credit/override-approval";
 import { BillingPreferences } from "@/features/billing/billing-preferences";
 import { NotificationPreferences } from "@/features/settings/notification-preferences";
@@ -12,7 +12,7 @@ import { ReturnReasonSettings } from "@/features/billing/return-reason-settings"
 import { DEFAULT_RETURN_REASONS } from "@/features/billing/return-reasons";
 
 export default async function SettingsPage() {
-  const session = await getSession();
+  const session = await getSession("settings");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();
@@ -69,7 +69,7 @@ export default async function SettingsPage() {
           currency: business?.currency ?? "ZAR",
         }}
       />
-      <LocationsManager />
+      {store.role === "owner" && <p className="mt-5 rounded-lg border border-border bg-surface p-5 text-sm">Adding another store? <Link href="/stores" className="text-primary-hover underline">Open My Stores</Link> to add locations and set up staff and products.</p>}
       <BusinessLogoSettings />
       <OverrideCodeSettings />
       <BillingPreferences

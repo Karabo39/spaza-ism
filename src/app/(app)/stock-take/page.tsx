@@ -11,7 +11,7 @@ import { dateTime } from "@/lib/format";
 import { ClipboardList } from "lucide-react";
 
 export default async function StockTakePage() {
-  const session = await getSession();
+  const session = await getSession("stock_take");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();

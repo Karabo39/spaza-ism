@@ -24,7 +24,7 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string; page?: string; status?: string }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession();
+  const session = await getSession("products");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const page = Math.max(1, Number(sp.page) || 1);

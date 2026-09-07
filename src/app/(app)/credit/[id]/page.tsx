@@ -41,7 +41,7 @@ export default async function CustomerCreditPage({
   const sp = await searchParams,
     page = Math.max(1, Math.floor(Number(sp.page) || 1)),
     pageSize = 50;
-  const session = await getSession();
+  const session = await getSession("credit");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
   const supabase = await createClient();
