@@ -54,6 +54,13 @@ complete unit suite rerun successfully. The browser test's recovery-link label
 was corrected to match the displayed text; all eight browser checks then passed.
 The mobile recovery screen was also captured for visual inspection.
 
+Before the requested integration to `main`, type checks, lint, all 64 unit/component
+tests and the production build were run again with the existing analytics change
+included. All passed; lint retained the same 10 pre-existing warnings. The source
+BRD, handover and supplied brand assets were added to version control unchanged.
+Database migrations and application workflows did not change in this final batch,
+so the database and browser results above remain the relevant acceptance evidence.
+
 The database runner applies all migrations to an empty disposable local database and checks single-/multi-store assignment backfill and legacy price-history preservation. Its 16 rollback suites are: core RPC, location access, transfers, unpacking, Card/EFT, credit approvals, invoices, returns, store credit, report email, report history, notifications, imports, logos, bulk-count override and stock counts. New money/stock cases run in these dedicated suites alongside the original `rpc_integration.sql`.
 
 ## Staging acceptance before rollout

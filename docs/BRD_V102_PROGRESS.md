@@ -31,8 +31,9 @@ Each branch includes the preceding branch. Review/merge in this order or review 
 | `codex/brd-v102-reports-notifications` | Invoicing | 5 |
 | `codex/brd-v102-imports-ux` | Reports/notifications | 5 |
 | `codex/brd-v102-acceptance` | Imports/interface | 5 |
+| `codex/brd-v102-main-integration` | Acceptance | 5 |
 
-The final batch contains password recovery, stock-count integrity, report coverage, configured returns/printing, and final workflow/acceptance fixes. Schema changes are incremental migrations **0013–0034** after the original 0001–0012. Released migrations were not rewritten.
+The acceptance batch contains password recovery, stock-count integrity, report coverage, configured returns/printing, and final workflow/acceptance fixes. The main integration batch includes the existing Vercel analytics change, source BRD/handover, supplied brand assets, machine-local file exclusion and this release record. Schema changes are incremental migrations **0013–0034** after the original 0001–0012. Released migrations were not rewritten.
 
 ## Validation and release boundaries
 
@@ -40,7 +41,9 @@ See [BRD_V102_ACCEPTANCE.md](BRD_V102_ACCEPTANCE.md) for coverage and verificati
 
 Local database tests use PostgreSQL with minimal Auth and Storage contracts. They verify migrations, RLS, retries, ledgers and rollback; they do not exercise hosted Supabase Auth, Storage HTTP or PostgREST. Browser smoke tests cover public navigation and access gates. Authenticated business flows still need staging verification with representative users and data.
 
-No production migrations, merge, deployment, live email or scheduled delivery were performed. Email credentials, Auth redirects, staging checks and backup verification remain rollout prerequisites. GitHub draft PR creation was blocked by connector permissions; the signed-in browser method requires the explicit approval requested in this task.
+The user authorized direct integration and push to `main`, superseding the earlier draft-PR route blocked by connector permissions. Integration preserves the feature commits without rewriting history. Machine-specific assistant permissions and ignored environment files stay local.
+
+No production database migrations, live email or scheduled delivery were performed. A host connected to `main` may deploy after the push; hosting deployment status is separate from Git integration. Database migrations through **0034**, email credentials, Auth redirects, staging checks and backup verification remain rollout prerequisites.
 
 ## Business interpretations
 
