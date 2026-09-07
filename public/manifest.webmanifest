@@ -1,7 +1,7 @@
 {
-  "name": "Spaza ISM — Inventory Management",
-  "short_name": "Spaza ISM",
-  "description": "Fast, reliable stock and credit management for spaza shops and community retailers.",
+  "name": "POS INVENTORY",
+  "short_name": "POS INVENTORY",
+  "description": "Stock, sales, invoicing and credit management for shops and community retailers.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a1120",
@@ -9,7 +9,7 @@
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

@@ -1,5 +1,5 @@
 /*
- * Spaza ISM service worker.
+ * POS INVENTORY service worker.
  * Safe runtime caching only:
  *   • cross-origin requests (Supabase API/auth) are NEVER intercepted — offline
  *     reads come from the app's IndexedDB mirror, never from stale cached API
@@ -8,7 +8,7 @@
  *   • navigations are network-first with a cached-shell fallback, so the app
  *     opens and runs offline after the first online visit.
  */
-const CACHE = "spaza-ism-v1";
+const CACHE = "pos-inventory-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -32,6 +32,7 @@ self.addEventListener("fetch", (event) => {
 
   const isStatic =
     url.pathname.startsWith("/_next/static") ||
+    url.pathname.startsWith("/brand/") ||
     url.pathname.startsWith("/icon") ||
     url.pathname === "/manifest.webmanifest";
 

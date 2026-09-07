@@ -1,15 +1,18 @@
-// Rasterises public/icon.svg into the PNG sizes browsers want for install.
-// Run: node scripts/gen-icons.mjs
-import sharp from "sharp";
-import { readFileSync } from "node:fs";
+// Restore the supplied POS INVENTORY icons without changing their artwork.
+// Run: npm run icons
+import { copyFile } from "node:fs/promises";
 
-const svg = readFileSync(new URL("../public/icon.svg", import.meta.url));
+const kit = new URL("../docs/POS-Inventory-Brand-Kit-1/POS-Inventory-Brand-Kit/", import.meta.url);
 const targets = [
-  ["public/icon-192.png", 192],
-  ["public/icon-512.png", 512],
-  ["public/apple-touch-icon.png", 180],
+  ["source-svg/icon-mark.svg", "public/icon.svg"],
+  ["source-svg/icon-mark.svg", "src/app/icon.svg"],
+  ["favicon/favicon.ico", "src/app/favicon.ico"],
+  ["favicon/android-chrome-192.png", "public/icon-192.png"],
+  ["favicon/android-chrome-512.png", "public/icon-512.png"],
+  ["favicon/apple-touch-icon-180.png", "public/apple-touch-icon.png"],
+  ["app-icons/android/maskable-icon-512.png", "public/icon-maskable-512.png"],
 ];
-for (const [out, size] of targets) {
-  await sharp(svg, { density: 512 }).resize(size, size).png().toFile(out);
-  console.log("wrote", out, `${size}x${size}`);
+for (const [source, output] of targets) {
+  await copyFile(new URL(source, kit), new URL(`../${output}`, import.meta.url));
+  console.log("Restored", output);
 }

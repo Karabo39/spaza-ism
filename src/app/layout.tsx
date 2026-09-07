@@ -4,15 +4,30 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/providers";
+import { BRAND_NAME, BRAND_DESCRIPTION, BRAND_URL } from "@/lib/brand";
 
 const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Spaza ISM — Inventory Management",
-  description: "Fast, reliable stock and credit management for spaza shops and community retailers.",
+  metadataBase: new URL(BRAND_URL),
+  title: BRAND_NAME,
+  description: BRAND_DESCRIPTION,
   manifest: "/manifest.webmanifest",
-  applicationName: "Spaza ISM",
-  appleWebApp: { capable: true, title: "Spaza ISM", statusBarStyle: "black-translucent" },
+  applicationName: BRAND_NAME,
+  appleWebApp: { capable: true, title: BRAND_NAME, statusBarStyle: "black-translucent" },
+  openGraph: {
+    type: "website",
+    title: BRAND_NAME,
+    siteName: BRAND_NAME,
+    description: BRAND_DESCRIPTION,
+    images: [{ url: "/brand/og-image.png", width: 1200, height: 630, alt: BRAND_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: BRAND_NAME,
+    description: BRAND_DESCRIPTION,
+    images: [{ url: "/brand/twitter-card.png", alt: BRAND_NAME }],
+  },
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
