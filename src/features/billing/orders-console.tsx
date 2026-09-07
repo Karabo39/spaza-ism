@@ -14,12 +14,9 @@ import { LocationProductPicker } from "@/features/operations/product-picker";
 import { useBillingAction } from "./use-billing-action";
 import { money, dateTime } from "@/lib/format";
 import { businessDate } from "@/lib/business-date";
+import type { OrderWorkflow } from "./order-workflow";
 import { orderTotals } from "./order-totals";
-import type {
-  CreditCustomer,
-  ProductStock,
-  SalesOrder,
-} from "@/lib/db/database.types";
+import type { CreditCustomer, ProductStock } from "@/lib/db/database.types";
 type Line = {
   product_id: string;
   name: string;
@@ -27,7 +24,7 @@ type Line = {
   unit_price: number;
 };
 export function OrdersConsole() {
-  const { store, currency } = useStore();
+  const { store, currency, canModule } = useStore();
   const router = useRouter();
   const { online, busy, request, run } = useBillingAction();
   const [customer, setCustomer] = useState<CreditCustomer | null>(null);
@@ -36,7 +33,7 @@ export function OrdersConsole() {
   const [quantity, setQuantity] = useState(1);
   const [lines, setLines] = useState<Line[]>([]);
   const [note, setNote] = useState("");
-  const [selected, setSelected] = useState<SalesOrder | null>(null);
+  const [selected, setSelected] = useState<OrderWorkflow | null>(null);
   const [due, setDue] = useState(businessDate());
   const [terms, setTerms] = useState("CASH");
   const [discount, setDiscount] = useState(0);
@@ -44,14 +41,12 @@ export function OrdersConsole() {
   const { data: orders, error } = useQuery({
     queryKey: ["billing", "orders", store.id],
     queryFn: async () => {
-      const { data, error } = await createClient()
-        .from("sales_orders")
-        .select("*")
-        .eq("store_id", store.id)
-        .order("created_at", { ascending: false })
-        .limit(200);
+      const { data, error } = await createClient().rpc(
+        "order_workflow_summary",
+        { p_store: store.id },
+      );
       if (error) throw error;
-      return data;
+      return data as unknown as OrderWorkflow[];
     },
   });
   const { data: items } = useQuery({
@@ -89,7 +84,13 @@ export function OrdersConsole() {
     billing.data ?? 0,
   );
   function add() {
-    if (!product || quantity <= 0 || !Number.isFinite(quantity)) return;
+    if (
+      !product ||
+      quantity <= 0 ||
+      !Number.isFinite(quantity) ||
+      Math.abs(quantity * 1000 - Math.round(quantity * 1000)) > 0.000001
+    )
+      return;
     setLines((old) =>
       old.some((l) => l.product_id === product.id)
         ? old.map((l) =>
@@ -111,7 +112,7 @@ export function OrdersConsole() {
     setQuantity(1);
   }
   async function createInvoice() {
-    if (!current) return;
+    if (!current || current.invoice || current.status !== "CONFIRMED") return;
     await run(async () => {
       const res = await createClient().rpc("create_sales_invoice", {
         p_order: current.id,
@@ -138,10 +139,11 @@ export function OrdersConsole() {
               {customer?.name ?? "Choose customer"}
             </Button>
           </div>
-          <div className="grid gap-3 md:grid-cols-[1fr_8rem_auto]">
+          <div className="grid gap-3 md:grid-cols-[1fr_9rem]">
             <LocationProductPicker
               location={store.id}
               label="Order product"
+              searchable
               value={product}
               onChange={setProduct}
             />
@@ -155,15 +157,21 @@ export function OrdersConsole() {
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
               />
+              <Button
+                className="mt-3 w-full"
+                variant="secondary"
+                onClick={add}
+                disabled={
+                  !product ||
+                  quantity <= 0 ||
+                  !Number.isFinite(quantity) ||
+                  Math.abs(quantity * 1000 - Math.round(quantity * 1000)) >
+                    0.000001
+                }
+              >
+                Add item
+              </Button>
             </div>
-            <Button
-              className="self-end"
-              variant="secondary"
-              onClick={add}
-              disabled={!product || quantity <= 0}
-            >
-              Add item
-            </Button>
           </div>
           {lines.map((l) => (
             <div
@@ -186,7 +194,7 @@ export function OrdersConsole() {
               </Button>
             </div>
           ))}
-          <Label htmlFor="order-note">Order note</Label>
+          <Label htmlFor="order-note">Order note (optional)</Label>
           <Input
             id="order-note"
             value={note}
@@ -238,9 +246,11 @@ export function OrdersConsole() {
       )}
       <div className="flex justify-between">
         <h2 className="font-semibold">Recent orders</h2>
-        <Link className="text-accent" href="/invoices">
-          View invoices
-        </Link>
+        {canModule("invoices") && (
+          <Link className="text-accent" href="/invoices">
+            View invoices
+          </Link>
+        )}
       </div>
       {error && (
         <p role="alert" className="text-danger">
@@ -275,7 +285,7 @@ export function OrdersConsole() {
                 </button>
               </TD>
               <TD>{o.customer_name}</TD>
-              <TD>{o.status}</TD>
+              <TD>{o.status.replaceAll("_", " ")}</TD>
               <TD>{dateTime(o.created_at)}</TD>
             </TR>
           ))}
@@ -294,14 +304,54 @@ export function OrdersConsole() {
               {l.quantity} × {l.product_name} — {money(l.line_total, currency)}
             </p>
           ))}
-          <p className="text-sm">
-            Subtotal: {money(invoiceTotals.subtotal, currency)} · Discount:{" "}
-            {money(invoiceTotals.discount, currency)} · Tax ({billing.data ?? 0}
-            %): {money(invoiceTotals.tax, currency)} · Estimated invoice total:{" "}
-            {money(invoiceTotals.total, currency)}. Final amounts are shown on
-            the generated invoice.
-          </p>
-          {!invoiceTotals.valid && (
+          {current.invoice ? (
+            <section
+              aria-label="Order summary"
+              className="rounded-lg border border-border p-4 space-y-3"
+            >
+              <h3 className="font-semibold">Order summary</h3>
+              <p className="break-all">Invoice {current.invoice.reference}</p>
+              <p>
+                Payment: {current.invoice.status.replaceAll("_", " ")} ·{" "}
+                {current.invoice.goods_issued_at
+                  ? `Goods released ${dateTime(current.invoice.goods_issued_at)}`
+                  : "Awaiting goods release"}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-4">
+                {[
+                  ["Invoice total", current.invoice.total],
+                  ["Payments", current.invoice.paid],
+                  ["Credit notes", current.invoice.credits],
+                  ["Outstanding", current.invoice.outstanding],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-sm text-muted">{label}</p>
+                    <p className="font-semibold">
+                      {money(Number(value), currency)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {canModule("invoices") && (
+                <Link
+                  className="text-accent"
+                  href={`/invoices/${current.invoice.id}`}
+                >
+                  View invoice and payment history
+                </Link>
+              )}
+            </section>
+          ) : (
+            <p className="text-sm">
+              Subtotal: {money(invoiceTotals.subtotal, currency)} · Discount:{" "}
+              {money(invoiceTotals.discount, currency)} · Tax (
+              {billing.data ?? 0}
+              %): {money(invoiceTotals.tax, currency)} · Estimated invoice
+              total: {money(invoiceTotals.total, currency)}. Final amounts are
+              shown on the generated invoice.
+            </p>
+          )}
+          {!current.invoice && !invoiceTotals.valid && (
             <p role="alert" className="text-danger">
               The discount must be between zero and the subtotal.
             </p>
@@ -324,7 +374,7 @@ export function OrdersConsole() {
               Confirm order
             </Button>
           )}
-          {current.status === "CONFIRMED" && (
+          {current.status === "CONFIRMED" && !current.invoice && (
             <div className="grid gap-3 sm:grid-cols-3">
               <div>
                 <Label htmlFor="invoice-due">Payment due</Label>
@@ -373,7 +423,7 @@ export function OrdersConsole() {
               </Button>
             </div>
           )}
-          {current.status !== "CANCELLED" && (
+          {current.can_cancel && (
             <div className="flex gap-2">
               <Input
                 aria-label="Order cancellation reason"
