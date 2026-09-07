@@ -32,6 +32,7 @@ Each branch includes the preceding branch. Review/merge in this order or review 
 | `codex/brd-v102-imports-ux` | Reports/notifications | 5 |
 | `codex/brd-v102-acceptance` | Imports/interface | 5 |
 | `codex/brd-v102-main-integration` | Acceptance | 5 |
+| `main` — POS INVENTORY branding | Main integration | 5 |
 
 The acceptance batch contains password recovery, stock-count integrity, report coverage, configured returns/printing, and final workflow/acceptance fixes. The main integration batch includes the existing Vercel analytics change, source BRD/handover, supplied brand assets, machine-local file exclusion and this release record. Schema changes are incremental migrations **0013–0034** after the original 0001–0012. Released migrations were not rewritten.
 
@@ -43,7 +44,7 @@ Local database tests use PostgreSQL with minimal Auth and Storage contracts. The
 
 The user authorized direct integration and push to `main`, superseding the earlier draft-PR route blocked by connector permissions. Integration preserves the feature commits without rewriting history. Machine-specific assistant permissions and ignored environment files stay local.
 
-No production database migrations, live email or scheduled delivery were performed. A host connected to `main` may deploy after the push; hosting deployment status is separate from Git integration. Database migrations through **0034**, email credentials, Auth redirects, staging checks and backup verification remain rollout prerequisites.
+On 7 September 2026, migrations **0013–0034** were applied to the live Spaza-ISM Supabase project with explicit user approval. Stock and credit balance checksums matched before and after the upgrade, reconciliation differences remained zero, and staff assignments were preserved. Two open stock takes require their counts to be saved again. The missing-column API query now succeeds; the signed-in dashboard still needs browser confirmation. Live email and scheduled delivery remain unconfigured. Auth redirects, staging checks and backup verification remain rollout checks.
 
 ## Business interpretations
 

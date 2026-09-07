@@ -1,4 +1,7 @@
-# Spaza ISM — Inventory Management System
+# POS INVENTORY — Inventory Management System
+
+Branding uses the supplied [POS INVENTORY kit](docs/POS-Inventory-Brand-Kit-1/POS-Inventory-Brand-Kit/README.md).
+See [BRANDING.md](docs/BRANDING.md) for asset locations and installed-app updates.
 
 A production-oriented, multi-tenant SaaS for **spaza shops, village shops and
 small community retailers** to manage stock and customer credit quickly and

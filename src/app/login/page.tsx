@@ -11,7 +11,7 @@ import { safeAuthPath } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
   return (
-    <React.Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background" />}>
+    <React.Suspense fallback={<div className="flex min-h-[calc(100svh-4rem)] items-center justify-center bg-background" />}>
       <LoginInner />
     </React.Suspense>
   );
@@ -43,7 +43,7 @@ function LoginInner() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-[calc(100svh-4rem)] items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center px-4">
           <BrandLogo className="max-w-full" />

@@ -46,7 +46,7 @@ export default function SignupPage() {
 
   if (needsConfirm) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="flex min-h-[calc(100svh-4rem)] items-center justify-center bg-background p-4">
         <div className="w-full max-w-sm rounded-lg border border-border bg-surface p-6 text-center">
           <MailCheck className="mx-auto mb-3 size-8 text-success" />
           <h1 className="text-base font-semibold">Confirm your email</h1>
@@ -61,7 +61,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-[calc(100svh-4rem)] items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center px-4">
           <BrandLogo className="max-w-full" />

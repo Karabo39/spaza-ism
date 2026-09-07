@@ -33,6 +33,7 @@ let dbPromise: Promise<IDBPDatabase<SpazaDB>> | null = null;
 function getDB() {
   if (typeof indexedDB === "undefined") return null;
   if (!dbPromise) {
+    // Keep the original database name so the POS INVENTORY rebrand retains queued sales.
     dbPromise = openDB<SpazaDB>("spaza-ism", 1, {
       upgrade(db) {
         const p = db.createObjectStore("products", { keyPath: "id" });

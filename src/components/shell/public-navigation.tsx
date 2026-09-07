@@ -6,7 +6,7 @@ export function PublicNavigation() {
   return (
     <nav
       aria-label="Page navigation"
-      className="absolute left-4 top-3 z-20 flex items-center gap-3"
+      className="flex h-16 shrink-0 items-center gap-3 px-4"
     >
       <BackButton />
       <Link

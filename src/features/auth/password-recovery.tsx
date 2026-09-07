@@ -50,7 +50,7 @@ export function PasswordRecovery({ reset = false }: { reset?: boolean }) {
     }
   }
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-20">
+    <main className="flex min-h-[calc(100svh-4rem)] items-center justify-center px-4 py-20">
       <section className="w-full max-w-sm rounded-lg border border-border bg-surface p-6">
         <h1 className="text-xl font-semibold">
           {reset ? "Choose a new password" : "Reset your password"}

@@ -1,6 +1,6 @@
 # Architecture
 
-Spaza ISM is a server-rendered Next.js app talking directly to Supabase
+POS INVENTORY is a server-rendered Next.js app talking directly to Supabase
 (PostgreSQL + Auth). There is **no custom API tier** — the security boundary is
 the database itself (RLS + `SECURITY DEFINER` RPCs), so the app can use the
 Supabase client directly from React Server Components and the browser without
