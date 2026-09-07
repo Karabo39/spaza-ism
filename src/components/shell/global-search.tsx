@@ -1,8 +1,16 @@
 "use client";
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Search, Boxes, User } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
@@ -12,20 +20,20 @@ type Result =
   | { kind: "product"; id: string; name: string; extra: string }
   | { kind: "customer"; id: string; name: string; extra: string };
 
-export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const router = useRouter();
-  const { store, canModule } = useStore();
-  const productsAllowed = canModule("products");
-  const customersAllowed = canModule("credit");
-  const [q, setQ] = React.useState("");
-  const [results, setResults] = React.useState<Result[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
+export function GlobalSearch({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   // "/" opens search from anywhere (unless typing in a field).
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const el = e.target as HTMLElement;
-      const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.isContentEditable;
+      const typing =
+        ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
+        el.isContentEditable;
       if (e.key === "/" && !typing) {
         e.preventDefault();
         onOpenChange(true);
@@ -35,39 +43,102 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     return () => window.removeEventListener("keydown", onKey);
   }, [onOpenChange]);
 
-  React.useEffect(() => {
-    if (!open) { setQ(""); setResults([]); }
-  }, [open]);
+  const { store } = useStore();
+  return open ? (
+    <SearchContent key={store.id} open={open} onOpenChange={onOpenChange} />
+  ) : null;
+}
 
-  React.useEffect(() => {
-    const term = q.trim();
-    if (term.length < 2) { setResults([]); return; }
-    let cancelled = false;
-    setLoading(true);
-    const t = setTimeout(async () => {
+function SearchContent({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const router = useRouter();
+  const { store, canModule } = useStore();
+  const productsAllowed = canModule("products");
+  const customersAllowed = canModule("credit");
+  const [q, setQ] = React.useState("");
+  const term = useDebouncedValue(q.trim());
+
+  const search = useQuery({
+    queryKey: [
+      "global-search",
+      store.id,
+      term,
+      productsAllowed,
+      customersAllowed,
+    ],
+    enabled: term.length >= 2,
+    queryFn: async () => {
       const supabase = createClient();
       const [prod, cust, byBarcode] = await Promise.all([
-        productsAllowed ? supabase.from("products").select("id, name, selling_price")
-          .eq("store_id", store.id).ilike("name", `%${term}%`).limit(6) : { data: [] },
-        customersAllowed ? supabase.from("customers").select("id, name, phone")
-          .eq("store_id", store.id).ilike("name", `%${term}%`).limit(4) : { data: [] },
-        productsAllowed ? supabase.from("product_barcodes").select("product_id, barcode, products(name, selling_price)")
-          .eq("store_id", store.id).eq("barcode", term).limit(3) : { data: [] },
+        productsAllowed
+          ? supabase
+              .from("products")
+              .select("id, name, selling_price")
+              .eq("store_id", store.id)
+              .ilike("name", `%${term}%`)
+              .limit(6)
+          : { data: [], error: null },
+        customersAllowed
+          ? supabase
+              .from("customers")
+              .select("id, name, phone")
+              .eq("store_id", store.id)
+              .ilike("name", `%${term}%`)
+              .limit(4)
+          : { data: [], error: null },
+        productsAllowed
+          ? supabase
+              .from("product_barcodes")
+              .select("product_id, barcode, products(name, selling_price)")
+              .eq("store_id", store.id)
+              .eq("barcode", term)
+              .limit(3)
+          : { data: [], error: null },
       ]);
-      if (cancelled) return;
+      if (prod.error || cust.error || byBarcode.error)
+        throw prod.error ?? cust.error ?? byBarcode.error;
       const out: Result[] = [];
-      for (const p of prod.data ?? []) out.push({ kind: "product", id: p.id, name: p.name, extra: money(p.selling_price) });
+      for (const p of prod.data ?? [])
+        out.push({
+          kind: "product",
+          id: p.id,
+          name: p.name,
+          extra: money(p.selling_price),
+        });
       for (const b of byBarcode.data ?? []) {
-        const prod = b.products as unknown as { name: string; selling_price: number } | null;
-        if (prod && !out.some((r) => r.kind === "product" && r.id === b.product_id))
-          out.push({ kind: "product", id: b.product_id, name: prod.name, extra: `Barcode ${b.barcode}` });
+        const prod = b.products as unknown as {
+          name: string;
+          selling_price: number;
+        } | null;
+        if (
+          prod &&
+          !out.some((r) => r.kind === "product" && r.id === b.product_id)
+        )
+          out.push({
+            kind: "product",
+            id: b.product_id,
+            name: prod.name,
+            extra: `Barcode ${b.barcode}`,
+          });
       }
-      for (const c of cust.data ?? []) out.push({ kind: "customer", id: c.id, name: c.name, extra: c.phone ?? "" });
-      setResults(out);
-      setLoading(false);
-    }, 220);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [q, store.id, productsAllowed, customersAllowed]);
+      for (const c of cust.data ?? [])
+        out.push({
+          kind: "customer",
+          id: c.id,
+          name: c.name,
+          extra: c.phone ?? "",
+        });
+      return out;
+    },
+  });
+  const loading =
+    q.trim().length >= 2 && (q.trim() !== term || search.isLoading);
+  const results = loading || q.trim().length < 2 ? [] : (search.data ?? []);
 
   function go(r: Result) {
     onOpenChange(false);
@@ -78,6 +149,12 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="top-[15%] translate-y-0 p-0 sm:max-w-xl">
+        <DialogTitle className="sr-only">
+          Search products and customers
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Type at least two characters to search this store.
+        </DialogDescription>
         <div className="flex items-center gap-2 border-b border-border px-4">
           <Search className="size-4 text-muted" />
           <Input
@@ -89,11 +166,20 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
           />
         </div>
         <div className="max-h-80 overflow-y-auto p-2">
-          {loading && results.length === 0 ? (
+          {search.isError && !loading && q.trim().length >= 2 ? (
+            <p role="alert" className="p-4 text-sm text-danger">
+              Couldn&apos;t load results.{" "}
+              <Button variant="ghost" onClick={() => search.refetch()}>
+                Retry
+              </Button>
+            </p>
+          ) : loading ? (
             <p className="p-4 text-center text-sm text-muted">Searching…</p>
           ) : results.length === 0 ? (
             <p className="p-4 text-center text-sm text-muted">
-              {q.trim().length < 2 ? "Type at least 2 characters." : "No matches."}
+              {q.trim().length < 2
+                ? "Type at least 2 characters."
+                : "No matches."}
             </p>
           ) : (
             results.map((r) => (
@@ -102,8 +188,12 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
                 onClick={() => go(r)}
                 className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-surface-2"
               >
-                {r.kind === "product" ? <Boxes className="size-4 text-accent" /> : <User className="size-4 text-primary-hover" />}
-                <span className="flex-1 truncate">{r.name}</span>
+                {r.kind === "product" ? (
+                  <Boxes className="size-4 text-accent" />
+                ) : (
+                  <User className="size-4 text-primary-hover" />
+                )}
+                <span className="min-w-0 flex-1 break-words">{r.name}</span>
                 <span className="text-xs text-muted">{r.extra}</span>
               </button>
             ))

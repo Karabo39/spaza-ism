@@ -70,3 +70,10 @@ it("does not select stale results while fetching", () => {
   fireEvent.keyDown(screen.getByRole("combobox"), { key: "Enter" });
   expect(screen.getByTestId("selected")).toBeEmptyDOMElement();
 });
+it("does not select the previous result while waiting for typing to settle", () => {
+  render(<Demo />);
+  fireEvent.change(screen.getByRole("combobox"), { target: { value: "Pear" } });
+  fireEvent.keyDown(screen.getByRole("combobox"), { key: "Enter" });
+  expect(screen.getByTestId("selected")).toBeEmptyDOMElement();
+  expect(screen.queryByRole("option")).not.toBeInTheDocument();
+});

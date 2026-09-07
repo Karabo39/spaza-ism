@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,10 @@ function LegacyProductPicker({
   onChange,
 }: PickerProps) {
   const [search, setSearch] = React.useState("");
+  const term = useDebouncedValue(search.trim());
   const id = React.useId();
   const { data, error, isLoading } = useQuery({
-    queryKey: ["operation-products", location, search],
+    queryKey: ["operation-products", location, term],
     enabled: !!location,
     queryFn: async () => {
       const { data, error } = await createClient()
@@ -42,7 +44,7 @@ function LegacyProductPicker({
         .select("*")
         .eq("store_id", location)
         .eq("is_active", true)
-        .ilike("name", `%${search}%`)
+        .ilike("name", `%${term}%`)
         .order("name")
         .limit(100);
       if (error) throw error;
@@ -66,7 +68,7 @@ function LegacyProductPicker({
       <select
         id={id}
         className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
-        disabled={!location || isLoading}
+        disabled={!location || isLoading || term !== search.trim()}
         value={value?.id ?? ""}
         onChange={(e) =>
           onChange(rows.find((p) => p.id === e.target.value) ?? null)
@@ -96,6 +98,7 @@ function SearchProductPicker({
 }: PickerProps) {
   const { currency } = useStore();
   const [search, setSearch] = React.useState("");
+  const term = useDebouncedValue(search.trim());
   const [open, setOpen] = React.useState(false);
   const [active, setActive] = React.useState(0);
   const input = React.useRef<HTMLInputElement>(null);
@@ -103,9 +106,9 @@ function SearchProductPicker({
   const {
     data = [],
     error,
-    isFetching,
+    isFetching: fetching,
   } = useQuery({
-    queryKey: ["order-product-search", location, search],
+    queryKey: ["order-product-search", location, term],
     enabled: !!location && open,
     queryFn: async () => {
       const { data, error } = await createClient()
@@ -113,13 +116,14 @@ function SearchProductPicker({
         .select("*")
         .eq("store_id", location)
         .eq("is_active", true)
-        .ilike("name", `%${search.replace(/[\\%_]/g, "\\$&")}%`)
+        .ilike("name", `%${term.replace(/[\\%_]/g, "\\$&")}%`)
         .order("name")
         .limit(100);
       if (error) throw error;
       return data as ProductStock[];
     },
   });
+  const isFetching = fetching || term !== search.trim();
   const index = Math.min(active, Math.max(data.length - 1, 0));
   function choose(product: ProductStock) {
     onChange(product);
