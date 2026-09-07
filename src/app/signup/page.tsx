@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, MailCheck } from "lucide-react";
+import { MailCheck } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -62,14 +63,8 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <ShieldCheck className="size-5" />
-          </div>
-          <div>
-            <p className="text-lg font-semibold">Spaza ISM</p>
-            <p className="text-xs text-muted">Inventory Management System</p>
-          </div>
+        <div className="mb-8 flex justify-center px-4">
+          <BrandLogo className="max-w-full" />
         </div>
         <div className="rounded-lg border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-base font-semibold">Create your account</h1>

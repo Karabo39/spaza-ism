@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { BusinessLogo } from "@/features/settings/business-logo";
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store-context";
 import { NAV, itemVisible } from "./nav-config";
@@ -38,7 +39,7 @@ export function Sidebar({
           <Link href="/" aria-label={`${store.businessName} home`} onClick={onClose} className="flex items-center gap-2.5">
             <BusinessLogo />
             <div className="leading-tight">
-              <p className="text-sm font-semibold">Spaza ISM</p>
+              <BrandLogo variant="wordmark" />
               <p className="text-[10px] text-muted">Inventory Control</p>
             </div>
           </Link>

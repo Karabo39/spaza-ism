@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* =====================================================================
-   Spaza ISM — dark enterprise operational theme.
-   Slate-navy shell, crimson primary action, calm muted tables.
+   POS INVENTORY — dark operational theme.
+   Slate-navy shell, brand-pink primary action, calm muted tables.
    The app is dark by default (operational tool used at a till).
    ===================================================================== */
 
@@ -16,10 +16,10 @@
   --muted-foreground: #9fb0c9;
   --border: #1e2c46;
   --input: #16233c;
-  --ring: #f43f5e;
+  --ring: #ff3a74;
 
-  --primary: #e11d48;         /* crimson */
-  --primary-hover: #f43f5e;
+  --primary: #e8134f;         /* POS INVENTORY brand pink */
+  --primary-hover: #ff3a74;
   --primary-foreground: #ffffff;
 
   --accent: #22d3ee;          /* cyan secondary highlight */

@@ -51,7 +51,7 @@ test.describe("public routing & auth gate", () => {
     await page.getByRole("button", { name: "Go back" }).click();
     await expect(page).toHaveURL(/\/login/);
     await expect(
-      page.getByRole("link", { name: "Spaza ISM home" }),
+      page.getByRole("link", { name: "POS INVENTORY home" }),
     ).toBeVisible();
   });
 

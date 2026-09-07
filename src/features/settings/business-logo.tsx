@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store-context";
 import { useOffline } from "@/lib/offline/offline-context";
@@ -51,9 +51,7 @@ export function BusinessLogo() {
       className="size-8 shrink-0 rounded-md bg-white object-contain"
     />
   ) : (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-      <ShieldCheck className="size-4" />
-    </span>
+    <BrandLogo variant="mark" />
   );
 }
 export async function validateLogo(

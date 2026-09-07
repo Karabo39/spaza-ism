@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
+import { BRAND_NAME } from "@/lib/brand";
 import { BackButton } from "./back-button";
 export function PublicNavigation() {
   return (
@@ -10,11 +11,10 @@ export function PublicNavigation() {
       <BackButton />
       <Link
         href="/"
-        aria-label="Spaza ISM home"
+        aria-label={`${BRAND_NAME} home`}
         className="focus-ring flex items-center gap-2 rounded-md px-2 py-2 text-sm"
       >
-        <ShieldCheck className="size-5 text-primary-hover" />
-        Spaza ISM
+        <BrandLogo variant="horizontal" className="w-44" />
       </Link>
     </nav>
   );
