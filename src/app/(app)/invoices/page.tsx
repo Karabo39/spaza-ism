@@ -63,9 +63,14 @@ export default async function InvoicesPage({
         description="Track issued invoices, payments, credit notes and balances by customer."
         crumbs={[{ label: "Sales" }, { label: "Invoices" }]}
         actions={
-          <Link className="text-accent" href="/orders">
-            Create from order
-          </Link>
+          <div className="flex flex-wrap gap-4">
+            <Link className="text-accent" href="/invoices/quotes">
+              Create quotation / Quotes
+            </Link>
+            <Link className="text-accent" href="/orders">
+              Create from order
+            </Link>
+          </div>
         }
       />
       <InvoiceSummary storeId={store.id} currency={store.currency} />
@@ -179,6 +184,7 @@ export default async function InvoicesPage({
           )}
         </p>
         <ExportButton
+          module="invoices"
           rows={rows.map((r) => ({
             reference: r.reference,
             customer: r.customer_name,

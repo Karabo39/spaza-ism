@@ -1,4 +1,5 @@
 "use client";
+import { PurchaseOrder } from "./purchase-order";
 import { amountCents } from "@/features/cash-up/cash-utils";
 import { useState } from "react";
 import Link from "next/link";
@@ -387,6 +388,7 @@ export function InvoiceWorkspace({
       <div className="flex justify-between">
         <h2 className="font-semibold">Invoice ledger</h2>
         <ExportButton
+          module="invoices"
           rows={entries.map((e) => ({
             date: dateTime(e.created_at),
             reference: e.reference,
@@ -430,6 +432,7 @@ export function InvoiceWorkspace({
           ))}
         </TBody>
       </Table>
+      <PurchaseOrder order={i.order_id} />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import type { SalesOrder } from "@/lib/db/database.types";
 
 export type OrderWorkflow = SalesOrder & {
+  quoted_tax_percent?: number | null;
+  quoted_discount?: number | null;
   can_cancel: boolean;
   invoice: null | {
     id: string;

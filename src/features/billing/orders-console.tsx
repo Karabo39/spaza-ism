@@ -1,4 +1,5 @@
 "use client";
+import { PurchaseOrder } from "./purchase-order";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,7 +24,9 @@ type Line = {
   quantity: number;
   unit_price: number;
 };
-export function OrdersConsole() {
+export function OrdersConsole({
+  initialOrder,
+}: { initialOrder?: string } = {}) {
   const { store, currency, canModule } = useStore();
   const router = useRouter();
   const { online, busy, request, run } = useBillingAction();
@@ -49,19 +52,23 @@ export function OrdersConsole() {
       return data as unknown as OrderWorkflow[];
     },
   });
+  const current =
+    orders?.find((o) => o.id === selected?.id) ??
+    selected ??
+    orders?.find((o) => o.id === initialOrder) ??
+    null;
   const { data: items } = useQuery({
-    queryKey: ["billing", "order-items", selected?.id],
-    enabled: !!selected,
+    queryKey: ["billing", "order-items", current?.id],
+    enabled: !!current,
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("sales_order_items")
         .select("*")
-        .eq("order_id", selected!.id);
+        .eq("order_id", current!.id);
       if (error) throw error;
       return data;
     },
   });
-  const current = orders?.find((o) => o.id === selected?.id) ?? selected;
   const billing = useQuery({
     queryKey: ["billing", "order-tax", store.businessId],
     queryFn: async () => {
@@ -80,8 +87,8 @@ export function OrdersConsole() {
       quantity: Number(i.quantity),
       unit_price: Number(i.unit_price),
     })),
-    discount,
-    billing.data ?? 0,
+    Number(current?.quoted_discount ?? discount),
+    Number(current?.quoted_tax_percent ?? billing.data ?? 0),
   );
   function add() {
     if (
@@ -277,7 +284,7 @@ export function OrdersConsole() {
                   className="text-accent text-left"
                   onClick={() => {
                     setSelected(o);
-                    setDiscount(0);
+                    setDiscount(Number(o.quoted_discount ?? 0));
                     setReason("");
                   }}
                 >
@@ -345,7 +352,7 @@ export function OrdersConsole() {
             <p className="text-sm">
               Subtotal: {money(invoiceTotals.subtotal, currency)} · Discount:{" "}
               {money(invoiceTotals.discount, currency)} · Tax (
-              {billing.data ?? 0}
+              {current.quoted_tax_percent ?? billing.data ?? 0}
               %): {money(invoiceTotals.tax, currency)} · Estimated invoice
               total: {money(invoiceTotals.total, currency)}. Final amounts are
               shown on the generated invoice.
@@ -406,6 +413,7 @@ export function OrdersConsole() {
                   min="0"
                   step="0.01"
                   value={discount}
+                  disabled={current.quoted_discount != null}
                   onChange={(e) => setDiscount(Number(e.target.value))}
                 />
               </div>
@@ -450,6 +458,7 @@ export function OrdersConsole() {
               </Button>
             </div>
           )}
+          <PurchaseOrder order={current.id} />
         </section>
       )}
       <CustomerPicker
