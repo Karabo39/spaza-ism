@@ -36,4 +36,13 @@ describe("location creation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add location" }));
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
+  it("selects a created store for its setup flow", async () => {
+    const id = "00000000-0000-4000-8000-000000000008";
+    mocks.rpc.mockResolvedValue({ data: id, error: null });
+    render(<LocationsManager activateOnCreate />);
+    fireEvent.change(screen.getByLabelText("New location name"), { target: { value: "North shop" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add store" }));
+    await waitFor(() => expect(document.cookie).toContain(`sism_store=${id}`));
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
 });
