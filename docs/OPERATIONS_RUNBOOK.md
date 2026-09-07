@@ -8,6 +8,14 @@ Apply the tested migrations in order before deploying the matching application:
 2. 20260907084244_store_module_access.sql
 3. 20260907084247_daily_cash_up.sql
 
+Release state on 7 September 2026: all three steps are applied to the linked
+production project after explicit owner approval. Hosted versions are
+`20260907100110_release_compatibility_contract`,
+`20260907102555_store_module_access`, and `20260907102614_daily_cash_up`.
+The production compatibility check passes. Hosted migration timestamps differ
+from local filenames; inspect history before applying changes and do not reapply
+these migrations or repair existing history blindly.
+
 The release contract requires BRD v1.02, store module access and daily cash-up.
 Run **npm run release:check** against the intended environment. Vercel runs this
 check automatically before building. A missing capability or unreachable database
