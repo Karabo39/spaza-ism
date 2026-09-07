@@ -6,6 +6,8 @@ const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth", "/_next"
 
 /** Refreshes the auth session and gates the app behind login. */
 export async function updateSession(request: NextRequest) {
+  // Health checks must still report database failure when Auth is unavailable.
+  if (request.nextUrl.pathname === "/api/health") return NextResponse.next();
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
