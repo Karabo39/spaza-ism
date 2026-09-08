@@ -8,6 +8,12 @@ vi.mock("@/lib/offline/db", () => ({
 }));
 describe("offline replay idempotency", () => {
   beforeEach(() => vi.clearAllMocks());
+  it("retains an expiry-rejected queued sale for review instead of claiming success", async () => {
+    mock.rpc.mockResolvedValue({ error: { message: "INSUFFICIENT_SELLABLE_STOCK" } });
+    await expect(flushSaleQueue("store")).resolves.toEqual({ synced: 0, failed: 1 });
+    expect(mock.update).toHaveBeenCalledWith("sale-request", expect.objectContaining({ status: "failed", error: expect.stringContaining("unexpired stock") }));
+    expect(mock.remove).not.toHaveBeenCalled();
+  });
   it("reuses the persisted request ID after an uncertain network result", async () => {
     mock.rpc.mockResolvedValueOnce({ error: { message: "Network unavailable" } }).mockResolvedValueOnce({ error: null });
     await expect(flushSaleQueue("store")).resolves.toEqual({ synced: 0, failed: 0 });

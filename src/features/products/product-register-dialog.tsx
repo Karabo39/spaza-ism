@@ -37,6 +37,7 @@ function ProductRegisterDialogContent({
   const [cost, setCost] = React.useState("");
   const [minLevel, setMinLevel] = React.useState("");
   const [reorder, setReorder] = React.useState("");
+  const [trackExpiry, setTrackExpiry] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -45,6 +46,7 @@ function ProductRegisterDialogContent({
     const supabase = createClient();
     const { data: id, error } = await supabase.rpc("create_product", {
       p_store: store.id,
+      p_track_expiry: trackExpiry,
       p_name: name.trim(),
       p_barcode: barcode.trim() || undefined,
       p_cost: Number(cost) || 0,
@@ -150,6 +152,20 @@ function ProductRegisterDialogContent({
               />
             </div>
           </div>
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={trackExpiry}
+              onChange={(e) => setTrackExpiry(e.target.checked)}
+            />
+            Track expiry by batch
+          </label>
+          {trackExpiry && (
+            <p className="text-sm text-muted">
+              A date is required when you receive stock. This creates an empty
+              catalogue item.
+            </p>
+          )}
           <DialogFooter>
             <Button
               type="button"

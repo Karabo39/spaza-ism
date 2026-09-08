@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import type { ProductStock, CreditCustomer, SaleType } from "@/lib/db/database.types";
 import { Label } from "@/components/ui/label";
 
-type Line = { productId: string; name: string; unit: string; quantity: number; unitPrice: number; stock: number };
+type Line = { productId: string; name: string; unit: string; quantity: number; unitPrice: number; stock: number; trackExpiry: boolean };
 
 function isNetworkError(message?: string) {
   const m = (message ?? "").toLowerCase();
@@ -62,7 +62,7 @@ export function GoodsOutConsole() {
       if (existing) {
         return prev.map((l) => (l.productId === p.id ? { ...l, quantity: l.quantity + 1 } : l));
       }
-      return [...prev, { productId: p.id, name: p.name, unit: p.unit, quantity: 1, unitPrice: Number(p.selling_price), stock: Number(p.quantity) }];
+      return [...prev, { productId: p.id, name: p.name, unit: p.unit, quantity: 1, unitPrice: Number(p.selling_price), stock: Number(p.quantity), trackExpiry: p.track_expiry }];
     });
   }
 
@@ -97,6 +97,7 @@ export function GoodsOutConsole() {
   }
 
   async function saveOffline() {
+    if (lines.some(line => line.trackExpiry)) { toast.error("Expiry-tracked stock needs a connection so its batch dates can be checked. This sale has not been queued."); return; }
     await enqueueSale({
       id: attempt.current?.id ?? crypto.randomUUID(),
       storeId: store.id,

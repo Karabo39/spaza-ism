@@ -10,6 +10,7 @@ import { StockStatusBadge } from "@/features/stock/status-badge";
 import { ProductEditDialog } from "@/features/products/product-edit-dialog";
 import { MOVEMENT_META } from "@/features/stock/movement-meta";
 import { money, qty, dateTime } from "@/lib/format";
+import { ExpiryBatches } from "@/features/products/expiry-batches";
 import type { ProductStock } from "@/lib/db/database.types";
 import { BarcodeCopy } from "@/features/products/barcode-copy";
 
@@ -25,13 +26,24 @@ export default async function ProductDetailPage({
   const supabase = await createClient();
 
   const { data: product } = await supabase
-    .from("v_product_stock")
+    .from("v_product_catalog")
     .select("*")
     .eq("id", id)
     .eq("store_id", store.id)
     .maybeSingle();
   if (!product) notFound();
-  const p = product as ProductStock;
+  const p = product as ProductStock & {
+    undated_quantity: number;
+    sellable_quantity: number;
+    nearest_expiry: string | null;
+  };
+  const { data: batches, error: batchError } = await supabase
+    .from("stock_batches")
+    .select("id,quantity,expiry_date")
+    .eq("product_id", id)
+    .eq("store_id", store.id)
+    .gt("quantity", 0)
+    .order("expiry_date");
 
   const [{ data: barcodes }, { data: movements }, { data: priceHistory }] =
     await Promise.all([
@@ -125,6 +137,24 @@ export default async function ProductDetailPage({
         </span>
       </div>
 
+      {p.track_expiry && (
+        <p className="mb-3 text-sm">
+          Nearest expiry: {p.nearest_expiry ?? (p.quantity > 0 ? "Date required" : "No stock")} | Sellable
+          stock: {qty(p.sellable_quantity)}
+        </p>
+      )}
+      {batchError ? (
+        <p role="alert">Could not load expiry batches. Refresh to try again.</p>
+      ) : p.track_expiry ? (
+        <ExpiryBatches
+          key={`${p.id}:${p.undated_quantity}`}
+          product={p.id}
+          undated={p.undated_quantity}
+          batches={batches ?? []}
+        />
+      ) : p.quantity > 0 ? (
+        <details className="mb-5"><summary className="cursor-pointer py-3 text-sm font-medium">Set up expiry tracking (optional)</summary><ExpiryBatches key={`${p.id}:${p.undated_quantity}`} product={p.id} undated={p.undated_quantity} batches={batches ?? []} /></details>
+      ) : null}
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface">
           <div className="border-b border-border px-5 py-3">

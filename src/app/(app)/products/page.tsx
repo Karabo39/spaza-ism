@@ -15,13 +15,19 @@ import { Boxes } from "lucide-react";
 import { ListFilter } from "@/components/shell/list-filter";
 import { ImportLink } from "@/features/imports/import-link";
 import { ExportButton } from "@/features/reports/export-button";
+import { ProductNameFilter } from "@/features/products/product-name-filter";
 
 const PAGE_SIZE = 20;
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string; status?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    page?: string;
+    status?: string;
+    name?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const session = await getSession("products");
@@ -32,10 +38,11 @@ export default async function ProductsPage({
   const supabase = await createClient();
 
   let query = supabase
-    .from("v_product_stock")
+    .from("v_product_catalog")
     .select("*", { count: "exact" })
     .eq("store_id", store.id);
-  if (q) query = query.ilike("name", `%${q}%`);
+  if (q) query = query.ilike("search_text", `%${q}%`);
+  if (sp.name) query = query.eq("name", sp.name);
   const status = ["ok", "low", "out", "reorder", "inactive"].includes(
     sp.status ?? "",
   )
@@ -47,6 +54,7 @@ export default async function ProductsPage({
   const { data, count } = await query
     .order("is_active", { ascending: false })
     .order("name")
+    .order("id")
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   const rows = data ?? [];
 
@@ -57,7 +65,7 @@ export default async function ProductsPage({
         crumbs={[{ label: "Catalog" }, { label: "Products" }]}
         actions={
           <>
-            <ToolbarSearch placeholder="Search products…" />
+            <ToolbarSearch placeholder="Search name or barcode..." />
             <AddProductButton />
             <ImportLink kind="products" />
           </>
@@ -75,6 +83,9 @@ export default async function ProductsPage({
           columns={[
             { key: "id", label: "Product ID" },
             { key: "name", label: "Product" },
+            { key: "barcodes", label: "Barcodes" },
+            { key: "nearest_expiry", label: "Nearest expiry" },
+            { key: "sellable_quantity", label: "Sellable quantity" },
             { key: "unit", label: "Unit" },
             { key: "quantity", label: "Quantity" },
             { key: "cost_price", label: "Cost" },
@@ -85,6 +96,7 @@ export default async function ProductsPage({
       </div>
 
       <div className="mb-4">
+        <ProductNameFilter store={store.id} />
         <ListFilter
           label="Status"
           param="status"
@@ -113,6 +125,8 @@ export default async function ProductsPage({
               <THead>
                 <TR>
                   <TH>Product</TH>
+                  <TH>Barcode</TH>
+                  <TH>Nearest expiry</TH>
                   <TH>Category</TH>
                   <TH className="text-right">Stock</TH>
                   <TH className="text-right">Cost</TH>
@@ -136,9 +150,23 @@ export default async function ProductsPage({
                         </Badge>
                       ) : null}
                     </TD>
+                    <TD className="max-w-48 break-all text-xs">
+                      {r.barcodes || "None"}
+                    </TD>
+                    <TD>
+                      {r.track_expiry
+                        ? (r.nearest_expiry ?? (r.quantity > 0 ? "Date required" : "No stock"))
+                        : "Not tracked"}
+                      {r.track_expiry && r.expired_quantity > 0 && <span className="block text-xs text-danger">{qty(r.expired_quantity)} expired</span>}
+                    </TD>
                     <TD className="text-muted">{r.category_name ?? "—"}</TD>
                     <TD className="text-right tabular-nums">
                       {qty(r.quantity)}
+                      {r.track_expiry && (
+                        <span className="block text-xs text-muted">
+                          {qty(r.sellable_quantity)} sellable
+                        </span>
+                      )}
                     </TD>
                     <TD className="text-right tabular-nums text-muted-foreground">
                       {money(r.cost_price, store.currency)}
@@ -161,7 +189,7 @@ export default async function ProductsPage({
               page={page}
               pageSize={PAGE_SIZE}
               total={count ?? 0}
-              params={{ q, status }}
+              params={{ q, status, ...(sp.name ? { name: sp.name } : {}) }}
               basePath="/products"
             />
           </>
