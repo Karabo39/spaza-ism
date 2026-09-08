@@ -25,6 +25,7 @@ export function CashUpConsole() {
   const { store, can, currency } = useStore();
   const { online, pending, failed, syncing, syncNow } = useOffline();
   const [day, setDay] = React.useState(businessDate());
+  const [ending, setEnding] = React.useState(false);
   const [opening, setOpening] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -113,6 +114,7 @@ export function CashUpConsole() {
             onChange={(e) => {
               if (e.target.value) {
                 setDay(e.target.value);
+                setEnding(false);
                 setError("");
               }
             }}
@@ -136,6 +138,7 @@ export function CashUpConsole() {
               key={s.business_date}
               onClick={() => {
                 setDay(s.business_date);
+                setEnding(false);
                 setError("");
               }}
               disabled={busy}
@@ -192,10 +195,58 @@ export function CashUpConsole() {
                 className="rounded-lg border border-warning/30 bg-warning/5 p-4 text-sm text-warning"
                 role="alert"
               >
-                New cash activity arrived after this count. A manager must
-                reopen and recount it. The earlier approval and count remain in
-                history.
+                New transaction activity arrived after this count. A manager
+                must reopen and recount it. The earlier approval and count
+                remain in history.
               </p>
+            )}
+            {data.sources.activity && (
+              <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                <h2 className="text-lg font-semibold">Today&apos;s summary</h2>
+                <p className="mt-1 text-sm text-muted">
+                  Shared drawer at {store.name}. Totals are calculated from
+                  recorded payments.
+                </p>
+                <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
+                  {[
+                    ["Cash sales", data.sources.activity.cash_sales],
+                    ["Card / EFT sales", data.sources.activity.card_sales],
+                    [
+                      "Credit payments received",
+                      data.sources.activity.credit_payments,
+                    ],
+                    [
+                      "Invoice payments received",
+                      data.sources.activity.invoice_payments,
+                    ],
+                    ["Refunds paid", -data.sources.activity.refunds],
+                    [
+                      "Credit issued (not collected)",
+                      data.sources.activity.credit_issued,
+                    ],
+                  ].map(([label, value]) => (
+                    <div
+                      key={String(label)}
+                      className="flex justify-between gap-3 border-b border-border py-3 text-sm"
+                    >
+                      <dt>{label}</dt>
+                      <dd className="font-medium tabular-nums">
+                        {money(Number(value), currency)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-4 flex flex-wrap justify-between gap-2">
+                  <span className="font-semibold">Net collected</span>
+                  <strong className="text-2xl tabular-nums">
+                    {money(data.sources.activity.net_collected, currency)}
+                  </strong>
+                </div>
+                <p className="mt-2 text-xs text-muted">
+                  Opening cash and unpaid credit are separate. Invoice payments
+                  count only the amount received. Refunds reduce this total.
+                </p>
+              </section>
             )}
             <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
               <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
@@ -205,7 +256,7 @@ export function CashUpConsole() {
                 </div>
                 <dl className="mt-5 divide-y divide-border text-sm">
                   {[
-                    ["Opening float", session?.opening_float ?? 0],
+                    ["Opening cash", session?.opening_float ?? 0],
                     ["Cash checkout sales", data.sources.sales],
                     ["Cash invoice payments", data.sources.invoices],
                     ["Cash credit payments", data.sources.credit],
@@ -228,7 +279,7 @@ export function CashUpConsole() {
                   <p className="text-xs text-muted">
                     {session
                       ? "Expected in drawer"
-                      : "Net cash before opening float"}
+                      : "Net cash before opening cash"}
                   </p>
                   <p className="mt-1 text-3xl font-semibold tabular-nums">
                     {money(data.expected, currency)}
@@ -242,7 +293,7 @@ export function CashUpConsole() {
               {!session ? (
                 <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
                   <h2 className="text-lg font-semibold">
-                    Start this day’s cash-up
+                    Start day
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Enter the cash that was in the drawer before trading began
@@ -254,7 +305,7 @@ export function CashUpConsole() {
                       e.preventDefault();
                       const cents = amountCents(opening);
                       if (cents === null) {
-                        setError("Enter a valid opening float.");
+                        setError("Enter a valid opening cash.");
                         return;
                       }
                       void run(
@@ -270,7 +321,7 @@ export function CashUpConsole() {
                   >
                     <div>
                       <Label htmlFor="opening-float">
-                        Opening float ({currency})
+                        Opening cash ({currency})
                       </Label>
                       <Input
                         id="opening-float"
@@ -286,9 +337,23 @@ export function CashUpConsole() {
                       loading={busy}
                       disabled={disabled || amountCents(opening) === null}
                     >
-                      Start cash-up
+                      Start day
                     </Button>
                   </form>
+                </section>
+              ) : session.status === "OPEN" && !ending ? (
+                <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                  <h2 className="text-lg font-semibold">Day open</h2>
+                  <p className="my-4 text-sm text-muted">
+                    Continue trading. When all tills are synced, end the day and
+                    count the shared drawer.
+                  </p>
+                  <Button
+                    disabled={disabled || pending + failed > 0}
+                    onClick={() => setEnding(true)}
+                  >
+                    End day
+                  </Button>
                 </section>
               ) : session.status === "OPEN" ? (
                 <CashCount
@@ -311,7 +376,7 @@ export function CashUpConsole() {
                           p_note: note,
                           p_request: request,
                         }),
-                      "Count submitted for manager approval",
+                      "End-of-day count saved for manager approval",
                       true,
                     )
                   }
@@ -394,13 +459,18 @@ export function CashUpConsole() {
               </section>
             )}
             {can("manager") && (
-              <CashManagement
-                key={`${session?.id}:${session?.version}:${day}`}
-                data={data}
-                day={day}
-                disabled={disabled}
-                run={run}
-              />
+              <details>
+                <summary className="cursor-pointer py-3 font-medium">
+                  Manage opening cash and drawer movements
+                </summary>
+                <CashManagement
+                  key={`${session?.id}:${session?.version}:${day}`}
+                  data={data}
+                  day={day}
+                  disabled={disabled}
+                  run={run}
+                />
+              </details>
             )}
             {data.movements.length > 0 && (
               <section className="rounded-xl border border-border bg-surface p-5">
@@ -651,7 +721,7 @@ export function CashCount({
             disabled || cents === null || (variance !== 0 && !note.trim())
           }
         >
-          Submit for approval
+          Complete end of day
         </Button>
         <p className="text-xs text-muted">
           A manager reviews this count. Submitting does not change stock or
@@ -785,7 +855,7 @@ function CashManagement({
   return (
     <details className="rounded-xl border border-border bg-surface p-5">
       <summary className="cursor-pointer text-sm font-semibold">
-        Manager tools · cash added, banked or opening float corrections
+        Manager tools · cash added, banked or opening cash corrections
       </summary>
       <div className="mt-5 grid gap-6 lg:grid-cols-2">
         <form
@@ -796,21 +866,22 @@ function CashManagement({
             const key = JSON.stringify([kind, cents, reason, day]);
             if (request.current?.key !== key)
               request.current = { key, id: crypto.randomUUID() };
-            void run(
-              async () => {
-                const result = await createClient().rpc("record_cash_movement", {
-                  p_store: store.id,
-                  p_day: day,
-                  p_kind: kind,
-                  p_amount: cents / 100,
-                  p_reason: reason,
-                  p_request: request.current!.id,
-                });
-                if (!result.error) { setAmount(""); setReason(""); request.current = null; }
-                return result;
-              },
-              "Cash movement recorded",
-            );
+            void run(async () => {
+              const result = await createClient().rpc("record_cash_movement", {
+                p_store: store.id,
+                p_day: day,
+                p_kind: kind,
+                p_amount: cents / 100,
+                p_reason: reason,
+                p_request: request.current!.id,
+              });
+              if (!result.error) {
+                setAmount("");
+                setReason("");
+                request.current = null;
+              }
+              return result;
+            }, "Cash movement recorded");
           }}
         >
           <h3 className="text-sm font-medium">Other drawer movement</h3>
@@ -868,18 +939,18 @@ function CashManagement({
                     p_version: data.session!.version,
                     p_reason: floatReason,
                   }),
-                "Opening float corrected",
+                "Opening cash corrected",
               );
             }}
           >
-            <h3 className="text-sm font-medium">Correct the opening float</h3>
+            <h3 className="text-sm font-medium">Correct the opening cash</h3>
             <p className="text-xs text-muted">
               Use only to correct an opening entry. Later cash added belongs in
               drawer movements.
             </p>
             <div>
               <Label htmlFor="correct-float">
-                Correct opening float ({currency})
+                Correct opening cash ({currency})
               </Label>
               <Input
                 id="correct-float"

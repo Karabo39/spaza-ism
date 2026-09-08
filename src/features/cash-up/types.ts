@@ -12,6 +12,15 @@ export type CashSummary = {
   count_token: string;
   changed_since_count: boolean;
   sources: {
+    activity?: {
+      cash_sales: number;
+      card_sales: number;
+      credit_issued: number;
+      invoice_payments: number;
+      credit_payments: number;
+      refunds: number;
+      net_collected: number;
+    };
     sales: number;
     invoices: number;
     credit: number;
