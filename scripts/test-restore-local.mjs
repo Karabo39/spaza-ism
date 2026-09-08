@@ -11,15 +11,14 @@ await client.connect();
 const target = new URL(source);
 target.pathname = "/restore_" + randomUUID().replaceAll("-", "");
 try {
-  const fixture = await readFile(
-    "supabase/tests/document_workflows.sql",
-    "utf8",
-  );
-  if (!fixture.includes("raise exception 'TESTS_PASSED';"))
-    throw new Error("Document fixture sentinel missing");
-  await client.query(
-    fixture.replace("raise exception 'TESTS_PASSED';", "null;"),
-  );
+  for (const suite of ["document_workflows", "employee_invitations"]) {
+    const fixture = await readFile(`supabase/tests/${suite}.sql`, "utf8");
+    if (!fixture.includes("raise exception 'TESTS_PASSED';"))
+      throw new Error("Document fixture sentinel missing");
+    await client.query(
+      fixture.replace("raise exception 'TESTS_PASSED';", "null;"),
+    );
+  }
   await client.query('create database "' + target.pathname.slice(1) + '"');
 } finally {
   await client.end();
