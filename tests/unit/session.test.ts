@@ -6,6 +6,7 @@ const mock = vi.hoisted(() => ({
   user: { id: "employee", email: "staff@example.test" } as { id: string; email: string } | null,
   preferred: "shop",
   ready: true,
+  setupRequired: false,
   grants: [] as Record<string, unknown>[],
   memberships: [
     { id: "staff-member", user_id: "employee", business_id: "business", role: "employee", is_active: true, businesses: { name: "Business", currency: "ZAR" } },
@@ -17,6 +18,7 @@ const mock = vi.hoisted(() => ({
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => ({ value: mock.preferred }) }) }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
+    rpc: async () => ({ data: { required: mock.setupRequired }, error: null }),
     auth: { getUser: async () => ({ data: { user: mock.user } }) },
     from(table: string) {
       let rows: Record<string, unknown>[] = table === "memberships" ? [...mock.memberships] : table === "stores" ? [...mock.stores] : table === "store_module_access" ? [...mock.grants] : [{ id: "employee", full_name: "Staff" }];
@@ -41,10 +43,15 @@ describe("session location access", () => {
     mock.user = { id: "employee", email: "staff@example.test" };
     mock.preferred = "shop"; mock.error = false;
     mock.ready = true; mock.grants = [];
+    mock.setupRequired = false;
     mock.stores = [{ id: "shop", business_id: "business", name: "Shop", is_active: true, location_type: "store" }];
   });
   it("uses only the signed-in member's role even when other business members are readable", async () => {
     expect((await getSession())?.activeStore?.role).toBe("employee");
+  });
+  it("routes unfinished invited employees to account completion", async () => {
+    mock.setupRequired = true;
+    await expect(getSession()).rejects.toThrow("NEXT_REDIRECT");
   });
   it("ignores a stale or forged preferred location cookie", async () => {
     mock.preferred = "unassigned";

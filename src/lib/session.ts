@@ -42,6 +42,10 @@ const loadSession = cache(async (): Promise<Session | null> => {
   if (!user) return null;
   if (!(await databaseReady())) throw new Error("SERVICE_TEMPORARILY_UNAVAILABLE");
 
+  const { data: setup, error: setupError } = await supabase.rpc("my_employee_setup", {});
+  if (setupError) throw new Error("SERVICE_TEMPORARILY_UNAVAILABLE");
+  if ((setup as { required?: boolean } | null)?.required) redirect("/accept-invitation");
+
   const [{ data: memberships }, { data: stores }, { data: profile }] = await Promise.all([
     supabase.from("memberships").select("id, business_id, role, businesses(name, currency)").eq("user_id", user.id).eq("is_active", true).throwOnError(),
     supabase.from("stores").select("id, name, business_id, location_type").eq("is_active", true).order("location_type").order("name").throwOnError(),
@@ -81,7 +85,8 @@ const loadSession = cache(async (): Promise<Session | null> => {
   const cookieStore = await cookies();
   const preferred = cookieStore.get(ACTIVE_STORE_COOKIE)?.value;
   const activeStore =
-    sessionStores.find((s) => s.id === preferred) ?? sessionStores[0] ?? null;
+    sessionStores.find((s) => s.id === preferred && Object.values(s.modules).some(Boolean)) ??
+    sessionStores.find((s) => Object.values(s.modules).some(Boolean)) ?? sessionStores[0] ?? null;
 
   return {
     userId: user.id,
