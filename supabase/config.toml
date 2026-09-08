@@ -1,3 +1,7 @@
 [functions.scheduled-notifications]
 # The worker validates a dedicated random secret; never expose it to a browser.
 verify_jwt = false
+
+[functions.employee-invitations]
+# The handler verifies the bearer session through Auth before any privileged work.
+verify_jwt = false
