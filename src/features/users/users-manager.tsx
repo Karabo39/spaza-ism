@@ -1,8 +1,9 @@
 "use client";
 import * as React from "react";
+import { Invitations } from "./invitations";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { UserPlus, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +12,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { LoadingRows, EmptyState } from "@/components/ui/misc";
@@ -40,7 +39,6 @@ type Member = {
 export function UsersManager() {
   const { store, user } = useStore();
   const qc = useQueryClient();
-  const [addOpen, setAddOpen] = React.useState(false);
   const [assignMember, setAssignMember] = React.useState<Member | null>(null);
 
   const { data, isLoading, error } = useQuery({
@@ -103,11 +101,7 @@ export function UsersManager() {
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <UserPlus className="size-4" /> Add user
-        </Button>
-      </div>
+      <Invitations />
       <div className="rounded-lg border border-border bg-surface">
         {error ? (
           <p role="alert" className="p-4 text-sm text-danger">
@@ -187,16 +181,6 @@ export function UsersManager() {
           </Table>
         )}
       </div>
-      {addOpen && (
-        <AddMemberDialog
-          key={store.businessId}
-          open={addOpen}
-          onOpenChange={setAddOpen}
-          onAdded={() =>
-            qc.invalidateQueries({ queryKey: ["members", store.businessId] })
-          }
-        />
-      )}
       {assignMember ? (
         <AssignLocationsDialog
           key={assignMember.id}
@@ -318,104 +302,6 @@ function AssignLocationsDialog({
             </Button>
             <Button type="submit" loading={busy} disabled={!ready || !online}>
               Save access
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AddMemberDialog({
-  open,
-  onOpenChange,
-  onAdded,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  onAdded: () => void;
-}) {
-  const { store } = useStore();
-  const [email, setEmail] = React.useState("");
-  const [role, setRole] = React.useState<MembershipRole>("employee");
-  const [busy, setBusy] = React.useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.rpc("add_member_by_email", {
-      p_business: store.businessId,
-      p_email: email.trim(),
-      p_role: role,
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(friendlyError(error.message));
-      return;
-    }
-    toast.success(
-      role === "owner"
-        ? "Owner added with access to all locations"
-        : "User added. Select Assign locations to give them access.",
-    );
-    onOpenChange(false);
-    onAdded();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add team member</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted">
-          The person must already have an account. Ask them to sign up first,
-          then add them here by email.
-        </p>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <Label htmlFor="m-email">Email</Label>
-            <Input
-              id="m-email"
-              type="email"
-              required
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="staff@shop.co.za"
-            />
-          </div>
-          <div>
-            <Label>Role</Label>
-            <Select
-              value={role}
-              onValueChange={(v) => setRole(v as MembershipRole)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="employee">
-                  Employee — daily operations
-                </SelectItem>
-                <SelectItem value="manager">
-                  Manager — adjustments, stock take, reports
-                </SelectItem>
-                <SelectItem value="owner">Owner — full access</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" loading={busy}>
-              Add user
             </Button>
           </DialogFooter>
         </form>
