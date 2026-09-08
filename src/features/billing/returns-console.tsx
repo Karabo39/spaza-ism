@@ -39,6 +39,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     initialInvoice ? "invoice" : "sale",
   );
   const [source, setSource] = useState(initialInvoice ?? "");
+  const [sourceSearch, setSourceSearch] = useState("");
   const [lines, setLines] = useState<ReturnLine[]>([]);
   const [item, setItem] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -99,18 +100,19 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
       if (sourceType === "invoice") {
         const { data, error } = await db
           .from("sales_invoice_items")
-          .select("id,product_name,quantity")
+          .select("id,product_name,quantity,net_total")
           .eq("invoice_id", source);
         if (error) throw error;
         return (data ?? []).map((l) => ({
           id: l.id,
           name: l.product_name,
           quantity: Number(l.quantity),
+          charged: Number(l.net_total),
         }));
       }
       const { data, error } = await db
         .from("goods_out_items")
-        .select("id,product_id,quantity")
+        .select("id,product_id,quantity,line_total")
         .eq("goods_out_id", source);
       if (error) throw error;
       const products = await db
@@ -127,6 +129,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           products.data?.find((p) => p.id === l.product_id)?.name ??
           l.product_id,
         quantity: Number(l.quantity),
+        charged: Number(l.line_total),
       }));
     },
   });
@@ -239,6 +242,13 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <Label htmlFor="return-source">
               Select original sale / invoice
             </Label>
+            <Input
+              aria-label="Find original sale or invoice"
+              className="mb-2"
+              placeholder="Search product, customer, date or reference"
+              value={sourceSearch}
+              onChange={(e) => setSourceSearch(e.target.value)}
+            />
             <select
               id="return-source"
               className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
@@ -254,11 +264,17 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                 !sources.data?.some((s) => s.id === initialInvoice) && (
                   <option value={initialInvoice}>{initialInvoice}</option>
                 )}
-              {sources.data?.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
+              {sources.data
+                ?.filter(
+                  (s) =>
+                    s.id === source ||
+                    s.label.toLowerCase().includes(sourceSearch.toLowerCase()),
+                )
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -294,10 +310,24 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
               <option value="">Select item</option>
               {sourceItems.data?.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.name} · {l.quantity} sold
+                  {l.name} · {l.quantity} sold ·{" "}
+                  {money(l.charged / l.quantity, currency)} per unit charged
                 </option>
               ))}
             </select>
+            {item &&
+              sourceItems.data
+                ?.filter((l) => l.id === item)
+                .map((l) => (
+                  <p key={l.id} className="mt-2 text-xs text-muted">
+                    Estimated return value:{" "}
+                    {money((l.charged * quantity) / l.quantity, currency)} for{" "}
+                    {quantity} unit(s). Uses the original charged price,
+                    including discounts and tax. Expiry is a reason, not a fee;
+                    earlier returns and payments determine the final refundable
+                    amount.
+                  </p>
+                ))}
           </div>
           <div>
             <Label htmlFor="return-quantity">Quantity returned</Label>

@@ -15,15 +15,28 @@ export function useReturnSources(
       if (sourceType === "invoice") {
         const { data, error } = await db
           .from("sales_invoices")
-          .select("id,reference,customer_name")
+          .select("id,reference,customer_name,total,created_at")
           .eq("store_id", store.id)
           .not("goods_issued_at", "is", null)
           .order("created_at", { ascending: false })
           .limit(100);
         if (error) throw error;
+        const ids = (data ?? []).map((i) => i.id);
+        const { data: items, error: itemError } = ids.length
+          ? await db
+              .from("sales_invoice_items")
+              .select("invoice_id,product_name,quantity")
+              .in("invoice_id", ids)
+          : { data: [], error: null };
+        if (itemError) throw itemError;
         return (data ?? []).map((i) => ({
           id: i.id,
-          label: `${i.reference} · ${i.customer_name}`,
+          label: `${dateTime(i.created_at)} · ${i.customer_name} · ${money(i.total, currency)} · ${(
+            items ?? []
+          )
+            .filter((l) => l.invoice_id === i.id)
+            .map((l) => `${l.quantity} × ${l.product_name}`)
+            .join(", ")} · ${i.reference.slice(-6)}`,
         }));
       }
       const { data, error } = await db
