@@ -44,7 +44,7 @@ begin
   blocked:=false;
   begin perform public.process_stock_transfer(t,'submit'); exception when others then if sqlerrm<>'INSUFFICIENT_STOCK' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT shortage denied'; end if;
-  mid:=public.add_member_by_email(biz,'transfers-staff@test.invalid','employee');
+  reset role; mid:=public.add_member_by_email(biz,'transfers-staff@test.invalid','employee'); set local role authenticated;
   select count(*) into n from public.transfer_history(biz,p_status=>'RECEIVED',p_product=>'Milk');
   if n<>1 then raise exception 'ASSERT transfer status/product filter'; end if;
   perform public.set_member_locations(mid,array[dest]);

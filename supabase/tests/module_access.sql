@@ -5,7 +5,7 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true); set local role authenticated;
  r:=public.create_business('Module test','Store A'); biz:=(r->>'business_id')::uuid; a:=(r->>'store_id')::uuid;
  b:=public.create_location(biz,'Store B','store');
- m:=public.add_member_by_email(biz,'modules-staff@test.invalid','employee'); perform public.set_member_locations(m,array[a,b]);
+ reset role; m:=public.add_member_by_email(biz,'modules-staff@test.invalid','employee'); set local role authenticated; perform public.set_member_locations(m,array[a,b]);
  p:=public.create_product(a,'Test product','PERM-1');
  select jsonb_object_agg(key,false) into denied from public.module_catalog;
  v:=public.set_store_module_access(m,a,denied||'{"check_price":true}',0);

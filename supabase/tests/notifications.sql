@@ -7,7 +7,7 @@ begin
   product:=public.create_product(loc,'Out product','NOTIFY-OUT');
   tracked:=public.create_product(loc,'Expiry product','NOTIFY-EXP',null,null,1,2,0,0,'each',true);
   perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',tracked,'quantity',3,'expiry_date',current_date+5)));
-  member:=public.add_member_by_email(biz,'notification-manager@test.invalid','manager');perform public.set_member_locations(member,array[loc]);
+  reset role; member:=public.add_member_by_email(biz,'notification-manager@test.invalid','manager'); set local role authenticated;perform public.set_member_locations(member,array[loc]);
   perform public.set_notification_preference(loc,'OUT_OF_STOCK',true,0);perform public.set_notification_preference(loc,'UPCOMING_EXPIRY',true,0);perform public.set_notification_preference(loc,'WEEKLY_PROFIT',true,0);
   blocked:=false;begin perform public.claim_notification_deliveries();exception when insufficient_privilege then blocked:=true;end;
   if not blocked then raise exception 'ASSERT browser cannot invoke delivery worker';end if;

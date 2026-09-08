@@ -17,8 +17,8 @@ begin
   other_shop := public.create_location(biz, 'Second shop', 'store');
   res := public.create_business('Other business', 'Foreign shop');
   foreign_biz := (res->>'business_id')::uuid; foreign_shop := (res->>'store_id')::uuid;
-  manager_member := public.add_member_by_email(biz,'location-manager@test.invalid','manager');
-  employee_member := public.add_member_by_email(biz,'location-employee@test.invalid','employee');
+  reset role; manager_member := public.add_member_by_email(biz,'location-manager@test.invalid','manager'); set local role authenticated;
+  reset role; employee_member := public.add_member_by_email(biz,'location-employee@test.invalid','employee'); set local role authenticated;
   perform public.set_member_locations(manager_member, array[shop,warehouse]);
   perform public.set_member_locations(employee_member, array[shop]);
   warehouse_product := public.create_product(warehouse, 'Milk warehouse', 'WH-MILK');

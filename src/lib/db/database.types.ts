@@ -10,6 +10,7 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      employee_invitations: { Row: EmployeeInvitation; Insert: never; Update: never; Relationships: [] }
       sales_quotes: { Row: SalesQuote; Insert: never; Update: never; Relationships: [] }
       sales_purchase_orders: { Row: PurchaseOrder; Insert: never; Update: never; Relationships: [] }
 
@@ -141,7 +142,7 @@ export type Database = {
         Relationships: []
       }
       profiles: {
-        Row: { created_at: string; full_name: string | null; id: string; phone: string | null; updated_at: string }
+        Row: { first_name: string | null; surname: string | null; created_at: string; full_name: string | null; id: string; phone: string | null; updated_at: string }
         Insert: { created_at?: string; full_name?: string | null; id: string; phone?: string | null; updated_at?: string }
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>
         Relationships: []
@@ -236,6 +237,13 @@ export type Database = {
       }
     }
     Functions: {
+      registration_open: { Args: Record<string, never>; Returns: boolean }
+      my_employee_setup: { Args: Record<string, never>; Returns: Json }
+      save_employee_invitation: { Args: { p_business: string; p_email: string; p_role: MembershipRole; p_assignments: Json; p_request: string; p_first_name?: string; p_surname?: string; p_phone?: string; p_invitation?: string; p_expected?: number }; Returns: string }
+      cancel_employee_invitation: { Args: { p_invitation: string; p_expected: number }; Returns: undefined }
+      employee_invitation_details: { Args: { p_invitation: string; p_secret: string }; Returns: Json }
+      accept_employee_invitation: { Args: { p_invitation: string; p_secret: string; p_first_name: string; p_surname: string; p_phone: string }; Returns: undefined }
+
       save_quote: { Args: { p_store: string; p_customer: string; p_items: Json; p_valid: string; p_discount: number; p_note: string; p_request: string; p_quote?: string; p_expected?: number }; Returns: string }
       set_quote_status: { Args: { p_quote: string; p_status: string; p_expected: number }; Returns: undefined }
       convert_quote: { Args: { p_quote: string; p_items: Json; p_expected: number }; Returns: string }
@@ -514,3 +522,5 @@ export type InvoiceBalance = SalesInvoice & { debits: number; credits: number; p
 export type QuoteLine = {product_id:string;name:string;unit:string;quantity:number;unit_price:number;line_total:number};
 export type SalesQuote = {id:string;business_id:string;store_id:string;customer_id:string;customer_name:string;reference:string;status:string;valid_until:string;items:QuoteLine[];subtotal:number;discount:number;tax_percent:number;tax_amount:number;total:number;note:string|null;version:number;created_by:string;created_at:string;order_id:string|null};
 export type PurchaseOrder = {id:string;store_id:string;quote_id:string|null;order_id:string|null;received:boolean;approved:boolean;reference:string|null;filename:string|null;mime:string|null;version:number;updated_by:string;updated_at:string;approved_by:string|null;approved_at:string|null};
+
+export type EmployeeInvitation = { id: string; business_id: string; email: string; role: MembershipRole; first_name: string; surname: string; phone: string; assignments: Record<string,Record<string,boolean>>; state: "PENDING" | "ACCEPTED" | "CANCELLED"; delivery: "QUEUED" | "SENT" | "FAILED"; expires_at: string; version: number; created_by: string; created_at: string; user_id: string | null; accepted_at: string | null; sent_at: string | null; request_id: string; request_payload: Json };

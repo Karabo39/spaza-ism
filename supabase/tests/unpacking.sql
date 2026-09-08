@@ -8,7 +8,7 @@ begin
   unit:=public.create_product(loc,'Bottle','UNIT',null,null,10,15,0,0,'each',true);
   cid:=public.set_bulk_conversion(pack,unit,6);
   perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',pack,'quantity',2,'expiry_date','2028-01-01')));
-  mid:=public.add_member_by_email(biz,'unpack-staff@test.invalid','employee'); perform public.set_member_locations(mid,array[loc]);
+  reset role; mid:=public.add_member_by_email(biz,'unpack-staff@test.invalid','employee'); set local role authenticated; perform public.set_member_locations(mid,array[loc]);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
   uid:=public.unpack_stock(cid,1,'Shelf restock',req);
   if uid<>public.unpack_stock(cid,1,'Shelf restock',req) then raise exception 'ASSERT unpack idempotency'; end if;

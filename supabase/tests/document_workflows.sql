@@ -4,7 +4,7 @@ begin
  insert into auth.users(id,email,raw_user_meta_data) values(u,'document-owner@test.invalid','{}'),(employee,'document-staff@test.invalid','{}');
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
  res:=public.create_business('Document workflows','Shop');biz:=(res->>'business_id')::uuid;loc:=(res->>'store_id')::uuid;
- member:=public.add_member_by_email(biz,'document-staff@test.invalid','employee');perform public.set_member_locations(member,array[loc]);
+ reset role; member:=public.add_member_by_email(biz,'document-staff@test.invalid','employee'); set local role authenticated;perform public.set_member_locations(member,array[loc]);
  insert into public.customers(business_id,store_id,name) values(biz,loc,'Quote customer') returning id into c;
  p:=public.create_product(loc,'In stock water','DOC-WATER',null,null,5,10,0,0,'each',false);
  p2:=public.create_product(loc,'Unavailable water','DOC-NONE',null,null,5,17,0,0,'each',false);

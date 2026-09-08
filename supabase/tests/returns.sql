@@ -5,7 +5,7 @@ begin
   insert into auth.users(id,email,raw_user_meta_data) values(u,'returns-owner@test.invalid','{}'),(cashier,'returns-cashier@test.invalid','{}');
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true); set local role authenticated;
   res:=public.create_business('Returns test','Shop'); biz:=(res->>'business_id')::uuid; loc:=(res->>'store_id')::uuid;
-  member:=public.add_member_by_email(biz,'returns-cashier@test.invalid','employee'); perform public.set_member_locations(member,array[loc]);
+  reset role; member:=public.add_member_by_email(biz,'returns-cashier@test.invalid','employee'); set local role authenticated; perform public.set_member_locations(member,array[loc]);
   insert into public.customers(business_id,store_id,name) values(biz,loc,'Return customer') returning id into c;
   p:=public.create_product(loc,'Milk','RET-MILK',null,null,5,10,0,0,'each',true);
   perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',10,'expiry_date','2028-01-01')));

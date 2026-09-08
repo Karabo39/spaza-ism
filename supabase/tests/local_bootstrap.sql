@@ -10,7 +10,8 @@ create table auth.users (
   id uuid primary key, instance_id uuid, aud text, role text, email text,
   created_at timestamptz, updated_at timestamptz,
   raw_app_meta_data jsonb, raw_user_meta_data jsonb,
-  is_sso_user boolean, is_anonymous boolean
+  is_sso_user boolean, is_anonymous boolean,
+  email_change text default '', email_confirmed_at timestamptz, encrypted_password text default ''
 );
 create function auth.uid() returns uuid language sql stable as $$
   select (nullif(current_setting('request.jwt.claims', true), '')::jsonb->>'sub')::uuid;
