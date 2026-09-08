@@ -24,7 +24,11 @@ try {
   const setup = await asUser(admin, async (c) => {
     const created = await scalar(c, "select public.create_business('Concurrency fixture','Test till')");
     const loc = created.store_id, biz = created.business_id;
+    // Seed an existing member as the local fixture administrator. Browser
+    // admission now requires invitation acceptance, tested in its own suite.
+    await c.query("reset role");
     const member = await scalar(c, "select public.add_member_by_email($1,$2,'employee')", [biz, "staff-" + employee + "@test.invalid"]);
+    await c.query("set local role authenticated");
     await c.query("select public.set_member_locations($1,array[$2]::uuid[])", [member, loc]);
     const product = await scalar(c, "select public.create_product($1,'Test stock',$2,null,null,5,10)", [loc, randomUUID()]);
     await c.query("select public.receive_stock($1,null,null,null,$2)", [loc, JSON.stringify([{ product_id: product, quantity: 50 }])]);
