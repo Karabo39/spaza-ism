@@ -209,6 +209,7 @@ export type Database = {
       }
     }
     Views: {
+      v_product_catalog: { Row: ProductStock & {barcodes: string; search_text: string; nearest_expiry: string | null; expired_quantity: number; undated_quantity: number; sellable_quantity: number}; Relationships: [] }
       v_return_report: { Row: { id: string; business_id: string; store_id: string; reference: string; invoice_id: string | null; sale_id: string | null; customer_id: string | null; status: string; reason: string; inspection: string; created_at: string; amount: number; items: string; quantity: number; inventory_actions: string; refunded: number; allocated_credit: number }; Relationships: [] }
       v_stock_take_variance: { Row: { id: string; stock_take_id: string; business_id: string; store_id: string; created_at: string; status: string; product_name: string; product_id: string; system_qty: number; counted_qty: number | null; variance: number | null; counted: boolean; counted_at: string | null; counted_expiry: string | null; counted_by: string | null }; Relationships: [] }
       v_payment_activity: { Row: { id: string; store_id: string; business_id: string; created_at: string; method: string; amount: number; reference: string; payment_reference: string | null; source: string; document_id: string }; Relationships: [] }
@@ -237,6 +238,8 @@ export type Database = {
       }
     }
     Functions: {
+      assign_stock_expiry: { Args: {p_product: string; p_expiry: string; p_quantity: number; p_expected: number}; Returns: undefined }
+      save_product_details: { Args: {p_product: string; p_values: Json; p_expiry?: string; p_expected?: number}; Returns: undefined }
       registration_open: { Args: Record<string, never>; Returns: boolean }
       my_employee_setup: { Args: Record<string, never>; Returns: Json }
       save_employee_invitation: { Args: { p_business: string; p_email: string; p_role: MembershipRole; p_assignments: Json; p_request: string; p_first_name?: string; p_surname?: string; p_phone?: string; p_invitation?: string; p_expected?: number }; Returns: string }

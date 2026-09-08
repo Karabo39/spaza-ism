@@ -92,6 +92,16 @@ try {
   assert.equal((await asUser(a, () => scalar(a,"select public.return_refund_summary($1)",[returned]))).available,0);
   assert.equal(await scalar(admin,"select sum(amount)::text from public.customer_refunds where return_id=$1",[returned]),"10.00");
   console.log("Passed competing partial refunds: exact settlement, no excess refund");
+  const tracked = await asUser(admin, async (c) => {
+    const id = await scalar(c, "select public.create_product($1,'Last fresh batch',$2,null,null,3,10,0,0,'each',true)", [loc, randomUUID()]);
+    await c.query("select public.receive_stock($1,null,null,null,jsonb_build_array(jsonb_build_object('product_id',$2::uuid,'quantity',4,'expiry_date',$3::date-1),jsonb_build_object('product_id',$2::uuid,'quantity',1,'expiry_date',$3::date+1)))", [loc, id, day]);
+    return id;
+  });
+  const lastBatch = await Promise.allSettled([a, b].map((c) => asUser(c, () => scalar(c, "select public.complete_sale($1,'CASH',null,$2,false,null,$3)", [loc, JSON.stringify([{ product_id: tracked, quantity: 1 }]), randomUUID()]))));
+  assert.equal(lastBatch.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(lastBatch.find((r) => r.status === "rejected").reason.message, "INSUFFICIENT_SELLABLE_STOCK");
+  assert.equal(Number(await scalar(admin, "select sum(quantity) from public.stock_batches where product_id=$1 and expiry_date<$2::date", [tracked, day])), 4);
+  console.log("Passed competing tills: last fresh unit sold once, expired stock untouched");
 } finally {
   // Fixtures remain only in this disposable database for the restore drill.
   await Promise.allSettled(clients.map(async (c) => { await c.query("rollback"); await c.end(); }));

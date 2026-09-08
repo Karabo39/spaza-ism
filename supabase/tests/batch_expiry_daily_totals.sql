@@ -1,0 +1,45 @@
+do $$
+declare u uuid:=gen_random_uuid(); b uuid; s uuid; p uuid; fresh uuid; bad uuid; r jsonb; result jsonb; sale uuid; before_qty numeric; day date:=(now() at time zone 'Africa/Johannesburg')::date; blocked boolean; c uuid; oid uuid; iid uuid;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'batch-release@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true); set local role authenticated;
+ r:=public.create_business('Batch test','Store');b:=(r->>'business_id')::uuid;s:=(r->>'store_id')::uuid;
+ p:=public.create_product(s,'Same product','BATCH-ONE',null,null,3,10,0,0,'each',true);
+ perform public.receive_stock(s,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',4,'expiry_date',day-1),jsonb_build_object('product_id',p,'quantity',3,'expiry_date',day),jsonb_build_object('product_id',p,'quantity',2,'expiry_date',day+10)));
+ if (select sellable_quantity from public.v_product_catalog where id=p)<>5 then raise exception 'ASSERT sellable excludes expired';end if;
+ if (select barcodes from public.v_product_catalog where id=p)<>'BATCH-ONE' then raise exception 'ASSERT barcode column';end if;
+ blocked:=false;begin perform public.complete_sale(s,'CASH',null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',6)));exception when others then if sqlerrm<>'INSUFFICIENT_SELLABLE_STOCK' then raise;end if;blocked:=true;end;
+ if not blocked or (select quantity from public.stock where product_id=p)<>9 then raise exception 'ASSERT blocked sale rollback';end if;
+ sale:=public.complete_sale(s,'CASH',null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',4)),false,null,gen_random_uuid());
+ if (select sum(quantity) from public.stock_batches where product_id=p and expiry_date=day)<>0 or (select sum(quantity) from public.stock_batches where product_id=p and expiry_date=day-1)<>4 then raise exception 'ASSERT earliest unexpired first';end if;
+ fresh:=public.create_product(s,'Same product','BATCH-TWO',null,null,3,10);
+ perform public.receive_stock(s,null,null,null,jsonb_build_array(jsonb_build_object('product_id',fresh,'quantity',10)));
+ perform public.assign_stock_expiry(fresh,day+5,4,10);
+ blocked:=false;begin perform public.assign_stock_expiry(fresh,day+9,6,10);exception when others then if sqlerrm<>'STOCK_CHANGED_REFRESH' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT stale expiry allocation rejected';end if;
+ perform public.assign_stock_expiry(fresh,day+9,6,6);
+ if (select quantity from public.stock where product_id=fresh)<>10 or (select sum(quantity) from public.stock_batches where product_id=fresh)<>10 then raise exception 'ASSERT expiry assignment preserves quantity';end if;
+ blocked:=false;begin update public.products set track_expiry=false where id=fresh;exception when others then if sqlerrm<>'EXPIRY_TRACKING_REQUIRED' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT cannot disable tracking on existing stock';end if;
+ blocked:=false;begin update public.stock_batches set expiry_date=day+30 where product_id=p;exception when insufficient_privilege then blocked:=true;end;
+ if not blocked then raise exception 'ASSERT no direct batch rewrite';end if;
+ insert into public.customers(business_id,store_id,name) values(b,s,'Test buyer') returning id into c;
+ perform public.set_credit_limit(c,1000);
+ perform public.complete_sale(s,'CARD_EFT',null,jsonb_build_array(jsonb_build_object('product_id',fresh,'quantity',1)),false,null,gen_random_uuid(),'CARD');
+ perform public.complete_sale(s,'CREDIT',c,jsonb_build_array(jsonb_build_object('product_id',fresh,'quantity',2)),false,null,gen_random_uuid());
+ perform public.record_credit_payment_tender(c,5,'CASH',gen_random_uuid());
+ perform public.open_cash_up(s,day,500);
+ r:=public.cash_up_summary(s,day);
+ if (r->'sources'->'activity'->>'net_collected')::numeric<>55 or (r->>'expected')::numeric<>545 or (r->'sources'->'activity'->>'credit_issued')::numeric<>20 then raise exception 'ASSERT collected separates float/card/credit: %',r;end if;
+ -- An invoice cannot bypass expiry controls at goods issue, even if paid.
+ oid:=public.create_sales_order(s,c,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2)),gen_random_uuid());
+ perform public.process_sales_order(oid,'confirm');
+ iid:=public.create_sales_invoice(oid,day,'CASH',0,null);
+ perform public.issue_sales_invoice(iid);
+ perform public.post_invoice_entry(iid,'PAYMENT',20,gen_random_uuid(),'CASH');
+ blocked:=false;begin perform public.issue_invoice_goods(iid);exception when others then if sqlerrm<>'INSUFFICIENT_SELLABLE_STOCK' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT invoice expiry guard';end if;
+ r:=public.cash_up_summary(s,day);
+ if (r->'sources'->'activity'->>'invoice_payments')::numeric<>20 or (r->'sources'->'activity'->>'net_collected')::numeric<>75 then raise exception 'ASSERT invoice payments counted once';end if;
+ raise exception 'TESTS_PASSED';
+end $$;

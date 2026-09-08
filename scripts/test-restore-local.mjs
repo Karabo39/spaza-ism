@@ -11,7 +11,7 @@ await client.connect();
 const target = new URL(source);
 target.pathname = "/restore_" + randomUUID().replaceAll("-", "");
 try {
-  for (const suite of ["document_workflows", "employee_invitations"]) {
+  for (const suite of ["document_workflows", "employee_invitations", "batch_expiry_daily_totals"]) {
     const fixture = await readFile(`supabase/tests/${suite}.sql`, "utf8");
     if (!fixture.includes("raise exception 'TESTS_PASSED';"))
       throw new Error("Document fixture sentinel missing");
