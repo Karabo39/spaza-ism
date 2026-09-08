@@ -13,7 +13,7 @@ export const MODULES = [
     label: "Transfers & unpacking",
     href: "/operations",
     role: "employee",
-    group: "Daily work",
+    group: "Catalogue",
   },
   {
     key: "goods_in",
@@ -115,7 +115,7 @@ export const MODULES = [
   },
   {
     key: "imports",
-    label: "Excel imports",
+    label: "Data Imports and Exports",
     href: "/imports",
     role: "manager",
     group: "Catalogue",

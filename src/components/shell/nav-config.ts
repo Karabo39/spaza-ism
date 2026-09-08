@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, PackagePlus, PackageMinus, Search, Tag, Users, SlidersHorizontal,
-  ClipboardList, TriangleAlert, Boxes, Truck, BarChart3, UserCog, Settings, ScrollText,
+  ClipboardList, Boxes, Truck, BarChart3, UserCog, Settings, ScrollText,
   CalendarClock, ArrowRightLeft, FileSpreadsheet, Store, ShieldCheck, Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -21,7 +21,6 @@ export const NAV: NavGroup[] = [
     label: "Operations",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/operations", label: "Operations", icon: ArrowRightLeft },
       { href: "/goods-in", label: "Goods In", icon: PackagePlus },
       { href: "/goods-out", label: "Goods Out", icon: PackageMinus },
       { href: "/orders", label: "Orders", icon: ClipboardList },
@@ -38,7 +37,6 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/adjust", label: "Adjust Stock", icon: SlidersHorizontal, minRole: "manager" },
       { href: "/stock-take", label: "Stock Take", icon: ClipboardList },
-      { href: "/low-stock", label: "Low Stock", icon: TriangleAlert },
       { href: "/expiry", label: "Expiry", icon: CalendarClock },
     ],
   },
@@ -46,8 +44,9 @@ export const NAV: NavGroup[] = [
     label: "Catalog",
     items: [
       { href: "/products", label: "Products", icon: Boxes },
+      { href: "/operations", label: "Operations", icon: ArrowRightLeft },
       { href: "/suppliers", label: "Suppliers", icon: Truck },
-      { href: "/imports", label: "Excel imports", icon: FileSpreadsheet, minRole: "manager" },
+      { href: "/imports", label: "Data Imports and Exports", icon: FileSpreadsheet, minRole: "manager" },
     ],
   },
   {

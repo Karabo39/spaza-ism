@@ -16,9 +16,9 @@ export default async function ImportsPage({
   return (
     <>
       <PageHeader
-        title="Excel imports"
+        title="Data Imports and Exports"
         description="Download a template, review the changes and import products, suppliers or credit customers."
-        crumbs={[{ label: "Catalog" }, { label: "Imports" }]}
+        crumbs={[{ label: "Catalog" }, { label: "Data Imports and Exports" }]}
       />
       <ImportConsole
         key={`${session.activeStore.id}:${initialKind}`}
