@@ -102,6 +102,20 @@ try {
   assert.equal(lastBatch.find((r) => r.status === "rejected").reason.message, "INSUFFICIENT_SELLABLE_STOCK");
   assert.equal(Number(await scalar(admin, "select sum(quantity) from public.stock_batches where product_id=$1 and expiry_date<$2::date", [tracked, day])), 4);
   console.log("Passed competing tills: last fresh unit sold once, expired stock untouched");
+  const handoverFixture = await asUser(admin, async (c) => {
+    const created = await scalar(c, "select public.create_business('Handover fixture','Shared till')");
+    const shift = await scalar(c, "select public.open_cash_up($1,$2,100)", [created.store_id, day]);
+    const sum = await scalar(c, "select public.cash_up_summary($1,$2)", [created.store_id, day]);
+    const count = await scalar(c, "select public.submit_cash_up($1,100,'{}',$2,'',$3)", [shift, sum.count_token, randomUUID()]);
+    await c.query("select public.review_cash_up($1,$2,'APPROVE','')", [shift, count]);
+    return { shift, store: created.store_id };
+  });
+  const handovers = await Promise.allSettled([a, b].map(c => asUser(c, () => scalar(c, "select public.start_next_cash_shift($1,100,'',$2)", [handoverFixture.shift, randomUUID()]))));
+  assert.equal(handovers.filter(r => r.status === "fulfilled").length, 1);
+  assert.equal(handovers.find(r => r.status === "rejected").reason.message, "SHIFT_ALREADY_STARTED");
+  assert.equal(Number(await scalar(admin, "select count(*) from public.cash_ups where store_id=$1", [handoverFixture.store])), 2);
+  console.log("Passed competing handovers: exactly one next shift");
+
 } finally {
   // Fixtures remain only in this disposable database for the restore drill.
   await Promise.allSettled(clients.map(async (c) => { await c.query("rollback"); await c.end(); }));
