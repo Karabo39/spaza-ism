@@ -4,11 +4,13 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { InvoiceWorkspace } from "@/features/billing/invoice-workspace";
 import type { InvoiceBalance } from "@/lib/db/database.types";
 const mocks = vi.hoisted(() => ({
+  registered: true,
   manager: false,
   rpc: vi.fn().mockResolvedValue({ error: null }),
   run: vi.fn(),
   online: true,
 }));
+vi.mock("@tanstack/react-query", () => ({useQuery: () => ({data: mocks.registered ? {customer_id:"customer",name:"Registered customer"} : null})}));
 vi.mock("@/lib/store-context", () => ({
   useStore: () => ({ can: () => mocks.manager }),
 }));
@@ -57,7 +59,9 @@ function show(overrides: Partial<InvoiceBalance> = {}) {
 }
 beforeEach(() => {
   cleanup();
+  mocks.registered = true;
   mocks.manager = false;
+  mocks.rpc.mockClear();
   mocks.online = true;
   mocks.run.mockClear();
 });
@@ -71,7 +75,7 @@ it("removes payment entry once paid, before or after collection", () => {
   ).toBeEnabled();
   view.unmount();
   show();
-  expect(screen.getByText("Fully paid")).toBeInTheDocument();
+  expect(screen.getByRole("heading", {name:"Paid"})).toBeInTheDocument();
   expect(screen.queryByLabelText("Amount")).not.toBeInTheDocument();
 });
 it("preserves credit payments after goods release and caps payment at the balance", () => {
@@ -112,3 +116,18 @@ it("blocks offline payments and amounts with fractions of a cent", () => {
 });
 
 vi.mock("@/features/billing/purchase-order", () => ({ PurchaseOrder: () => null }));
+
+it("uses registered customer credit without asking for or posting a payment amount", async () => {
+ show({customer_id:"customer",status:"UNPAID",outstanding:10,paid:0,goods_issued_at:null});
+ fireEvent.change(screen.getByLabelText("Payment method"), {target:{value:"CREDIT"}});
+ expect(screen.queryByLabelText("Amount")).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole("button",{name:"Continue on customer credit"}));
+ await mocks.run.mock.calls[0][0]();
+ expect(mocks.rpc).toHaveBeenCalledWith("use_invoice_customer_credit",{p_invoice:"invoice",p_customer:"customer"});
+ expect(mocks.rpc).not.toHaveBeenCalledWith("post_invoice_entry",expect.anything());
+});
+it("does not offer customer credit for a one-off customer", () => {
+ mocks.registered=false;
+ show({status:"UNPAID",outstanding:10,paid:0,goods_issued_at:null});
+ expect(screen.queryByRole("option",{name:"Credit Customer"})).not.toBeInTheDocument();
+});

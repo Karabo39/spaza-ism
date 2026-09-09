@@ -1,3 +1,5 @@
+import { invoiceStatusLabel } from "@/features/billing/status-label";
+import { Button } from "@/components/ui/button";
 import { businessDayStart, businessDayAfter } from "@/lib/business-date";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -41,7 +43,9 @@ export default async function InvoicesPage({
     query = query.eq("terms", sp.method);
   if (sp.paidMethod && ["CASH", "CARD_EFT", "CREDIT"].includes(sp.paidMethod))
     query = query.contains("payment_methods", [sp.paidMethod]);
-  if (sp.status) query = query.eq("status", sp.status);
+  if (sp.status === "PAID_AWAITING_DELIVERY")
+    query = query.eq("status", "PAID").is("goods_issued_at", null);
+  else if (sp.status) query = query.eq("status", sp.status);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
   if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
   const { data, error } = await query
@@ -59,14 +63,17 @@ export default async function InvoicesPage({
   return (
     <>
       <PageHeader
-        title="Invoices"
+        title="Invoicing"
         description="Track issued invoices, payments, credit notes and balances by customer."
-        crumbs={[{ label: "Sales" }, { label: "Invoices" }]}
+        crumbs={[{ label: "Sales" }, { label: "Invoicing" }]}
         actions={
           <div className="flex flex-wrap gap-4">
-            <Link className="text-accent" href="/invoices/quotes">
-              Create quotation / Quotes
-            </Link>
+            <Button asChild>
+              <Link href="/invoices/quotes?create=1">Create Quotes</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/invoices/quotes">View all quotes</Link>
+            </Button>
             <Link className="text-accent" href="/orders">
               Create from order
             </Link>
@@ -132,6 +139,7 @@ export default async function InvoicesPage({
           defaultValue={sp.status ?? ""}
         >
           <option value="">All statuses</option>
+          <option value="PAID_AWAITING_DELIVERY">Paid – To be Delivered</option>
           {[
             "DRAFT",
             "UNPAID",
@@ -188,7 +196,7 @@ export default async function InvoicesPage({
           rows={rows.map((r) => ({
             reference: r.reference,
             customer: r.customer_name,
-            status: r.status,
+            status: invoiceStatusLabel(r),
             terms: r.terms,
             methods: r.payment_methods.join(", "),
             due: r.due_date,
@@ -234,7 +242,7 @@ export default async function InvoicesPage({
                 </Link>
               </TD>
               <TD>{i.customer_name}</TD>
-              <TD>{i.status.replaceAll("_", " ")}</TD>
+              <TD>{invoiceStatusLabel(i)}</TD>
               <TD>{dateOnly(i.due_date)}</TD>
               <TD>{money(i.total, store.currency)}</TD>
               <TD>{money(i.outstanding, store.currency)}</TD>

@@ -1,3 +1,4 @@
+vi.mock("@tanstack/react-query", () => ({useQuery: () => ({data:null})}));
 import {beforeEach,expect,it,vi} from "vitest";
 import {cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react";
 import {InvoiceWorkspace} from "@/features/billing/invoice-workspace";

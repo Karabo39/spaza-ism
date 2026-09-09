@@ -1,6 +1,7 @@
 "use client";
+import { useQuery } from "@tanstack/react-query";
+import { invoiceStatusLabel } from "./status-label";
 import { statusLabel } from "./status-label";
-import { PurchaseOrder } from "./purchase-order";
 import { amountCents } from "@/features/cash-up/cash-utils";
 import { useState } from "react";
 import Link from "next/link";
@@ -41,6 +42,22 @@ export function InvoiceWorkspace({
   const [override, setOverride] = useState(false);
   const [token, setToken] = useState<string>();
   const [showAdjustments, setShowAdjustments] = useState(false);
+  const { data: creditCustomer } = useQuery({
+    queryKey: ["invoice-credit-customer", i.customer_id],
+    queryFn: async () => {
+      const { data, error } = await createClient()
+        .from("v_credit_customers")
+        .select("customer_id,name")
+        .eq("customer_id", i.customer_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const useCredit = kind === "PAYMENT" && method === "CREDIT";
+  const creditAllowed =
+    !!creditCustomer && !i.goods_issued_at && Number(i.outstanding) > 0;
   const settled = i.state === "ISSUED" && Number(i.outstanding) <= 0;
   const cents = amountCents(amount);
   const invalidEntry =
@@ -53,6 +70,19 @@ export function InvoiceWorkspace({
     Number(i.outstanding) > 0 &&
     Number(account.balance) > Number(account.credit_limit);
   function post() {
+    if (useCredit) {
+      if (!online || busy || !creditAllowed || i.state !== "ISSUED") return;
+      void run(
+        () =>
+          createClient().rpc("use_invoice_customer_credit", {
+            p_invoice: i.id,
+            p_customer: creditCustomer.customer_id,
+          }),
+        "Customer credit terms applied",
+        () => setMethod("CASH"),
+      );
+      return;
+    }
     if (!online || busy || invalidEntry || i.state !== "ISSUED") return;
     const payload = {
       p_invoice: i.id,
@@ -115,7 +145,7 @@ export function InvoiceWorkspace({
       </div>
       <p className="text-sm text-muted">
         {i.customer_name} · {i.terms.replace("_", "/")} · Due{" "}
-        {dateOnly(i.due_date)} · {statusLabel(i.status)} · Salesperson:{" "}
+        {dateOnly(i.due_date)} · {invoiceStatusLabel(i)} · Salesperson:{" "}
         {i.salesperson}
       </p>
       <Table>
@@ -177,7 +207,7 @@ export function InvoiceWorkspace({
           <h2 className="font-semibold">
             {i.status === "CREDITED"
               ? "Invoice settled by credit"
-              : "Fully paid"}
+              : invoiceStatusLabel(i)}
           </h2>
           <p>
             No further payment required.{" "}
@@ -226,18 +256,6 @@ export function InvoiceWorkspace({
                   )}
                 </select>
               </div>
-              <div>
-                <Label htmlFor="entry-amount">Amount</Label>
-                <Input
-                  id="entry-amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  max={kind === "PAYMENT" ? Number(i.outstanding) : undefined}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
               {kind === "PAYMENT" && (
                 <div>
                   <Label htmlFor="entry-method">Payment method</Label>
@@ -249,11 +267,53 @@ export function InvoiceWorkspace({
                   >
                     <option value="CASH">Cash</option>
                     <option value="CARD_EFT">Card/EFT</option>
+                    {creditAllowed && (
+                      <option value="CREDIT">Credit Customer</option>
+                    )}
                   </select>
                 </div>
               )}
+              {!useCredit && (
+                <>
+                  <div>
+                    <Label htmlFor="entry-amount">Amount</Label>
+                    <Input
+                      id="entry-amount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      max={
+                        kind === "PAYMENT" ? Number(i.outstanding) : undefined
+                      }
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
             </div>
-            {kind === "PAYMENT" ? (
+            {useCredit ? (
+              <div className="space-y-2">
+                <Label htmlFor="credit-customer">
+                  Existing customer account
+                </Label>
+                <select
+                  id="credit-customer"
+                  className="h-10 w-full rounded border border-border bg-input px-2"
+                  value={creditCustomer?.customer_id ?? ""}
+                  disabled
+                >
+                  <option value={creditCustomer?.customer_id ?? ""}>
+                    {creditCustomer?.name ?? "Account unavailable"}
+                  </option>
+                </select>
+                <p className="text-sm text-muted">
+                  Use this invoice’s customer account without recording a
+                  payment. The balance remains due. Credit limits and approval
+                  checks apply when releasing goods.
+                </p>
+              </div>
+            ) : kind === "PAYMENT" ? (
               <>
                 <Label htmlFor="entry-reference">
                   Card slip / payment reference
@@ -283,6 +343,7 @@ export function InvoiceWorkspace({
               onChange={(e) => setReason(e.target.value)}
             />
             {kind === "PAYMENT" &&
+              !useCredit &&
               cents !== null &&
               cents > Math.round(Number(i.outstanding) * 100) && (
                 <p role="alert" className="text-sm text-danger">
@@ -291,10 +352,16 @@ export function InvoiceWorkspace({
               )}
             <Button
               loading={busy}
-              disabled={!online || busy || invalidEntry}
+              disabled={
+                !online || busy || (useCredit ? !creditAllowed : invalidEntry)
+              }
               onClick={post}
             >
-              {kind === "PAYMENT" ? "Record payment" : "Post note"}
+              {useCredit
+                ? "Continue on customer credit"
+                : kind === "PAYMENT"
+                  ? "Record payment"
+                  : "Post note"}
             </Button>
           </section>
         )}
@@ -433,7 +500,6 @@ export function InvoiceWorkspace({
           ))}
         </TBody>
       </Table>
-      <PurchaseOrder order={i.order_id} />
     </div>
   );
 }
