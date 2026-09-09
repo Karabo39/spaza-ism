@@ -1,4 +1,7 @@
 export type CashSession = {
+  shift_number?: number;
+  created_at?: string;
+  handover_note?: string | null;
   id: string;
   business_date: string;
   opening_float: number;
@@ -7,6 +10,17 @@ export type CashSession = {
   latest_submission: string | null;
 };
 export type CashSummary = {
+  sealed?: boolean;
+  started_by_name?: string;
+  day_activity?: NonNullable<CashSummary["sources"]["activity"]>;
+  shifts?: {
+    id: string;
+    shift_number: number;
+    status: string;
+    created_by_name: string;
+    created_at: string;
+    opening_float: number;
+  }[];
   session: CashSession | null;
   expected: number;
   count_token: string;

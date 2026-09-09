@@ -16,16 +16,16 @@ describe("cash count", () => {
   it("requires a note for a variance and reuses a request on an uncertain retry", () => {
     const submit = vi.fn().mockResolvedValue(undefined); render(<CashCount data={data} disabled={false} busy={false} onSubmit={submit} />);
     fireEvent.change(screen.getByLabelText("Cash counted (ZAR)"), { target: { value: "10" } });
-    expect(screen.getByRole("button", { name: "Complete end of day" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Complete shift" })).toBeDisabled();
     fireEvent.change(screen.getByRole("textbox", { name: /^Count note / }), { target: { value: "30 cents short" } });
-    fireEvent.click(screen.getByRole("button", { name: "Complete end of day" }));
-    fireEvent.click(screen.getByRole("button", { name: "Complete end of day" }));
+    fireEvent.click(screen.getByRole("button", { name: "Complete shift" }));
+    fireEvent.click(screen.getByRole("button", { name: "Complete shift" }));
     expect(submit).toHaveBeenCalledTimes(2); expect(submit.mock.calls[0][3]).toBe(submit.mock.calls[1][3]);
     expect(submit.mock.calls[0].slice(0, 3)).toEqual([10, {}, "30 cents short"]);
   });
   it("prevents offline or unsynced submission", () => {
     const submit = vi.fn(); render(<CashCount data={data} disabled busy={false} onSubmit={submit} />);
-    expect(screen.getByRole("button", { name: "Complete end of day" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Complete end of day" })); expect(submit).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Complete shift" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Complete shift" })); expect(submit).not.toHaveBeenCalled();
   });
 });

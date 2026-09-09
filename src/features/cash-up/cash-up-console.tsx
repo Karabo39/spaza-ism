@@ -25,20 +25,26 @@ export function CashUpConsole() {
   const { store, can, currency } = useStore();
   const { online, pending, failed, syncing, syncNow } = useOffline();
   const [day, setDay] = React.useState(businessDate());
-  const [ending, setEnding] = React.useState(false);
+  const [selection, setSelection] = React.useState<{ store: string; id: string } | null>(null);
+  const selectedShift = selection?.store === store.id ? selection.id : null;
+  const setSelectedShift = (id: string | null) => setSelection(id ? { store: store.id, id } : null);
+  const [endingStore, setEndingStore] = React.useState<string | null>(null);
+  const ending = endingStore === store.id;
+  const setEnding = (value: boolean) => setEndingStore(value ? store.id : null);
   const [opening, setOpening] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   const qc = useQueryClient();
-  const queryKey = ["cash-up", store.id, day];
+  const queryKey = ["cash-up", store.id, day, selectedShift];
   const cash = useQuery({
     queryKey,
     enabled: online && !!day && store.locationType === "store",
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data, error } = await createClient().rpc("cash_up_summary", {
+      const { data, error } = await createClient().rpc("cash_shift_summary", {
         p_store: store.id,
         p_day: day,
+        p_shift: selectedShift ?? undefined,
       });
       if (error) throw error;
       return data as unknown as CashSummary;
@@ -50,9 +56,10 @@ export function CashUpConsole() {
     queryFn: async () => {
       const { data } = await createClient()
         .from("cash_ups")
-        .select("business_date, status")
+        .select("id, business_date, shift_number, status")
         .eq("store_id", store.id)
         .order("business_date", { ascending: false })
+        .order("shift_number", { ascending: false })
         .limit(14)
         .throwOnError();
       return data ?? [];
@@ -114,6 +121,7 @@ export function CashUpConsole() {
             onChange={(e) => {
               if (e.target.value) {
                 setDay(e.target.value);
+                setSelectedShift(null);
                 setEnding(false);
                 setError("");
               }
@@ -135,15 +143,17 @@ export function CashUpConsole() {
           {recent.data.map((s) => (
             <button
               className="focus-ring rounded-md border border-border px-2 py-1 hover:bg-surface-2"
-              key={s.business_date}
+              key={s.id}
               onClick={() => {
                 setDay(s.business_date);
+                setSelectedShift(s.id);
                 setEnding(false);
                 setError("");
               }}
               disabled={busy}
             >
-              {s.business_date} · {s.status.toLowerCase()}
+              {s.business_date} · Shift {s.shift_number} ·{" "}
+              {s.status.toLowerCase()}
             </button>
           ))}
         </div>
@@ -195,17 +205,68 @@ export function CashUpConsole() {
                 className="rounded-lg border border-warning/30 bg-warning/5 p-4 text-sm text-warning"
                 role="alert"
               >
-                New transaction activity arrived after this count. A manager
-                must reopen and recount it. The earlier approval and count
-                remain in history.
+                New transaction activity arrived after this count. Reopen to
+                include it in this shift, or start the next shift after approval
+                to carry it forward. Earlier counts stay in history.
               </p>
+            )}
+            {data.shifts && data.shifts.length > 0 && (
+              <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
+                <h2 className="font-semibold">Shifts on {day}</h2>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedShift(null);
+                      setEnding(false);
+                    }}
+                  >
+                    Latest shift
+                  </Button>
+                  {data.shifts.map((shift) => (
+                    <Button
+                      key={shift.id}
+                      variant={
+                        session?.id === shift.id ? "secondary" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedShift(shift.id);
+                        setEnding(false);
+                      }}
+                    >
+                      Shift {shift.shift_number} · {shift.created_by_name} ·{" "}
+                      {shift.status.toLowerCase()}
+                    </Button>
+                  ))}
+                </div>
+                {session && (
+                  <p className="text-sm text-muted">
+                    Viewing shift {session.shift_number ?? 1} · Started by{" "}
+                    {data.started_by_name ?? "Team member"}
+                    {session.created_at
+                      ? ` · ${dateTime(session.created_at)}`
+                      : ""}
+                  </p>
+                )}
+                {data.sealed && (
+                  <p className="text-sm text-muted">
+                    This approved shift is locked because a later shift has
+                    started. Counts and approvals remain available below.
+                  </p>
+                )}
+                {session?.handover_note && (
+                  <p className="text-sm">Handover: {session.handover_note}</p>
+                )}
+              </section>
             )}
             {data.sources.activity && (
               <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                <h2 className="text-lg font-semibold">Today&apos;s summary</h2>
+                <h2 className="text-lg font-semibold">Shift summary</h2>
                 <p className="mt-1 text-sm text-muted">
-                  Shared drawer at {store.name}. Totals are calculated from
-                  recorded payments.
+                  Shared drawer at {store.name}. These totals belong to the
+                  selected shift.
                 </p>
                 <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
                   {[
@@ -292,9 +353,7 @@ export function CashUpConsole() {
               </section>
               {!session ? (
                 <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                  <h2 className="text-lg font-semibold">
-                    Start day
-                  </h2>
+                  <h2 className="text-lg font-semibold">Start first shift</h2>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Enter the cash that was in the drawer before trading began
                     on {day}.
@@ -337,22 +396,22 @@ export function CashUpConsole() {
                       loading={busy}
                       disabled={disabled || amountCents(opening) === null}
                     >
-                      Start day
+                      Start first shift
                     </Button>
                   </form>
                 </section>
               ) : session.status === "OPEN" && !ending ? (
                 <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                  <h2 className="text-lg font-semibold">Day open</h2>
+                  <h2 className="text-lg font-semibold">Shift open</h2>
                   <p className="my-4 text-sm text-muted">
-                    Continue trading. When all tills are synced, end the day and
-                    count the shared drawer.
+                    Continue trading. When all tills are synced, end the shift
+                    and count the shared drawer.
                   </p>
                   <Button
                     disabled={disabled || pending + failed > 0}
                     onClick={() => setEnding(true)}
                   >
-                    End day
+                    End shift
                   </Button>
                 </section>
               ) : session.status === "OPEN" ? (
@@ -376,7 +435,7 @@ export function CashUpConsole() {
                           p_note: note,
                           p_request: request,
                         }),
-                      "End-of-day count saved for manager approval",
+                      "Shift count saved for manager approval",
                       true,
                     )
                   }
@@ -385,7 +444,7 @@ export function CashUpConsole() {
                 <ReviewCount
                   key={`${session.id}:${session.version}`}
                   data={data}
-                  disabled={disabled}
+                  disabled={disabled || !!data.sealed}
                   busy={busy}
                   onReview={(action, note) =>
                     run(
@@ -405,6 +464,41 @@ export function CashUpConsole() {
                 />
               )}
             </div>
+            {session?.status === "APPROVED" &&
+              !data.sealed &&
+              day === businessDate() && (
+                <NextShift
+                  key={session.id}
+                  previous={session.id}
+                  counted={data.history[0]?.counted ?? 0}
+                  disabled={disabled || pending + failed > 0}
+                  onStart={(amount, note, request) =>
+                    run(
+                      () =>
+                        createClient().rpc("start_next_cash_shift", {
+                          p_previous: session.id,
+                          p_float: amount,
+                          p_note: note,
+                          p_request: request,
+                        }),
+                      "New shift started for the signed-in user",
+                      true,
+                    ).then(() => {
+                      setSelectedShift(null);
+                      setEnding(false);
+                    })
+                  }
+                />
+              )}
+            {data.day_activity && (
+              <p className="rounded-lg border border-border p-4 text-sm">
+                Whole day · Net collected across all shifts:{" "}
+                <strong>
+                  {money(data.day_activity.net_collected, currency)}
+                </strong>
+                . Opening cash is excluded.
+              </p>
+            )}
             {data.sources.unclassified.length > 0 && (
               <section className="rounded-xl border border-warning/30 bg-surface p-5">
                 <h2 className="font-semibold">Payment methods need checking</h2>
@@ -458,7 +552,7 @@ export function CashUpConsole() {
                 </ul>
               </section>
             )}
-            {can("manager") && (
+            {can("manager") && !data.sealed && (
               <details>
                 <summary className="cursor-pointer py-3 font-medium">
                   Manage opening cash and drawer movements
@@ -474,7 +568,9 @@ export function CashUpConsole() {
             )}
             {data.movements.length > 0 && (
               <section className="rounded-xl border border-border bg-surface p-5">
-                <h2 className="font-semibold">Other drawer movements</h2>
+                <h2 className="font-semibold">
+                  Drawer movements for the whole day
+                </h2>
                 <ul className="mt-3 divide-y divide-border">
                   {data.movements.map((m) => (
                     <li
@@ -721,7 +817,7 @@ export function CashCount({
             disabled || cents === null || (variance !== 0 && !note.trim())
           }
         >
-          Complete end of day
+          Complete shift
         </Button>
         <p className="text-xs text-muted">
           A manager reviews this count. Submitting does not change stock or
@@ -780,7 +876,7 @@ function ReviewCount({
           {count.note}
         </p>
       )}
-      {can("manager") ? (
+      {can("manager") && !data.sealed ? (
         <div className="mt-5 space-y-3">
           <Label htmlFor="review-note">Manager note / reason to reopen</Label>
           <textarea
@@ -820,7 +916,7 @@ function ReviewCount({
         </div>
       ) : (
         <p className="mt-5 text-sm text-muted">
-          Ask a manager to review this count or reopen it for corrections.
+          {data.sealed ? "This approved shift is preserved as read-only history." : "Ask a manager to review this count or reopen it for corrections."}
         </p>
       )}
     </section>
@@ -980,5 +1076,89 @@ function CashManagement({
         )}
       </div>
     </details>
+  );
+}
+
+function NextShift({
+  previous,
+  counted,
+  disabled,
+  onStart,
+}: {
+  previous: string;
+  counted: number;
+  disabled: boolean;
+  onStart: (amount: number, note: string, request: string) => Promise<void>;
+}) {
+  const { currency } = useStore();
+  const [amount, setAmount] = React.useState(String(counted));
+  const [note, setNote] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const request = React.useRef<{ payload: string; id: string } | null>(null);
+  const cents = amountCents(amount);
+  return (
+    <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+      <h2 className="text-lg font-semibold">Start next shift</h2>
+      <p className="mt-2 text-sm text-muted">
+        The signed-in user will be responsible for the new shift. If another
+        user is taking over, sign in as that user first. Confirm the cash they
+        receive; the previous count stays in history.
+      </p>
+      <form
+        className="mt-4 space-y-4"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (cents === null || saving || disabled) return;
+          const payload = JSON.stringify([previous, cents, note]);
+          if (request.current?.payload !== payload)
+            request.current = { payload, id: crypto.randomUUID() };
+          setSaving(true);
+          try {
+            await onStart(cents / 100, note, request.current.id);
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <div>
+          <Label htmlFor="handover-cash">
+            Opening cash for next shift ({currency})
+          </Label>
+          <Input
+            id="handover-cash"
+            inputMode="decimal"
+            required
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="handover-note">
+            Handover note{" "}
+            {cents !== Math.round(counted * 100)
+              ? "(required: cash differs from previous count)"
+              : "(optional)"}
+          </Label>
+          <Input
+            id="handover-note"
+            maxLength={1000}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            required={cents !== Math.round(counted * 100)}
+          />
+        </div>
+        <Button
+          type="submit"
+          loading={saving}
+          disabled={
+            disabled ||
+            cents === null ||
+            (cents !== Math.round(counted * 100) && !note.trim())
+          }
+        >
+          Start next shift
+        </Button>
+      </form>
+    </section>
   );
 }

@@ -22,6 +22,15 @@ export function denominationCents(
 }
 export function cashError(message: string): string {
   const messages: Record<string, string> = {
+    SHIFT_LOCKED:
+      "A later shift has started. This approved shift is kept read-only.",
+    SHIFT_APPROVAL_REQUIRED:
+      "Approve the current cash-up before starting another shift.",
+    SHIFT_ALREADY_STARTED:
+      "Another shift has already started. Refresh to view it.",
+    SHIFT_DATE_NOT_TODAY: "New shifts can only be started for today.",
+    HANDOVER_NOTE_REQUIRED:
+      "Explain why the new opening cash differs from the previous count.",
     CASH_ACTIVITY_CHANGED:
       "Cash activity or the opening float changed. Refresh, check the latest total and count again.",
     CASH_UP_CHANGED: "This cash-up has changed. Refresh before continuing.",
