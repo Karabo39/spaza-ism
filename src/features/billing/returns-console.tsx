@@ -96,40 +96,20 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     queryKey: ["billing", "return-source-items", sourceType, source],
     enabled: !!source,
     queryFn: async () => {
-      const db = createClient();
-      if (sourceType === "invoice") {
-        const { data, error } = await db
-          .from("sales_invoice_items")
-          .select("id,product_name,quantity,net_total")
-          .eq("invoice_id", source);
-        if (error) throw error;
-        return (data ?? []).map((l) => ({
-          id: l.id,
-          name: l.product_name,
-          quantity: Number(l.quantity),
-          charged: Number(l.net_total),
-        }));
-      }
-      const { data, error } = await db
-        .from("goods_out_items")
-        .select("id,product_id,quantity,line_total")
-        .eq("goods_out_id", source);
+      const { data, error } = await createClient()
+        .from("v_returnable_items")
+        .select("*")
+        .eq("store_id", store.id)
+        .eq("source_type", sourceType)
+        .eq("source_id", source)
+        .gt("remaining_quantity", 0);
       if (error) throw error;
-      const products = await db
-        .from("products")
-        .select("id,name")
-        .in(
-          "id",
-          (data ?? []).map((l) => l.product_id),
-        );
-      if (products.error) throw products.error;
       return (data ?? []).map((l) => ({
-        id: l.id,
-        name:
-          products.data?.find((p) => p.id === l.product_id)?.name ??
-          l.product_id,
-        quantity: Number(l.quantity),
-        charged: Number(l.line_total),
+        id: l.item_id,
+        name: l.product_name,
+        quantity: Number(l.remaining_quantity),
+        originalQuantity: Number(l.quantity),
+        charged: Number(l.charged),
       }));
     },
   });
@@ -218,6 +198,12 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           Returns, inspections and refunds require a connection.
         </p>
       )}
+      {source && sourceItems.data?.length === 0 && (
+        <p role="status" className="text-sm text-muted">
+          No quantities remain available for return on this document. Earlier
+          submitted or approved returns already cover its items.
+        </p>
+      )}
       <section className="rounded-lg border border-border bg-surface p-5 space-y-3">
         <h2 className="font-semibold">Capture a return</h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -279,8 +265,9 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           </div>
         </div>
         <p className="text-xs text-muted">
-          Showing the latest 100 documents. For an older sale or invoice, enter
-          its full reference ID below.
+          Showing the latest 100 returnable documents. Submitted returns reserve
+          their quantities. For an older sale or invoice, enter its full
+          reference ID below.
         </p>
         <Input
           aria-label="Original document ID"
@@ -310,8 +297,9 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
               <option value="">Select item</option>
               {sourceItems.data?.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.name} · {l.quantity} sold ·{" "}
-                  {money(l.charged / l.quantity, currency)} per unit charged
+                  {l.name} · {l.quantity} remaining ·{" "}
+                  {money(l.charged / l.originalQuantity, currency)} per unit
+                  charged
                 </option>
               ))}
             </select>
@@ -321,8 +309,11 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                 .map((l) => (
                   <p key={l.id} className="mt-2 text-xs text-muted">
                     Estimated return value:{" "}
-                    {money((l.charged * quantity) / l.quantity, currency)} for{" "}
-                    {quantity} unit(s). Uses the original charged price,
+                    {money(
+                      (l.charged * quantity) / l.originalQuantity,
+                      currency,
+                    )}{" "}
+                    for {quantity} unit(s). Uses the original charged price,
                     including discounts and tax. Expiry is a reason, not a fee;
                     earlier returns and payments determine the final refundable
                     amount.
@@ -491,7 +482,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <TR key={r.id}>
               <TD>
                 <button
-                  className="text-accent"
+                  className="focus-ring inline-flex items-center rounded-md border border-accent/40 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10"
                   onClick={() => selectReturn(r.id)}
                 >
                   {r.reference}
@@ -513,7 +504,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           {current.status === "APPROVED" && (
             <Link
               href={`/returns/${current.id}/receipt`}
-              className="inline-block text-accent"
+              className="focus-ring inline-flex items-center rounded-md border border-accent/40 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10"
             >
               Print credit note / return receipt
             </Link>
