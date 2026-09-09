@@ -51,7 +51,9 @@ export default async function ProductDetailPage({
         .from("product_barcodes")
         .select("barcode, is_active")
         .eq("product_id", id)
-        .eq("is_active", true),
+        .eq("is_active", true)
+        .order("created_at")
+        .order("id"),
       supabase
         .from("stock_movements")
         .select("id, movement_type, quantity_delta, quantity_after, created_at")
@@ -74,7 +76,13 @@ export default async function ProductDetailPage({
         title={p.name}
         crumbs={[{ label: "Products", href: "/products" }, { label: p.name }]}
         description={p.category_name ?? undefined}
-        actions={<ProductEditDialog product={p} />}
+        actions={
+          <ProductEditDialog
+            key={(barcodes ?? [])[0]?.barcode ?? "none"}
+            product={p}
+            barcode={(barcodes ?? [])[0]?.barcode ?? ""}
+          />
+        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -139,8 +147,9 @@ export default async function ProductDetailPage({
 
       {p.track_expiry && (
         <p className="mb-3 text-sm">
-          Nearest expiry: {p.nearest_expiry ?? (p.quantity > 0 ? "Date required" : "No stock")} | Sellable
-          stock: {qty(p.sellable_quantity)}
+          Nearest expiry:{" "}
+          {p.nearest_expiry ?? (p.quantity > 0 ? "Date required" : "No stock")}{" "}
+          | Sellable stock: {qty(p.sellable_quantity)}
         </p>
       )}
       {batchError ? (
@@ -153,7 +162,17 @@ export default async function ProductDetailPage({
           batches={batches ?? []}
         />
       ) : p.quantity > 0 ? (
-        <details className="mb-5"><summary className="cursor-pointer py-3 text-sm font-medium">Set up expiry tracking (optional)</summary><ExpiryBatches key={`${p.id}:${p.undated_quantity}`} product={p.id} undated={p.undated_quantity} batches={batches ?? []} /></details>
+        <details className="mb-5">
+          <summary className="cursor-pointer py-3 text-sm font-medium">
+            Set up expiry tracking (optional)
+          </summary>
+          <ExpiryBatches
+            key={`${p.id}:${p.undated_quantity}`}
+            product={p.id}
+            undated={p.undated_quantity}
+            batches={batches ?? []}
+          />
+        </details>
       ) : null}
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface">

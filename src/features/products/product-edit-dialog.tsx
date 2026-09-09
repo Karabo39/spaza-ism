@@ -19,13 +19,16 @@ import type { ProductStock } from "@/lib/db/database.types";
 
 export function ProductEditDialog({
   product,
+  barcode = "",
 }: {
   product: ProductStock & { undated_quantity?: number };
+  barcode?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState({
     name: product.name,
+    barcode,
     cost: String(product.cost_price),
     selling: String(product.selling_price),
     min: String(product.min_stock_level),
@@ -49,6 +52,9 @@ export function ProductEditDialog({
       p_expected: product.undated_quantity ?? product.quantity,
       p_values: {
         name: form.name.trim(),
+        ...(form.barcode.trim() || barcode
+          ? { barcode: form.barcode.trim(), expected_barcode: barcode }
+          : {}),
         cost_price: Number(form.cost) || 0,
         selling_price: Number(form.selling) || 0,
         min_stock_level: Number(form.min) || 0,
@@ -87,6 +93,20 @@ export function ProductEditDialog({
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
               />
+            </div>
+            <div>
+              <Label htmlFor="e-barcode">Barcode</Label>
+              <Input
+                id="e-barcode"
+                value={form.barcode}
+                maxLength={128}
+                required={!!barcode}
+                onChange={(e) => set("barcode", e.target.value)}
+              />
+              <p className="mt-1 text-xs text-muted">
+                Changing this barcode replaces it for scanning. Other barcodes
+                and stock history are kept.
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

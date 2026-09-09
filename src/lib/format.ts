@@ -79,6 +79,9 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("OWNER_HAS_ALL_LOCATIONS")) return "Owners already have access to every location.";
   if (m.includes("INSUFFICIENT_SELLABLE_STOCK")) return "Not enough unexpired stock. Expired or undated tracked stock cannot be sold.";
   if (m.includes("STOCK_CHANGED_REFRESH")) return "Stock changed. Refresh and check the undated quantity before assigning expiry.";
+  if (m.includes("BARCODE_CHANGED_REFRESH")) return "The barcode changed while you were editing. Refresh and try again.";
+  if (m.includes("INVALID_BARCODE")) return "Enter a barcode of 1 to 128 characters.";
+  if (m.includes("BARCODE_ALREADY_EXISTS") || m.includes("uq_active_barcode_per_store")) return "That barcode is already assigned to a product in this store.";
   if (m.includes("EXPIRY_TRACKING_REQUIRED")) return "Dated stock still exists. Keep expiry tracking enabled.";
   if (m.includes("BATCH_RECONCILIATION_REQUIRED")) return "Batch quantities exceed recorded stock. Reconcile batches before assigning dates.";
   if (m.includes("INSUFFICIENT_STOCK")) return "Not enough stock to complete this sale.";

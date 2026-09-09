@@ -15,7 +15,6 @@ import { Boxes } from "lucide-react";
 import { ListFilter } from "@/components/shell/list-filter";
 import { ImportLink } from "@/features/imports/import-link";
 import { ExportButton } from "@/features/reports/export-button";
-import { ProductNameFilter } from "@/features/products/product-name-filter";
 
 const PAGE_SIZE = 20;
 
@@ -26,7 +25,6 @@ export default async function ProductsPage({
     q?: string;
     page?: string;
     status?: string;
-    name?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -42,7 +40,6 @@ export default async function ProductsPage({
     .select("*", { count: "exact" })
     .eq("store_id", store.id);
   if (q) query = query.ilike("search_text", `%${q}%`);
-  if (sp.name) query = query.eq("name", sp.name);
   const status = ["ok", "low", "out", "reorder", "inactive"].includes(
     sp.status ?? "",
   )
@@ -96,7 +93,6 @@ export default async function ProductsPage({
       </div>
 
       <div className="mb-4">
-        <ProductNameFilter store={store.id} />
         <ListFilter
           label="Status"
           param="status"
@@ -155,9 +151,14 @@ export default async function ProductsPage({
                     </TD>
                     <TD>
                       {r.track_expiry
-                        ? (r.nearest_expiry ?? (r.quantity > 0 ? "Date required" : "No stock"))
+                        ? (r.nearest_expiry ??
+                          (r.quantity > 0 ? "Date required" : "No stock"))
                         : "Not tracked"}
-                      {r.track_expiry && r.expired_quantity > 0 && <span className="block text-xs text-danger">{qty(r.expired_quantity)} expired</span>}
+                      {r.track_expiry && r.expired_quantity > 0 && (
+                        <span className="block text-xs text-danger">
+                          {qty(r.expired_quantity)} expired
+                        </span>
+                      )}
                     </TD>
                     <TD className="text-muted">{r.category_name ?? "—"}</TD>
                     <TD className="text-right tabular-nums">
@@ -189,7 +190,7 @@ export default async function ProductsPage({
               page={page}
               pageSize={PAGE_SIZE}
               total={count ?? 0}
-              params={{ q, status, ...(sp.name ? { name: sp.name } : {}) }}
+              params={{ q, status }}
               basePath="/products"
             />
           </>
