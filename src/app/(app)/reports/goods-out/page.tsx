@@ -26,7 +26,7 @@ export default async function GoodsOutReport({
   let query = supabase
     .from("goods_out")
     .select(
-      "id, sale_type, total_amount, credit_override, created_at, customers(name), goods_out_items(id)",
+      "id, sale_type, total_amount, credit_override, performed_by, authorized_by, created_at, customers(name), goods_out_items(id)",
     )
     .eq("store_id", store.id);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
@@ -40,11 +40,33 @@ export default async function GoodsOutReport({
     sale_type: string;
     total_amount: number;
     credit_override: boolean;
+    performed_by: string;
+    authorized_by: string | null;
     created_at: string;
     customers: { name: string } | null;
     goods_out_items: { id: string }[];
   }[];
 
+  const userIds = [
+    ...new Set(
+      rows.flatMap((r) =>
+        [r.performed_by, r.authorized_by].filter((id): id is string => !!id),
+      ),
+    ),
+  ];
+  const { data: people, error: peopleError } = userIds.length
+    ? await supabase.from("profiles").select("id,full_name").in("id", userIds)
+    : { data: [], error: null };
+  if (peopleError) throw peopleError;
+  const names = new Map((people ?? []).map((p) => [p.id, p.full_name]));
+  const salesperson = (r: (typeof rows)[number]) =>
+    names.get(r.performed_by) || "User unavailable";
+  const approver = (r: (typeof rows)[number]) =>
+    r.credit_override
+      ? r.authorized_by
+        ? names.get(r.authorized_by) || "User unavailable"
+        : "Not recorded"
+      : "—";
   const cash = rows
     .filter((r) => r.sale_type === "CASH")
     .reduce((s, r) => s + Number(r.total_amount), 0);
@@ -62,6 +84,8 @@ export default async function GoodsOutReport({
     items: r.goods_out_items?.length ?? 0,
     total: r.total_amount,
     override: r.credit_override ? "yes" : "",
+    salesperson: salesperson(r),
+    approved_by: approver(r),
   }));
   const columns = [
     { key: "date", label: "Date" },
@@ -70,6 +94,8 @@ export default async function GoodsOutReport({
     { key: "items", label: "Items" },
     { key: "total", label: "Total" },
     { key: "override", label: "Override" },
+    { key: "salesperson", label: "Sold by" },
+    { key: "approved_by", label: "Override approved by" },
   ];
 
   return (
@@ -142,6 +168,8 @@ export default async function GoodsOutReport({
                 <TH>Date</TH>
                 <TH>Type</TH>
                 <TH>Customer</TH>
+                <TH>Sold by</TH>
+                <TH>Override approved by</TH>
                 <TH className="text-right">Items</TH>
                 <TH className="text-right">Total</TH>
               </TR>
@@ -165,6 +193,8 @@ export default async function GoodsOutReport({
                     ) : null}
                   </TD>
                   <TD className="text-muted">{r.customers?.name ?? "—"}</TD>
+                  <TD>{salesperson(r)}</TD>
+                  <TD>{approver(r)}</TD>
                   <TD className="text-right tabular-nums">
                     {r.goods_out_items?.length ?? 0}
                   </TD>
