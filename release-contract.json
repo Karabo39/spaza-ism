@@ -7,6 +7,7 @@
     "order_workflow_v1",
     "document_workflows_v1",
     "employee_invitations_v1",
-    "batch_expiry_v1"
+    "batch_expiry_v1",
+    "cash_shifts_v1"
   ]
 }

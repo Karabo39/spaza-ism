@@ -6,8 +6,8 @@ describe("release safeguards", () => {
   it("rejects missing, partial and future-incompatible contracts", () => {
     expect(matchesRelease(null)).toBe(false);
     expect(matchesRelease({ version: 1, capabilities: { brd_v102: true } })).toBe(false);
-    expect(matchesRelease({ version: 2, capabilities: { brd_v102: true, module_access_v1: true, cash_up_v1: true, order_workflow_v1: true, document_workflows_v1: true, employee_invitations_v1: true, batch_expiry_v1: true } })).toBe(false);
-    expect(matchesRelease({ version: 1, capabilities: { brd_v102: true, module_access_v1: true, cash_up_v1: true, order_workflow_v1: true, document_workflows_v1: true, employee_invitations_v1: true, batch_expiry_v1: true } })).toBe(true);
+    expect(matchesRelease({ version: 2, capabilities: { brd_v102: true, module_access_v1: true, cash_up_v1: true, order_workflow_v1: true, document_workflows_v1: true, employee_invitations_v1: true, cash_shifts_v1: true, batch_expiry_v1: true } })).toBe(false);
+    expect(matchesRelease({ version: 1, capabilities: { brd_v102: true, module_access_v1: true, cash_up_v1: true, order_workflow_v1: true, document_workflows_v1: true, employee_invitations_v1: true, cash_shifts_v1: true, batch_expiry_v1: true } })).toBe(true);
   });
   it("fails closed for a database outage", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");

@@ -15,7 +15,7 @@ export type Database = {
       sales_purchase_orders: { Row: PurchaseOrder; Insert: never; Update: never; Relationships: [] }
 
       store_return_access: { Row: { membership_id: string; store_id: string; approve: boolean; refund: boolean; version: number; updated_by: string | null }; Insert: never; Update: never; Relationships: [] }
-      cash_ups: { Row: { id: string; business_id: string; store_id: string; business_date: string; opening_float: number; status: string; version: number; latest_submission: string | null; created_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
+      cash_ups: { Row: { shift_number: number; previous_shift: string | null; baseline: Json; handover_note: string | null; start_request: string | null; id: string; business_id: string; store_id: string; business_date: string; opening_float: number; status: string; version: number; latest_submission: string | null; created_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
       module_catalog: { Row: { key: string; label: string; minimum_role: MembershipRole }; Insert: never; Update: never; Relationships: [] }
       store_module_access: { Row: { membership_id: string; store_id: string; permissions: Json; version: number; updated_by: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
       import_batches: { Row: { id: string; business_id: string; store_id: string; kind: string; request_id: string; request_payload: Json; result: Json; performed_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
@@ -259,7 +259,9 @@ export type Database = {
       set_store_return_access: { Args: { p_membership: string; p_store: string; p_approve: boolean; p_refund: boolean; p_expected: number }; Returns: number }
 
       order_workflow_summary: { Args: { p_store: string }; Returns: Json };
-      cash_up_summary: { Args: { p_store: string; p_day: string }; Returns: Json }
+      cash_shift_summary: { Args: { p_store: string; p_day: string; p_shift?: string }; Returns: Json };
+    start_next_cash_shift: { Args: { p_previous: string; p_float: number; p_note: string; p_request: string }; Returns: string };
+    cash_up_summary: { Args: { p_store: string; p_day: string }; Returns: Json }
       open_cash_up: { Args: { p_store: string; p_day: string; p_float: number }; Returns: string }
       submit_cash_up: { Args: { p_cash_up: string; p_counted: number; p_denominations: Json; p_fingerprint: string; p_note: string; p_request: string }; Returns: string }
       review_cash_up: { Args: { p_cash_up: string; p_submission: string; p_action: string; p_note: string }; Returns: undefined }
