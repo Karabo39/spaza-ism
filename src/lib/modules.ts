@@ -38,7 +38,7 @@ export const MODULES = [
   },
   {
     key: "invoices",
-    label: "Invoices",
+    label: "Invoicing",
     href: "/invoices",
     role: "employee",
     group: "Daily work",

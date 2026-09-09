@@ -17,11 +17,51 @@ import type {
   ProductStock,
 } from "@/lib/db/database.types";
 
-export function QuoteEditor({
+export function QuoteEditor(props: {
+  quote?: SalesQuote;
+  saved: (id: string) => void;
+  cancel: () => void;
+}) {
+  const contact = useQuery({
+    queryKey: ["billing", "quote-contact", props.quote?.customer_id],
+    enabled: !!props.quote,
+    queryFn: async () => {
+      const { data, error } = await createClient()
+        .from("customers")
+        .select("name,phone,address,is_once_off")
+        .eq("id", props.quote!.customer_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  if (props.quote && contact.isLoading) return <p>Loading quote customer...</p>;
+  if (contact.error)
+    return (
+      <p role="alert">
+        Could not load the quote customer.{" "}
+        <Button onClick={() => contact.refetch()}>Retry</Button>
+      </p>
+    );
+  return (
+    <QuoteEditorForm
+      {...props}
+      initialGuest={contact.data?.is_once_off ? contact.data : null}
+    />
+  );
+}
+
+function QuoteEditorForm({
   quote,
   saved,
   cancel,
+  initialGuest,
 }: {
+  initialGuest?: {
+    name: string;
+    phone: string | null;
+    address: string | null;
+  } | null;
   quote?: SalesQuote;
   saved: (id: string) => void;
   cancel: () => void;
@@ -29,8 +69,15 @@ export function QuoteEditor({
   const { store, currency } = useStore();
   const { online, busy, run, request } = useBillingAction();
   const [customer, setCustomer] = useState<{ id: string; name: string } | null>(
-    quote ? { id: quote.customer_id, name: quote.customer_name } : null,
+    quote && !initialGuest
+      ? { id: quote.customer_id, name: quote.customer_name }
+      : null,
   );
+  const [onceOff, setOnceOff] = useState(!!initialGuest);
+  const [guestName, setGuestName] = useState(initialGuest?.name ?? "");
+  const [guestPhone, setGuestPhone] = useState(initialGuest?.phone ?? "");
+  const [guestAddress, setGuestAddress] = useState(initialGuest?.address ?? "");
+  const guestMode = onceOff;
   const [pick, setPick] = useState(false);
   const [product, setProduct] = useState<ProductStock | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -88,7 +135,16 @@ export function QuoteEditor({
   async function save() {
     const payload = {
       p_store: store.id,
-      p_customer: customer!.id,
+      p_customer: guestMode ? null : customer!.id,
+      ...(guestMode
+        ? {
+            p_guest: {
+              name: guestName,
+              phone: guestPhone,
+              address: guestAddress,
+            },
+          }
+        : {}),
       p_items: lines.map((l) => ({
         product_id: l.product_id,
         quantity: l.quantity,
@@ -117,13 +173,64 @@ export function QuoteEditor({
         A quotation does not reserve stock, reduce quantities or create customer
         debt. Out-of-stock items can be quoted.
       </p>
-      <Button variant="secondary" onClick={() => setPick(true)}>
-        {customer?.name ?? "Choose customer"}
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant={!guestMode ? "primary" : "secondary"}
+          onClick={() => {
+            setOnceOff(false);
+            setPick(true);
+          }}
+        >
+          Choose existing customer
+        </Button>
+        <Button
+          variant={guestMode ? "primary" : "secondary"}
+          onClick={() => {
+            setOnceOff(true);
+            setCustomer(null);
+          }}
+        >
+          One-off customer
+        </Button>
+      </div>
+      {guestMode ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label>
+            Customer name
+            <Input
+              required
+              maxLength={200}
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+            />
+          </label>
+          <label>
+            Contact number (optional)
+            <Input
+              maxLength={50}
+              value={guestPhone}
+              onChange={(e) => setGuestPhone(e.target.value)}
+            />
+          </label>
+          <label className="sm:col-span-2">
+            Address (optional)
+            <Input
+              maxLength={1000}
+              value={guestAddress}
+              onChange={(e) => setGuestAddress(e.target.value)}
+            />
+          </label>
+        </div>
+      ) : (
+        <p className="text-sm">
+          {customer?.name ?? "Choose a customer to continue."}
+        </p>
+      )}
       <CustomerPicker
         open={pick}
         onOpenChange={setPick}
         onSelect={(c) => {
+          setOnceOff(false);
           setCustomer({ id: c.customer_id, name: c.name });
           setPick(false);
         }}
@@ -239,7 +346,7 @@ export function QuoteEditor({
           loading={busy}
           disabled={
             !online ||
-            !customer ||
+            (guestMode ? !guestName.trim() : !customer) ||
             !lines.length ||
             !totals.valid ||
             !valid ||

@@ -24,7 +24,7 @@ export const NAV: NavGroup[] = [
       { href: "/goods-in", label: "Goods In", icon: PackagePlus },
       { href: "/goods-out", label: "Goods Out", icon: PackageMinus },
       { href: "/orders", label: "Orders", icon: ClipboardList },
-      { href: "/invoices", label: "Invoices", icon: ScrollText },
+      { href: "/invoices", label: "Invoicing", icon: ScrollText },
       { href: "/returns", label: "Goods Return", icon: ArrowRightLeft },
       { href: "/check-stock", label: "Check Stock", icon: Search },
       { href: "/check-price", label: "Check Price", icon: Tag },

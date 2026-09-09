@@ -1,4 +1,11 @@
 "use client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { QuoteEditor } from "./quote-editor";
@@ -20,11 +27,13 @@ import type { SalesQuote } from "@/lib/db/database.types";
 export function QuotesConsole() {
   const { store, currency } = useStore();
   const [selected, setSelected] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const params = useSearchParams();
+  const [creating, setCreating] = useState(params.get("create") === "1");
+  const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const term = useDebouncedValue(search.trim());
   const query = useQuery({
-    queryKey: ["billing", "quotes", store.id, term],
+    queryKey: ["billing", "quotes", store.id, term, page],
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("sales_quotes")
@@ -34,7 +43,8 @@ export function QuotesConsole() {
         .eq("store_id", store.id)
         .ilike("customer_name", `%${term}%`)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .order("id", { ascending: false })
+        .range(page * 50, page * 50 + 49);
       if (error) throw error;
       return data;
     },
@@ -49,19 +59,24 @@ export function QuotesConsole() {
             setCreating(true);
           }}
         >
-          Create quotation
+          Create Quotes
         </Button>
         <Input
           aria-label="Search quotations by customer"
           placeholder="Search customer"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
         />
       </div>
       {creating ? (
         <QuoteEditor
           key={`new:${store.id}`}
           saved={(id) => {
+            setSearch("");
+            setPage(0);
             setSelected(id);
             setCreating(false);
           }}
@@ -70,6 +85,7 @@ export function QuotesConsole() {
       ) : current ? (
         <QuoteDetail key={`${current.id}:${current.version}`} quote={current} />
       ) : null}
+      <h2 className="font-semibold">Saved quotes</h2>
       {query.error ? (
         <p role="alert">
           Could not load quotations.{" "}
@@ -100,12 +116,23 @@ export function QuotesConsole() {
         </div>
       )}
       {query.data?.length === 0 && <p>No quotations found.</p>}
-      {query.data?.length === 200 && (
-        <p>
-          Showing the latest 200 quotations. Search by customer to narrow the
-          results.
-        </p>
-      )}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="secondary"
+          disabled={page === 0 || query.isFetching}
+          onClick={() => setPage(page - 1)}
+        >
+          Previous quotes
+        </Button>
+        <span>Page {page + 1}</span>
+        <Button
+          variant="secondary"
+          disabled={query.isFetching || (query.data?.length ?? 0) < 50}
+          onClick={() => setPage(page + 1)}
+        >
+          Next quotes
+        </Button>
+      </div>
     </div>
   );
 }
@@ -118,6 +145,8 @@ function quoteStatus(q: SalesQuote) {
 function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
   const { store, currency, canModule } = useStore();
   const { online, busy, run } = useBillingAction();
+  const [acceptOpen, setAcceptOpen] = useState(false);
+  const [addPo, setAddPo] = useState(false);
   const [edit, setEdit] = useState(false);
   const [convert, setConvert] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>(
@@ -245,15 +274,17 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
                 loading={busy}
                 disabled={!online}
                 onClick={() =>
-                  run(
-                    () =>
-                      createClient().rpc("set_quote_status", {
-                        p_quote: q.id,
-                        p_status: s,
-                        p_expected: q.version,
-                      }),
-                    "Quotation status updated",
-                  )
+                  s === "ACCEPTED"
+                    ? setAcceptOpen(true)
+                    : run(
+                        () =>
+                          createClient().rpc("set_quote_status", {
+                            p_quote: q.id,
+                            p_status: s,
+                            p_expected: q.version,
+                          }),
+                        "Quotation status updated",
+                      )
                 }
               >
                 {s === "SENT"
@@ -264,7 +295,13 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
               </Button>
             ))}
         {active && canModule("orders") && (
-          <Button onClick={() => setConvert(!convert)}>
+          <Button
+            onClick={() =>
+              q.status === "ACCEPTED"
+                ? setConvert(!convert)
+                : setAcceptOpen(true)
+            }
+          >
             Review conversion to order
           </Button>
         )}
@@ -354,7 +391,59 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
           </Button>
         </div>
       )}
-      <PurchaseOrder quote={q.id} />
+      <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Accept quote</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm">
+            Would you like to add the customer purchase order before accepting?
+            After acceptance, its details will be locked.
+          </p>
+          {addPo ? (
+            <PurchaseOrder
+              quote={q.id}
+              saved={() => {
+                void run(
+                  () =>
+                    createClient().rpc("set_quote_status", {
+                      p_quote: q.id,
+                      p_status: "ACCEPTED",
+                      p_expected: q.version,
+                    }),
+                  "Quote accepted",
+                  () => setAcceptOpen(false),
+                );
+              }}
+            />
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              <Button variant="secondary" onClick={() => setAddPo(true)}>
+                Add purchase order
+              </Button>
+              <Button
+                loading={busy}
+                disabled={!online}
+                onClick={() =>
+                  run(
+                    () =>
+                      createClient().rpc("set_quote_status", {
+                        p_quote: q.id,
+                        p_status: "ACCEPTED",
+                        p_expected: q.version,
+                      }),
+                    "Quote accepted",
+                    () => setAcceptOpen(false),
+                  )
+                }
+              >
+                Accept without adding PO
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </section>
   );
 }

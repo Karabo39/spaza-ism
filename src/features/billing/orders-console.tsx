@@ -459,7 +459,7 @@ export function OrdersConsole({
               </Button>
             </div>
           )}
-          <PurchaseOrder order={current.id} />
+          {current.status === "DRAFT" && <PurchaseOrder order={current.id} />}
         </section>
       )}
       <CustomerPicker

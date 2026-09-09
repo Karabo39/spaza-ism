@@ -13,7 +13,9 @@ const columns =
 export function PurchaseOrder({
   quote,
   order,
+  saved,
 }: {
+  saved?: () => void;
   quote?: string;
   order?: string;
 }) {
@@ -43,6 +45,7 @@ export function PurchaseOrder({
       quote={quote}
       order={order}
       initial={query.data ?? null}
+      saved={saved}
     />
   );
 }
@@ -50,7 +53,9 @@ function POEditor({
   quote,
   order,
   initial,
+  saved,
 }: {
+  saved?: () => void;
   quote?: string;
   order?: string;
   initial: PO | null;
@@ -91,6 +96,7 @@ function POEditor({
           p_expected: initial?.version ?? 0,
         }),
       "Purchase order saved",
+      saved,
     );
   }
   async function download() {
@@ -170,7 +176,7 @@ function POEditor({
         </Button>
       )}
       <Button loading={busy} disabled={!online || locked} onClick={save}>
-        Save purchase order
+        {saved ? "Save purchase order and accept quote" : "Save purchase order"}
       </Button>
     </fieldset>
   );
