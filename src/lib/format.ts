@@ -31,6 +31,9 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (/PURCHASE_ORDER_LOCKED/.test(m)) return "Purchase-order details are locked after quote acceptance or conversion.";
+  if (/REGISTERED_(INVOICE|CREDIT)_CUSTOMER_REQUIRED/.test(m)) return "Credit requires this invoice’s existing registered customer account. One-off customers cannot use credit terms.";
+  if (/INVALID_QUOTE_CONTACT/.test(m)) return "Enter a customer name (up to 200 characters), with an optional phone number and address.";
   if (/QUOTE_CHANGED_REFRESH|PO_CHANGED_REFRESH|ACCESS_CHANGED_REFRESH/.test(m)) return "Someone changed this record. Refresh to review the latest version before saving.";
   if (m.includes("QUOTE_STOCK_CHANGED")) return "Stock availability changed. Refresh and review the quantities before converting.";
   if (m.includes("QUOTE_ALREADY_CONVERTED")) return "This quotation already has an order. Open that order instead.";

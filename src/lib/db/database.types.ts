@@ -88,7 +88,7 @@ export type Database = {
         Relationships: []
       }
       customers: {
-        Row: { business_id: string; created_at: string; email: string | null; id: string; is_active: boolean; name: string; notes: string | null; phone: string | null; store_id: string; updated_at: string }
+        Row: { is_once_off: boolean; address: string | null; business_id: string; created_at: string; email: string | null; id: string; is_active: boolean; name: string; notes: string | null; phone: string | null; store_id: string; updated_at: string }
         Insert: { business_id: string; created_at?: string; email?: string | null; id?: string; is_active?: boolean; name: string; notes?: string | null; phone?: string | null; store_id: string; updated_at?: string }
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>
         Relationships: []
@@ -213,6 +213,7 @@ export type Database = {
       v_return_report: { Row: { id: string; business_id: string; store_id: string; reference: string; invoice_id: string | null; sale_id: string | null; customer_id: string | null; status: string; reason: string; inspection: string; created_at: string; amount: number; items: string; quantity: number; inventory_actions: string; refunded: number; allocated_credit: number }; Relationships: [] }
       v_stock_take_variance: { Row: { id: string; stock_take_id: string; business_id: string; store_id: string; created_at: string; status: string; product_name: string; product_id: string; system_qty: number; counted_qty: number | null; variance: number | null; counted: boolean; counted_at: string | null; counted_expiry: string | null; counted_by: string | null }; Relationships: [] }
       v_payment_activity: { Row: { id: string; store_id: string; business_id: string; created_at: string; method: string; amount: number; reference: string; payment_reference: string | null; source: string; document_id: string }; Relationships: [] }
+      v_returnable_items: { Row: { source_type: string; store_id: string; source_id: string; item_id: string; product_name: string; quantity: number; charged: number; returned_quantity: number; remaining_quantity: number }; Relationships: [] }
       v_invoice_balances: { Row: InvoiceBalance; Relationships: [] }
       v_audit_activity: { Row: Database["public"]["Tables"]["audit_logs"]["Row"] & { actor_name: string | null; location_name: string | null; stock_items: string }; Relationships: [] }
       v_invoice_payment_report: { Row: InvoiceBalance & { payment_methods: string[] }; Relationships: [] }
@@ -247,7 +248,9 @@ export type Database = {
       employee_invitation_details: { Args: { p_invitation: string; p_secret: string }; Returns: Json }
       accept_employee_invitation: { Args: { p_invitation: string; p_secret: string; p_first_name: string; p_surname: string; p_phone: string }; Returns: undefined }
 
-      save_quote: { Args: { p_store: string; p_customer: string; p_items: Json; p_valid: string; p_discount: number; p_note: string; p_request: string; p_quote?: string; p_expected?: number }; Returns: string }
+      returnable_documents: { Args: { p_store: string; p_type: string }; Returns: Json }
+      use_invoice_customer_credit: { Args: { p_invoice: string; p_customer: string }; Returns: undefined }
+      save_quote: { Args: { p_store: string; p_customer: string | null; p_guest?: Json; p_items: Json; p_valid: string; p_discount: number; p_note: string; p_request: string; p_quote?: string; p_expected?: number }; Returns: string }
       set_quote_status: { Args: { p_quote: string; p_status: string; p_expected: number }; Returns: undefined }
       convert_quote: { Args: { p_quote: string; p_items: Json; p_expected: number }; Returns: string }
       save_purchase_order: { Args: { p_quote: string | null; p_order: string | null; p_received: boolean; p_approved: boolean; p_reference: string; p_filename: string | null; p_mime: string | null; p_content: string | null; p_expected: number }; Returns: undefined }

@@ -65,7 +65,7 @@ begin
  if not blocked then raise exception 'ASSERT cross-store export';end if;
  blocked:=false;begin perform public.set_store_return_access(member,loc,true,true,2);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT employee cannot delegate';end if;
- blocked:=false;begin perform public.save_purchase_order(qid,null,false,false,'Changed',null,null,null,1);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
+ blocked:=false;begin perform public.save_purchase_order(qid,null,false,false,'Changed',null,null,null,1);exception when others then if sqlerrm<>'PURCHASE_ORDER_LOCKED' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT employee cannot change approved PO';end if;
  blocked:=false;begin perform content from public.sales_purchase_orders where id=po;exception when insufficient_privilege then blocked:=true;end;
  if not blocked then raise exception 'ASSERT file content requires download RPC';end if;
@@ -89,7 +89,7 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
  qid:=public.save_quote(loc,c,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),current_date+30,0,'No PO required',gen_random_uuid());
  oid:=public.convert_quote(qid,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),1);
- perform public.save_purchase_order(null,oid,true,false,'LATE-PO',null,null,null,1);
- if (select reference from public.sales_purchase_orders where quote_id=qid)<>'LATE-PO' then raise exception 'ASSERT PO added after conversion stays linked';end if;
+ blocked:=false;begin perform public.save_purchase_order(null,oid,true,false,'LATE-PO',null,null,null,1);exception when others then if sqlerrm<>'PURCHASE_ORDER_LOCKED' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT PO locked after conversion';end if;
  raise exception 'TESTS_PASSED';
 end $$;
