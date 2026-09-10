@@ -175,6 +175,7 @@ function QuoteEditorForm({
       </p>
       <div className="flex flex-wrap gap-3">
         <Button
+          aria-pressed={!guestMode}
           variant={!guestMode ? "primary" : "secondary"}
           onClick={() => {
             setOnceOff(false);
@@ -184,7 +185,8 @@ function QuoteEditorForm({
           Choose existing customer
         </Button>
         <Button
-          variant={guestMode ? "primary" : "secondary"}
+          aria-pressed={guestMode}
+            variant={guestMode ? "primary" : "secondary"}
           onClick={() => {
             setOnceOff(true);
             setCustomer(null);

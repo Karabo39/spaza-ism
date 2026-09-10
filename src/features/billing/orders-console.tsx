@@ -158,6 +158,7 @@ export function OrdersConsole({
             </Button>
           </div>
           <Button
+            aria-pressed={guestMode}
             variant={guestMode ? "primary" : "secondary"}
             onClick={() => {
               setGuestMode(true);

@@ -236,17 +236,17 @@ export function GoodsOutConsole() {
         <div>
           <p className="mb-2 text-xs font-medium text-muted">Payment type</p>
           <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setSaleType("CASH")}
+            <button aria-pressed={saleType === "CASH"} onClick={() => setSaleType("CASH")}
               className={cn("flex items-center justify-center gap-2 rounded-md border py-2.5 text-sm font-medium transition-colors",
                 saleType === "CASH" ? "border-accent/50 bg-accent/15 text-accent" : "border-border hover:bg-surface-2")}>
               <Banknote className="size-4" /> Cash
             </button>
-            <button disabled={!online} onClick={() => setSaleType("CARD_EFT")}
+            <button disabled={!online} aria-pressed={saleType === "CARD_EFT"} onClick={() => setSaleType("CARD_EFT")}
               className={cn("flex items-center justify-center gap-1 rounded-md border py-2.5 text-sm font-medium disabled:opacity-50",
                 saleType === "CARD_EFT" ? "border-accent/50 bg-accent/15 text-accent" : "border-border hover:bg-surface-2")}>
               <CreditCard className="size-4" /> Card/EFT
             </button>
-            <button onClick={() => setSaleType("CREDIT")}
+            <button aria-pressed={saleType === "CREDIT"} onClick={() => setSaleType("CREDIT")}
               className={cn("flex items-center justify-center gap-2 rounded-md border py-2.5 text-sm font-medium transition-colors",
                 saleType === "CREDIT" ? "border-primary/50 bg-primary/15 text-primary-hover" : "border-border hover:bg-surface-2")}>
               <HandCoins className="size-4" /> Credit
