@@ -11,6 +11,7 @@
     "cash_shifts_v1",
     "invoice_refinements_v1",
     "store_currency_v1",
-    "document_email_v1"
+    "document_email_v1",
+    "product_description_v1"
   ]
 }
