@@ -27,8 +27,8 @@ export async function reportPdf(data:ExportData):Promise<ArrayBuffer>{
   const [{jsPDF},{autoTable}]=await Promise.all([import("jspdf"),import("jspdf-autotable")]);
   const doc=new jsPDF({orientation:data.columns.length>5?"landscape":"portrait",unit:"mm",format:"a4"});
   if(data.createdAt)doc.setCreationDate(new Date(data.createdAt));if(data.fileId)doc.setFileId(data.fileId.replaceAll("-",""));
-  doc.setFontSize(15);doc.text(data.title,14,16);doc.setFontSize(9);doc.text(data.subtitle??"",14,23,{maxWidth:doc.internal.pageSize.getWidth()-28});
-  autoTable(doc,{startY:31,margin:{top:18,bottom:18},head:[data.columns.map(c=>c.label)],body:data.rows.map(r=>data.columns.map(c=>String(cellValue(r[c.key])).replaceAll("−","-"))),styles:{fontSize:8,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[24,44,77]},alternateRowStyles:{fillColor:[243,246,249]},didDrawPage:()=>{doc.setFontSize(8);doc.text(`${BRAND_NAME} · Page ${doc.getNumberOfPages()}`,14,doc.internal.pageSize.getHeight()-8);}});
+  const width=doc.internal.pageSize.getWidth()-28;doc.setFontSize(15);const titleLines=doc.splitTextToSize(data.title,width);doc.text(titleLines,14,16);let y=16+titleLines.length*6;doc.setFontSize(9);const subtitleLines=doc.splitTextToSize(data.subtitle??"",width);doc.text(subtitleLines,14,y);y+=subtitleLines.length*4+5;
+  autoTable(doc,{startY:y,margin:{top:18,bottom:18},head:[data.columns.map(c=>c.label)],body:data.rows.map(r=>data.columns.map(c=>String(cellValue(r[c.key])).replaceAll("−","-"))),styles:{fontSize:8,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[24,44,77]},alternateRowStyles:{fillColor:[243,246,249]},didDrawPage:()=>{doc.setFontSize(8);doc.text(`${BRAND_NAME} · Page ${doc.getNumberOfPages()}`,14,doc.internal.pageSize.getHeight()-8);}});
   return doc.output("arraybuffer");
 }
 export async function reportFile(data:ExportData,format:"xlsx"|"pdf"|"csv"):Promise<Blob>{

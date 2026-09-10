@@ -91,7 +91,7 @@ export default async function ReturnReceiptPage({
         <Link href="/returns" className="text-accent">
           Back to returns
         </Link>
-        <PrintReceipt />
+        <PrintReceipt type="return" id={id} />
       </div>
       <article
         id="receipt"
