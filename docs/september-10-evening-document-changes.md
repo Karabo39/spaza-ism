@@ -10,3 +10,7 @@ Implemented the requests in System Changes.docx, Dashboard (1).docx and Products
 Validation: 135 application tests, 26 database suites, type/lint checks and a production build passed. Browser checks at 1440px and 390px verified independent scrolling, no page-wide horizontal overflow, disabled button state, product forms and print overflow. Live database compatibility checks passed after the additive migration. Security advisor categories remain unchanged; the new creation RPC checks store access and module permission and is unavailable to anonymous callers.
 
 Account creation remains available for testing. Document email sender configuration remains unconfirmed from the earlier release.
+
+## Button style correction requested at 18:58
+
+System Changes (1).docx supersedes the global pink button requirement above. The earlier primary, secondary, outline, ghost, danger and link treatments are restored, including dashboard quick actions and native controls. The Back button retains its pink appearance, sizing, placement and navigation behaviour. Accessible pressed-state information remains, while selected controls return to their original colours. Independent scrolling, print handling, store currency fixes and product descriptions remain in place.

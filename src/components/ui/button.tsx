@@ -9,17 +9,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        secondary:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        outline:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        ghost:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        danger:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        link: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+        secondary: "bg-surface-2 text-foreground hover:bg-[#1a2947] border border-border",
+        outline: "border border-border bg-transparent hover:bg-surface-2 text-foreground",
+        ghost: "hover:bg-surface-2 text-muted-foreground hover:text-foreground",
+        danger: "bg-danger text-white hover:bg-red-500 shadow-sm",
+        link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-11 sm:h-8 px-3 text-xs",
@@ -33,36 +28,18 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant,
-      size,
-      asChild = false,
-      loading,
-      children,
-      disabled,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ className, variant, size, asChild = false, loading, children, disabled, ...props }, ref) => {
     if (asChild) {
       // Radix Slot requires exactly one child element; don't inject a loader.
       return (
-        <Slot
-          data-app-button=""
-          className={cn(buttonVariants({ variant, size, className }))}
-          ref={ref}
-          {...props}
-        >
+        <Slot className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props}>
           {children}
         </Slot>
       );

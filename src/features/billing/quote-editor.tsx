@@ -186,7 +186,7 @@ function QuoteEditorForm({
         </Button>
         <Button
           aria-pressed={guestMode}
-            variant={guestMode ? "primary" : "secondary"}
+          variant={guestMode ? "primary" : "secondary"}
           onClick={() => {
             setOnceOff(true);
             setCustomer(null);

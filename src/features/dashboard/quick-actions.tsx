@@ -21,7 +21,6 @@ export function QuickActions() {
         const Icon = a.icon;
         return (
           <Link
-            data-app-button=""
             key={a.href}
             href={a.href}
             className={`flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center transition-colors ${
@@ -30,7 +29,7 @@ export function QuickActions() {
                 : "border-border bg-surface hover:bg-surface-2"
             }`}
           >
-            <Icon className="size-6 text-primary-foreground" />
+            <Icon className={`size-6 ${a.primary ? "text-primary-hover" : "text-muted-foreground"}`} />
             <span className="text-sm font-medium">{a.label}</span>
           </Link>
         );

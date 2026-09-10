@@ -124,7 +124,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         {/* User menu */}
         <Menu>
           <MenuTrigger className="focus-ring flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-surface-2">
-            <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary-foreground">
+            <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary-hover">
               {initials}
             </span>
             <span className="hidden text-left sm:block">
