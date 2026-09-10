@@ -27,36 +27,53 @@ export function Sidebar({
   return (
     <>
       {mobileOpen ? (
-        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onClose} aria-hidden />
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
       ) : null}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-sidebar transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-dvh w-64 shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar transition-transform lg:static lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/" aria-label={`${store.businessName} home`} onClick={onClose} className="flex items-center gap-2.5">
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+          <Link
+            href="/"
+            aria-label={`${store.businessName} home`}
+            onClick={onClose}
+            className="flex items-center gap-2.5"
+          >
             <BusinessLogo />
             <div className="leading-tight">
               <BrandLogo variant="wordmark" />
               <p className="text-[10px] text-muted">Inventory Control</p>
             </div>
           </Link>
-          <button aria-label="Close menu" className="text-muted hover:text-foreground lg:hidden" onClick={onClose}>
+          <button
+            aria-label="Close menu"
+            className="text-muted hover:text-foreground lg:hidden"
+            onClick={onClose}
+          >
             <X className="size-5" />
           </button>
         </div>
 
-        <div className="border-b border-border px-4 py-3">
-          <p className="text-[10px] uppercase tracking-wide text-muted">Active {store.locationType === "warehouse" ? "warehouse" : "store"}</p>
+        <div className="shrink-0 border-b border-border px-4 py-3">
+          <p className="text-[10px] uppercase tracking-wide text-muted">
+            Active {store.locationType === "warehouse" ? "warehouse" : "store"}
+          </p>
           <p className="truncate text-sm font-medium">{store.name}</p>
           <p className="truncate text-xs text-muted">{store.businessName}</p>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3">
           {NAV.map((group) => {
-            const items = group.items.filter((i) => itemVisible(i, role, canModule));
+            const items = group.items.filter((i) =>
+              itemVisible(i, role, canModule),
+            );
             if (items.length === 0) return null;
             return (
               <div key={group.label} className="mb-4">
@@ -79,7 +96,12 @@ export function Sidebar({
                               : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                           )}
                         >
-                          <Icon className={cn("size-4 shrink-0", active && "text-primary-hover")} />
+                          <Icon
+                            className={cn(
+                              "size-4 shrink-0",
+                              active && "text-primary-hover",
+                            )}
+                          />
                           {item.label}
                         </Link>
                       </li>

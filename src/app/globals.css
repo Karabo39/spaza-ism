@@ -92,3 +92,27 @@ body {
   #receipt { position: absolute; inset: 0; max-width: none; margin: 0; padding: 12mm; color: black; background: white; }
   #receipt tr { break-inside: avoid; }
 }
+
+/* One brand treatment for shared buttons, native controls and button links.
+   Unlayered rules also cover one-off utility colours without altering sizing. */
+button, [data-app-button] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+button:hover, [data-app-button]:hover { background-color: color-mix(in srgb, var(--primary) 90%, transparent); }
+button:disabled, [data-app-button][aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+button:focus-visible, [data-app-button]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+/* Viewport scrolling must not clip multi-page printed receipts. */
+@media print {
+  .app-shell { display: block; height: auto; overflow: visible; }
+  .app-shell > aside, .app-shell > div > header { display: none; }
+  .app-shell > div, #main-content { display: block; height: auto; overflow: visible; }
+}
+
+button[aria-pressed="true"], [data-app-button][aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--primary-foreground);
+}

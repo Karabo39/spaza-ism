@@ -1,10 +1,24 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Menu as MenuIcon, ChevronsUpDown, LogOut, Check, User, Search } from "lucide-react";
+import {
+  Menu as MenuIcon,
+  ChevronsUpDown,
+  LogOut,
+  Check,
+  User,
+  Search,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
-import { Menu, MenuTrigger, MenuContent, MenuItem, MenuLabel, MenuSeparator } from "@/components/ui/dropdown";
+import {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+} from "@/components/ui/dropdown";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { GlobalSearch } from "./global-search";
@@ -28,13 +42,27 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   }
 
   const initials = (user.fullName ?? user.email ?? "U")
-    .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur">
       <BackButton />
-      <Link href="/" aria-label={`${store.businessName} home`} className="focus-ring lg:hidden"><BusinessLogo/></Link>
-      <button className="text-muted hover:text-foreground lg:hidden" onClick={onMenu} aria-label="Open menu">
+      <Link
+        href="/"
+        aria-label={`${store.businessName} home`}
+        className="focus-ring lg:hidden"
+      >
+        <BusinessLogo />
+      </Link>
+      <button
+        className="text-muted hover:text-foreground lg:hidden"
+        onClick={onMenu}
+        aria-label="Open menu"
+      >
         <MenuIcon className="size-5" />
       </button>
 
@@ -44,9 +72,15 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
       >
         <Search className="size-4" />
         Search products, customers…
-        <kbd className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted">/</kbd>
+        <kbd className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted">
+          /
+        </kbd>
       </button>
-      <button onClick={() => setSearchOpen(true)} className="text-muted hover:text-foreground sm:hidden" aria-label="Search">
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="text-muted hover:text-foreground sm:hidden"
+        aria-label="Search"
+      >
         <Search className="size-5" />
       </button>
 
@@ -60,38 +94,64 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
               <ChevronsUpDown className="size-3.5 text-muted" />
             </MenuTrigger>
             <MenuContent>
-              <MenuLabel>{online ? "Switch location" : "Connect to switch locations"}</MenuLabel>
+              <MenuLabel>
+                {online ? "Switch location" : "Connect to switch locations"}
+              </MenuLabel>
               {stores.map((s) => (
-                <MenuItem key={s.id} disabled={!online} onSelect={() => setStore(s.id)}>
-                  <span className="flex-1 truncate">{s.name}{s.locationType === "warehouse" ? " · Warehouse" : ""}</span>
+                <MenuItem
+                  key={s.id}
+                  disabled={!online}
+                  onSelect={() => setStore(s.id)}
+                >
+                  <span className="flex-1 truncate">
+                    {s.name}
+                    {s.locationType === "warehouse" ? " · Warehouse" : ""}
+                  </span>
                   <span className="text-xs text-muted">{s.businessName}</span>
-                  {s.id === store.id ? <Check className="size-4 text-primary-hover" /> : null}
+                  {s.id === store.id ? (
+                    <Check className="size-4 text-primary-hover" />
+                  ) : null}
                 </MenuItem>
               ))}
             </MenuContent>
           </Menu>
         ) : (
-          <Badge variant="neutral" className="hidden sm:inline-flex">{store.name}</Badge>
+          <Badge variant="neutral" className="hidden sm:inline-flex">
+            {store.name}
+          </Badge>
         )}
 
         {/* User menu */}
         <Menu>
           <MenuTrigger className="focus-ring flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-surface-2">
-            <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary-hover">
+            <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary-foreground">
               {initials}
             </span>
             <span className="hidden text-left sm:block">
-              <span className="block max-w-[9rem] truncate text-sm font-medium leading-tight">{user.fullName}</span>
-              <span className={cn("block text-[10px] capitalize leading-tight text-muted")}>{role}</span>
+              <span className="block max-w-[9rem] truncate text-sm font-medium leading-tight">
+                {user.fullName}
+              </span>
+              <span
+                className={cn(
+                  "block text-[10px] capitalize leading-tight text-muted",
+                )}
+              >
+                {role}
+              </span>
             </span>
           </MenuTrigger>
           <MenuContent>
             <MenuLabel>{user.email}</MenuLabel>
             <MenuSeparator />
-            {canModule("settings") && <MenuItem onSelect={() => router.push("/settings")}>
-              <User className="size-4" /> Profile &amp; settings
-            </MenuItem>}
-            <MenuItem onSelect={signOut} className="text-danger focus:text-danger">
+            {canModule("settings") && (
+              <MenuItem onSelect={() => router.push("/settings")}>
+                <User className="size-4" /> Profile &amp; settings
+              </MenuItem>
+            )}
+            <MenuItem
+              onSelect={signOut}
+              className="text-danger focus:text-danger"
+            >
               <LogOut className="size-4" /> Sign out
             </MenuItem>
           </MenuContent>
