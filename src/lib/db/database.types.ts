@@ -30,7 +30,7 @@ export type Database = {
       sales_invoice_items: { Row: SalesInvoiceItem; Insert: never; Update: never; Relationships: [] }
       invoice_entries: { Row: InvoiceEntry; Insert: never; Update: never; Relationships: [] }
       goods_returns: { Row: GoodsReturn; Insert: never; Update: never; Relationships: [] }
-      goods_return_items: { Row: GoodsReturnItem; Insert: never; Update: never; Relationships: [] }
+      goods_return_items: { Row: GoodsReturnItem; Insert: never; Update: never; Relationships: [{ foreignKeyName: "goods_return_items_return_id_fkey"; columns: ["return_id"]; isOneToOne: false; referencedRelation: "goods_returns"; referencedColumns: ["id"] }] }
       return_dispositions: { Row: ReturnDisposition; Insert: never; Update: never; Relationships: [] }
       customer_refunds: { Row: CustomerRefund; Insert: never; Update: never; Relationships: [] }
       bulk_conversions: {
@@ -190,8 +190,8 @@ export type Database = {
         Relationships: []
       }
       stores: {
-        Row: { address: string | null; business_id: string; code: string | null; created_at: string; id: string; is_active: boolean; name: string; timezone: string; updated_at: string; location_type: LocationType }
-        Insert: { address?: string | null; business_id: string; code?: string | null; created_at?: string; id?: string; is_active?: boolean; name: string; timezone?: string; updated_at?: string; location_type?: LocationType }
+        Row: { currency: string; address: string | null; business_id: string; code: string | null; created_at: string; id: string; is_active: boolean; name: string; timezone: string; updated_at: string; location_type: LocationType }
+        Insert: { currency?: string; address?: string | null; business_id: string; code?: string | null; created_at?: string; id?: string; is_active?: boolean; name: string; timezone?: string; updated_at?: string; location_type?: LocationType }
         Update: Partial<Database["public"]["Tables"]["stores"]["Insert"]>
         Relationships: []
       }
@@ -251,6 +251,9 @@ export type Database = {
       returnable_documents: { Args: { p_store: string; p_type: string }; Returns: Json }
       use_invoice_customer_credit: { Args: { p_invoice: string; p_customer: string }; Returns: undefined }
       save_quote: { Args: { p_store: string; p_customer: string | null; p_guest?: Json; p_items: Json; p_valid: string; p_discount: number; p_note: string; p_request: string; p_quote?: string; p_expected?: number }; Returns: string }
+      set_store_currency: {Args:{p_store:string;p_currency:string};Returns:undefined}
+      prepare_document_email: {Args:{p_type:string;p_document:string;p_request:string;p_hash:string;p_recipient:string};Returns:Json}
+      create_order_with_contact: {Args:{p_store:string;p_customer:string|null;p_items:Json;p_request:string;p_note?:string;p_guest?:Json};Returns:string}
       set_quote_status: { Args: { p_quote: string; p_status: string; p_expected: number }; Returns: undefined }
       convert_quote: { Args: { p_quote: string; p_items: Json; p_expected: number }; Returns: string }
       save_purchase_order: { Args: { p_quote: string | null; p_order: string | null; p_received: boolean; p_approved: boolean; p_reference: string; p_filename: string | null; p_mime: string | null; p_content: string | null; p_expected: number }; Returns: undefined }

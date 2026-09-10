@@ -31,6 +31,9 @@ export function dateOnly(value: string | Date | null | undefined): string {
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
+  if (/TRANSFER_CURRENCY_MISMATCH/.test(m)) return "These locations use different currencies. A stock transfer cannot automatically convert their prices.";
+  if (/STORE_CURRENCY_HAS_HISTORY/.test(m)) return "This store already has products, customers or financial history. Its currency is locked to protect those amounts. Use a new store for another currency.";
+  if (/INVALID_CURRENCY/.test(m)) return "Choose a currency from the list.";
   if (/PURCHASE_ORDER_LOCKED/.test(m)) return "Purchase-order details are locked after quote acceptance or conversion.";
   if (/REGISTERED_(INVOICE|CREDIT)_CUSTOMER_REQUIRED/.test(m)) return "Credit requires this invoice’s existing registered customer account. One-off customers cannot use credit terms.";
   if (/INVALID_QUOTE_CONTACT/.test(m)) return "Enter a customer name (up to 200 characters), with an optional phone number and address.";

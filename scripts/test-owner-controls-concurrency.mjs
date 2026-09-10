@@ -116,6 +116,22 @@ try {
   assert.equal(Number(await scalar(admin, "select count(*) from public.cash_ups where store_id=$1", [handoverFixture.store])), 2);
   console.log("Passed competing handovers: exactly one next shift");
 
+  const emptyStore = await asUser(admin, async c => (await scalar(c,"select public.create_business('Currency race','New store')")).store_id);
+  await begin(a);
+  await a.query("select public.create_product($1,'First priced item',$2,null,null,5,10,0,0,'each',false)",[emptyStore,randomUUID()]);
+  const currencyChange=asUser(b,()=>b.query("select public.set_store_currency($1,'USD')",[emptyStore])).then(()=>({ok:true}),error=>({error:error.message}));
+  let currencyWaiting=false;
+  for(let n=0;n<100;n++){
+    currencyWaiting=await scalar(admin,"select exists(select 1 from pg_stat_activity where pid=$1 and wait_event_type='Lock')",[b.processID]);
+    if(currencyWaiting)break;
+    await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  assert.equal(currencyWaiting,true);
+  await a.query("commit");
+  assert.equal((await currencyChange).error,"STORE_CURRENCY_HAS_HISTORY");
+  assert.equal(await scalar(admin,"select currency from public.stores where id=$1",[emptyStore]),"ZAR");
+  console.log("Passed first product versus currency change: existing price cannot be relabelled");
+
 } finally {
   // Fixtures remain only in this disposable database for the restore drill.
   await Promise.allSettled(clients.map(async (c) => { await c.query("rollback"); await c.end(); }));

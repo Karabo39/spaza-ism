@@ -108,7 +108,7 @@ function SearchContent({
           kind: "product",
           id: p.id,
           name: p.name,
-          extra: money(p.selling_price),
+          extra: money(p.selling_price, store.currency),
         });
       for (const b of byBarcode.data ?? []) {
         const prod = b.products as unknown as {

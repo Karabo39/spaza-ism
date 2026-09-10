@@ -41,7 +41,7 @@ export function ExportButton({
     rows: filtered,
     columns,
     title,
-    subtitle: `${store.businessName ?? BRAND_NAME} · ${store.name} · ${store.currency ?? "ZAR"}`,
+    subtitle: `${store.businessName ?? BRAND_NAME} · ${store.name} · ${rows.some(r=>typeof r.currency==="string"&&r.currency!==store.currency)?"Currency shown per row":store.currency ?? "ZAR"}`,
   };
   async function download() {
     setBusy(true);

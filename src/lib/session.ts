@@ -48,7 +48,7 @@ const loadSession = cache(async (): Promise<Session | null> => {
 
   const [{ data: memberships }, { data: stores }, { data: profile }] = await Promise.all([
     supabase.from("memberships").select("id, business_id, role, businesses(name, currency)").eq("user_id", user.id).eq("is_active", true).throwOnError(),
-    supabase.from("stores").select("id, name, business_id, location_type").eq("is_active", true).order("location_type").order("name").throwOnError(),
+    supabase.from("stores").select("id, name, business_id, location_type, currency").eq("is_active", true).order("location_type").order("name").throwOnError(),
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
 
@@ -76,7 +76,7 @@ const loadSession = cache(async (): Promise<Session | null> => {
         businessId: s.business_id,
         businessName: b.name,
         role: b.role,
-        currency: b.currency,
+        currency: s.currency,
         locationType: s.location_type,
         modules: modulePermissions(b.role, grantsByStore.get(`${b.id}:${s.id}`)),
       };

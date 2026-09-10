@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
 
 export function MyStores() {
-  const { store, stores, setStore, currency } = useStore();
+  const { store, stores, setStore } = useStore();
   const { online } = useOffline();
   const overview = useQuery({
     queryKey: [
@@ -136,8 +136,8 @@ export function MyStores() {
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Stock value</dt>
-                    <dd className="mt-1 font-medium">
-                      {totals ? money(totals.stock_value, currency) : "—"}
+                    <dd className={`mt-1 inline-flex rounded-md border px-2 py-1 font-medium ${totals && totals.stock_value>0?"border-success/30 bg-success/10 text-success":"border-danger/30 bg-danger/10 text-danger"}`}>
+                      {totals ? money(totals.stock_value, s.currency) : "—"}
                     </dd>
                   </div>
                 </dl>

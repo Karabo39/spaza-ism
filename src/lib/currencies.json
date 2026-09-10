@@ -1,0 +1,767 @@
+[
+  {
+    "id": "AED",
+    "label": "AED – United Arab Emirates (United Arab Emirates Dirham)",
+    "searchText": "United Arab Emirates"
+  },
+  {
+    "id": "AFN",
+    "label": "AFN – Afghanistan (Afghan Afghani)",
+    "searchText": "Afghanistan"
+  },
+  {
+    "id": "ALL",
+    "label": "ALL – Albania (Albanian Lek)",
+    "searchText": "Albania"
+  },
+  {
+    "id": "AMD",
+    "label": "AMD – Armenia (Armenian Dram)",
+    "searchText": "Armenia"
+  },
+  {
+    "id": "AOA",
+    "label": "AOA – Angola (Angolan Kwanza)",
+    "searchText": "Angola"
+  },
+  {
+    "id": "ARS",
+    "label": "ARS – Argentina (Argentine Peso)",
+    "searchText": "Argentina"
+  },
+  {
+    "id": "AUD",
+    "label": "AUD – Australia (Australian Dollar)",
+    "searchText": "Australia, Cocos (Keeling) Islands, Christmas Island, Heard & McDonald Islands, Kiribati, Norfolk Island, Nauru, Tuvalu"
+  },
+  {
+    "id": "AWG",
+    "label": "AWG – Aruba (Aruban Florin)",
+    "searchText": "Aruba"
+  },
+  {
+    "id": "AZN",
+    "label": "AZN – Azerbaijan (Azerbaijani Manat)",
+    "searchText": "Azerbaijan"
+  },
+  {
+    "id": "BAM",
+    "label": "BAM – Bosnia & Herzegovina (Bosnia-Herzegovina Convertible Mark)",
+    "searchText": "Bosnia & Herzegovina"
+  },
+  {
+    "id": "BBD",
+    "label": "BBD – Barbados (Barbadian Dollar)",
+    "searchText": "Barbados"
+  },
+  {
+    "id": "BDT",
+    "label": "BDT – Bangladesh (Bangladeshi Taka)",
+    "searchText": "Bangladesh"
+  },
+  {
+    "id": "BHD",
+    "label": "BHD – Bahrain (Bahraini Dinar)",
+    "searchText": "Bahrain"
+  },
+  {
+    "id": "BIF",
+    "label": "BIF – Burundi (Burundian Franc)",
+    "searchText": "Burundi"
+  },
+  {
+    "id": "BMD",
+    "label": "BMD – Bermuda (Bermudan Dollar)",
+    "searchText": "Bermuda"
+  },
+  {
+    "id": "BND",
+    "label": "BND – Brunei (Brunei Dollar)",
+    "searchText": "Brunei"
+  },
+  {
+    "id": "BOB",
+    "label": "BOB – Bolivia (Bolivian Boliviano)",
+    "searchText": "Bolivia"
+  },
+  {
+    "id": "BRL",
+    "label": "BRL – Brazil (Brazilian Real)",
+    "searchText": "Brazil"
+  },
+  {
+    "id": "BSD",
+    "label": "BSD – Bahamas (Bahamian Dollar)",
+    "searchText": "Bahamas"
+  },
+  {
+    "id": "BTN",
+    "label": "BTN – Bhutan (Bhutanese Ngultrum)",
+    "searchText": "Bhutan"
+  },
+  {
+    "id": "BWP",
+    "label": "BWP – Botswana (Botswanan Pula)",
+    "searchText": "Botswana"
+  },
+  {
+    "id": "BYN",
+    "label": "BYN – Belarus (Belarusian Ruble)",
+    "searchText": "Belarus"
+  },
+  {
+    "id": "BZD",
+    "label": "BZD – Belize (Belize Dollar)",
+    "searchText": "Belize"
+  },
+  {
+    "id": "CAD",
+    "label": "CAD – Canada (Canadian Dollar)",
+    "searchText": "Canada"
+  },
+  {
+    "id": "CDF",
+    "label": "CDF – Congo - Kinshasa (Congolese Franc)",
+    "searchText": "Congo - Kinshasa"
+  },
+  {
+    "id": "CHF",
+    "label": "CHF – Switzerland (Swiss Franc)",
+    "searchText": "Switzerland, Liechtenstein"
+  },
+  {
+    "id": "CLP",
+    "label": "CLP – Chile (Chilean Peso)",
+    "searchText": "Chile"
+  },
+  {
+    "id": "CNY",
+    "label": "CNY – China (Chinese Yuan)",
+    "searchText": "China"
+  },
+  {
+    "id": "COP",
+    "label": "COP – Colombia (Colombian Peso)",
+    "searchText": "Colombia"
+  },
+  {
+    "id": "CRC",
+    "label": "CRC – Costa Rica (Costa Rican Colón)",
+    "searchText": "Costa Rica"
+  },
+  {
+    "id": "CUP",
+    "label": "CUP – Cuba (Cuban Peso)",
+    "searchText": "Cuba"
+  },
+  {
+    "id": "CVE",
+    "label": "CVE – Cape Verde (Cape Verdean Escudo)",
+    "searchText": "Cape Verde"
+  },
+  {
+    "id": "CZK",
+    "label": "CZK – Czechia (Czech Koruna)",
+    "searchText": "Czechia"
+  },
+  {
+    "id": "DJF",
+    "label": "DJF – Djibouti (Djiboutian Franc)",
+    "searchText": "Djibouti"
+  },
+  {
+    "id": "DKK",
+    "label": "DKK – Denmark (Danish Krone)",
+    "searchText": "Denmark, Faroe Islands, Greenland"
+  },
+  {
+    "id": "DOP",
+    "label": "DOP – Dominican Republic (Dominican Peso)",
+    "searchText": "Dominican Republic"
+  },
+  {
+    "id": "DZD",
+    "label": "DZD – Algeria (Algerian Dinar)",
+    "searchText": "Algeria"
+  },
+  {
+    "id": "EGP",
+    "label": "EGP – Egypt (Egyptian Pound)",
+    "searchText": "Egypt"
+  },
+  {
+    "id": "ERN",
+    "label": "ERN – Eritrea (Eritrean Nakfa)",
+    "searchText": "Eritrea"
+  },
+  {
+    "id": "ETB",
+    "label": "ETB – Ethiopia (Ethiopian Birr)",
+    "searchText": "Ethiopia"
+  },
+  {
+    "id": "EUR",
+    "label": "EUR – European Union (Euro)",
+    "searchText": "Andorra, Austria, Åland Islands, Belgium, Bulgaria, St. Barthélemy, Cyprus, Germany, Ceuta & Melilla, Estonia, Spain, European Union, Finland, France, French Guiana, Guadeloupe, Greece, Croatia, Canary Islands, Ireland, Italy, Lithuania, Luxembourg, Latvia, Monaco, Montenegro, St. Martin, Martinique, Malta, Netherlands, St. Pierre & Miquelon, Portugal, Réunion, Slovenia, Slovakia, San Marino, French Southern Territories, Vatican City, Kosovo, Mayotte"
+  },
+  {
+    "id": "FJD",
+    "label": "FJD – Fiji (Fijian Dollar)",
+    "searchText": "Fiji"
+  },
+  {
+    "id": "FKP",
+    "label": "FKP – Falkland Islands (Falkland Islands Pound)",
+    "searchText": "Falkland Islands"
+  },
+  {
+    "id": "GBP",
+    "label": "GBP – United Kingdom (British Pound)",
+    "searchText": "United Kingdom, Guernsey, South Georgia & South Sandwich Islands, Isle of Man, Jersey, Tristan da Cunha"
+  },
+  {
+    "id": "GEL",
+    "label": "GEL – Georgia (Georgian Lari)",
+    "searchText": "Georgia"
+  },
+  {
+    "id": "GHS",
+    "label": "GHS – Ghana (Ghanaian Cedi)",
+    "searchText": "Ghana"
+  },
+  {
+    "id": "GIP",
+    "label": "GIP – Gibraltar (Gibraltar Pound)",
+    "searchText": "Gibraltar"
+  },
+  {
+    "id": "GMD",
+    "label": "GMD – Gambia (Gambian Dalasi)",
+    "searchText": "Gambia"
+  },
+  {
+    "id": "GNF",
+    "label": "GNF – Guinea (Guinean Franc)",
+    "searchText": "Guinea"
+  },
+  {
+    "id": "GTQ",
+    "label": "GTQ – Guatemala (Guatemalan Quetzal)",
+    "searchText": "Guatemala"
+  },
+  {
+    "id": "GYD",
+    "label": "GYD – Guyana (Guyanaese Dollar)",
+    "searchText": "Guyana"
+  },
+  {
+    "id": "HKD",
+    "label": "HKD – Hong Kong SAR China (Hong Kong Dollar)",
+    "searchText": "Hong Kong SAR China"
+  },
+  {
+    "id": "HNL",
+    "label": "HNL – Honduras (Honduran Lempira)",
+    "searchText": "Honduras"
+  },
+  {
+    "id": "HTG",
+    "label": "HTG – Haiti (Haitian Gourde)",
+    "searchText": "Haiti"
+  },
+  {
+    "id": "HUF",
+    "label": "HUF – Hungary (Hungarian Forint)",
+    "searchText": "Hungary"
+  },
+  {
+    "id": "IDR",
+    "label": "IDR – Indonesia (Indonesian Rupiah)",
+    "searchText": "Indonesia"
+  },
+  {
+    "id": "ILS",
+    "label": "ILS – Israel (Israeli New Shekel)",
+    "searchText": "Israel, Palestinian Territories"
+  },
+  {
+    "id": "INR",
+    "label": "INR – India (Indian Rupee)",
+    "searchText": "Bhutan, India"
+  },
+  {
+    "id": "IQD",
+    "label": "IQD – Iraq (Iraqi Dinar)",
+    "searchText": "Iraq"
+  },
+  {
+    "id": "IRR",
+    "label": "IRR – Iran (Iranian Rial)",
+    "searchText": "Iran"
+  },
+  {
+    "id": "ISK",
+    "label": "ISK – Iceland (Icelandic Króna)",
+    "searchText": "Iceland"
+  },
+  {
+    "id": "JMD",
+    "label": "JMD – Jamaica (Jamaican Dollar)",
+    "searchText": "Jamaica"
+  },
+  {
+    "id": "JOD",
+    "label": "JOD – Jordan (Jordanian Dinar)",
+    "searchText": "Jordan, Palestinian Territories"
+  },
+  {
+    "id": "JPY",
+    "label": "JPY – Japan (Japanese Yen)",
+    "searchText": "Japan"
+  },
+  {
+    "id": "KES",
+    "label": "KES – Kenya (Kenyan Shilling)",
+    "searchText": "Kenya"
+  },
+  {
+    "id": "KGS",
+    "label": "KGS – Kyrgyzstan (Kyrgystani Som)",
+    "searchText": "Kyrgyzstan"
+  },
+  {
+    "id": "KHR",
+    "label": "KHR – Cambodia (Cambodian Riel)",
+    "searchText": "Cambodia"
+  },
+  {
+    "id": "KMF",
+    "label": "KMF – Comoros (Comorian Franc)",
+    "searchText": "Comoros"
+  },
+  {
+    "id": "KPW",
+    "label": "KPW – North Korea (North Korean Won)",
+    "searchText": "North Korea"
+  },
+  {
+    "id": "KRW",
+    "label": "KRW – South Korea (South Korean Won)",
+    "searchText": "South Korea"
+  },
+  {
+    "id": "KWD",
+    "label": "KWD – Kuwait (Kuwaiti Dinar)",
+    "searchText": "Kuwait"
+  },
+  {
+    "id": "KYD",
+    "label": "KYD – Cayman Islands (Cayman Islands Dollar)",
+    "searchText": "Cayman Islands"
+  },
+  {
+    "id": "KZT",
+    "label": "KZT – Kazakhstan (Kazakhstani Tenge)",
+    "searchText": "Kazakhstan"
+  },
+  {
+    "id": "LAK",
+    "label": "LAK – Laos (Laotian Kip)",
+    "searchText": "Laos"
+  },
+  {
+    "id": "LBP",
+    "label": "LBP – Lebanon (Lebanese Pound)",
+    "searchText": "Lebanon"
+  },
+  {
+    "id": "LKR",
+    "label": "LKR – Sri Lanka (Sri Lankan Rupee)",
+    "searchText": "Sri Lanka"
+  },
+  {
+    "id": "LRD",
+    "label": "LRD – Liberia (Liberian Dollar)",
+    "searchText": "Liberia"
+  },
+  {
+    "id": "LSL",
+    "label": "LSL – Lesotho (Lesotho Loti)",
+    "searchText": "Lesotho"
+  },
+  {
+    "id": "LYD",
+    "label": "LYD – Libya (Libyan Dinar)",
+    "searchText": "Libya"
+  },
+  {
+    "id": "MAD",
+    "label": "MAD – Morocco (Moroccan Dirham)",
+    "searchText": "Western Sahara, Morocco"
+  },
+  {
+    "id": "MDL",
+    "label": "MDL – Moldova (Moldovan Leu)",
+    "searchText": "Moldova"
+  },
+  {
+    "id": "MGA",
+    "label": "MGA – Madagascar (Malagasy Ariary)",
+    "searchText": "Madagascar"
+  },
+  {
+    "id": "MKD",
+    "label": "MKD – North Macedonia (Macedonian Denar)",
+    "searchText": "North Macedonia"
+  },
+  {
+    "id": "MMK",
+    "label": "MMK – Myanmar (Burma) (Myanmar Kyat)",
+    "searchText": "Myanmar (Burma)"
+  },
+  {
+    "id": "MNT",
+    "label": "MNT – Mongolia (Mongolian Tugrik)",
+    "searchText": "Mongolia"
+  },
+  {
+    "id": "MOP",
+    "label": "MOP – Macao SAR China (Macanese Pataca)",
+    "searchText": "Macao SAR China"
+  },
+  {
+    "id": "MRU",
+    "label": "MRU – Mauritania (Mauritanian Ouguiya)",
+    "searchText": "Mauritania"
+  },
+  {
+    "id": "MUR",
+    "label": "MUR – Mauritius (Mauritian Rupee)",
+    "searchText": "Mauritius"
+  },
+  {
+    "id": "MVR",
+    "label": "MVR – Maldives (Maldivian Rufiyaa)",
+    "searchText": "Maldives"
+  },
+  {
+    "id": "MWK",
+    "label": "MWK – Malawi (Malawian Kwacha)",
+    "searchText": "Malawi"
+  },
+  {
+    "id": "MXN",
+    "label": "MXN – Mexico (Mexican Peso)",
+    "searchText": "Mexico"
+  },
+  {
+    "id": "MYR",
+    "label": "MYR – Malaysia (Malaysian Ringgit)",
+    "searchText": "Malaysia"
+  },
+  {
+    "id": "MZN",
+    "label": "MZN – Mozambique (Mozambican Metical)",
+    "searchText": "Mozambique"
+  },
+  {
+    "id": "NAD",
+    "label": "NAD – Namibia (Namibian Dollar)",
+    "searchText": "Namibia"
+  },
+  {
+    "id": "NGN",
+    "label": "NGN – Nigeria (Nigerian Naira)",
+    "searchText": "Nigeria"
+  },
+  {
+    "id": "NIO",
+    "label": "NIO – Nicaragua (Nicaraguan Córdoba)",
+    "searchText": "Nicaragua"
+  },
+  {
+    "id": "NOK",
+    "label": "NOK – Norway (Norwegian Krone)",
+    "searchText": "Bouvet Island, Norway, Svalbard & Jan Mayen"
+  },
+  {
+    "id": "NPR",
+    "label": "NPR – Nepal (Nepalese Rupee)",
+    "searchText": "Nepal"
+  },
+  {
+    "id": "NZD",
+    "label": "NZD – New Zealand (New Zealand Dollar)",
+    "searchText": "Cook Islands, Niue, New Zealand, Pitcairn Islands, Tokelau"
+  },
+  {
+    "id": "OMR",
+    "label": "OMR – Oman (Omani Rial)",
+    "searchText": "Oman"
+  },
+  {
+    "id": "PAB",
+    "label": "PAB – Panama (Panamanian Balboa)",
+    "searchText": "Panama"
+  },
+  {
+    "id": "PEN",
+    "label": "PEN – Peru (Peruvian Sol)",
+    "searchText": "Peru"
+  },
+  {
+    "id": "PGK",
+    "label": "PGK – Papua New Guinea (Papua New Guinean Kina)",
+    "searchText": "Papua New Guinea"
+  },
+  {
+    "id": "PHP",
+    "label": "PHP – Philippines (Philippine Peso)",
+    "searchText": "Philippines"
+  },
+  {
+    "id": "PKR",
+    "label": "PKR – Pakistan (Pakistani Rupee)",
+    "searchText": "Pakistan"
+  },
+  {
+    "id": "PLN",
+    "label": "PLN – Poland (Polish Zloty)",
+    "searchText": "Poland"
+  },
+  {
+    "id": "PYG",
+    "label": "PYG – Paraguay (Paraguayan Guarani)",
+    "searchText": "Paraguay"
+  },
+  {
+    "id": "QAR",
+    "label": "QAR – Qatar (Qatari Riyal)",
+    "searchText": "Qatar"
+  },
+  {
+    "id": "RON",
+    "label": "RON – Romania (Romanian Leu)",
+    "searchText": "Romania"
+  },
+  {
+    "id": "RSD",
+    "label": "RSD – Serbia (Serbian Dinar)",
+    "searchText": "Serbia"
+  },
+  {
+    "id": "RUB",
+    "label": "RUB – Russia (Russian Ruble)",
+    "searchText": "Russia"
+  },
+  {
+    "id": "RWF",
+    "label": "RWF – Rwanda (Rwandan Franc)",
+    "searchText": "Rwanda"
+  },
+  {
+    "id": "SAR",
+    "label": "SAR – Saudi Arabia (Saudi Riyal)",
+    "searchText": "Saudi Arabia"
+  },
+  {
+    "id": "SBD",
+    "label": "SBD – Solomon Islands (Solomon Islands Dollar)",
+    "searchText": "Solomon Islands"
+  },
+  {
+    "id": "SCR",
+    "label": "SCR – Seychelles (Seychellois Rupee)",
+    "searchText": "Seychelles"
+  },
+  {
+    "id": "SDG",
+    "label": "SDG – Sudan (Sudanese Pound)",
+    "searchText": "Sudan"
+  },
+  {
+    "id": "SEK",
+    "label": "SEK – Sweden (Swedish Krona)",
+    "searchText": "Sweden"
+  },
+  {
+    "id": "SGD",
+    "label": "SGD – Singapore (Singapore Dollar)",
+    "searchText": "Singapore"
+  },
+  {
+    "id": "SHP",
+    "label": "SHP – St. Helena (St. Helena Pound)",
+    "searchText": "Ascension Island, St. Helena"
+  },
+  {
+    "id": "SLE",
+    "label": "SLE – Sierra Leone (Sierra Leonean Leone)",
+    "searchText": "Sierra Leone"
+  },
+  {
+    "id": "SOS",
+    "label": "SOS – Somalia (Somali Shilling)",
+    "searchText": "Somalia"
+  },
+  {
+    "id": "SRD",
+    "label": "SRD – Suriname (Surinamese Dollar)",
+    "searchText": "Suriname"
+  },
+  {
+    "id": "SSP",
+    "label": "SSP – South Sudan (South Sudanese Pound)",
+    "searchText": "South Sudan"
+  },
+  {
+    "id": "STN",
+    "label": "STN – São Tomé & Príncipe (São Tomé & Príncipe Dobra)",
+    "searchText": "São Tomé & Príncipe"
+  },
+  {
+    "id": "SYP",
+    "label": "SYP – Syria (Syrian Pound)",
+    "searchText": "Syria"
+  },
+  {
+    "id": "SZL",
+    "label": "SZL – Eswatini (Swazi Lilangeni)",
+    "searchText": "Eswatini"
+  },
+  {
+    "id": "THB",
+    "label": "THB – Thailand (Thai Baht)",
+    "searchText": "Thailand"
+  },
+  {
+    "id": "TJS",
+    "label": "TJS – Tajikistan (Tajikistani Somoni)",
+    "searchText": "Tajikistan"
+  },
+  {
+    "id": "TMT",
+    "label": "TMT – Turkmenistan (Turkmenistani Manat)",
+    "searchText": "Turkmenistan"
+  },
+  {
+    "id": "TND",
+    "label": "TND – Tunisia (Tunisian Dinar)",
+    "searchText": "Tunisia"
+  },
+  {
+    "id": "TOP",
+    "label": "TOP – Tonga (Tongan Paʻanga)",
+    "searchText": "Tonga"
+  },
+  {
+    "id": "TRY",
+    "label": "TRY – Türkiye (Turkish Lira)",
+    "searchText": "Türkiye"
+  },
+  {
+    "id": "TTD",
+    "label": "TTD – Trinidad & Tobago (Trinidad & Tobago Dollar)",
+    "searchText": "Trinidad & Tobago"
+  },
+  {
+    "id": "TWD",
+    "label": "TWD – Taiwan (New Taiwan Dollar)",
+    "searchText": "Taiwan"
+  },
+  {
+    "id": "TZS",
+    "label": "TZS – Tanzania (Tanzanian Shilling)",
+    "searchText": "Tanzania"
+  },
+  {
+    "id": "UAH",
+    "label": "UAH – Ukraine (Ukrainian Hryvnia)",
+    "searchText": "Ukraine"
+  },
+  {
+    "id": "UGX",
+    "label": "UGX – Uganda (Ugandan Shilling)",
+    "searchText": "Uganda"
+  },
+  {
+    "id": "USD",
+    "label": "USD – United States (US Dollar)",
+    "searchText": "American Samoa, Caribbean Netherlands, Diego Garcia, Ecuador, Micronesia, Guam, Haiti, British Indian Ocean Territory, Marshall Islands, Northern Mariana Islands, Panama, Puerto Rico, Palau, El Salvador, Turks & Caicos Islands, Timor-Leste, U.S. Outlying Islands, United States, British Virgin Islands, U.S. Virgin Islands, Zimbabwe"
+  },
+  {
+    "id": "UYU",
+    "label": "UYU – Uruguay (Uruguayan Peso)",
+    "searchText": "Uruguay"
+  },
+  {
+    "id": "UZS",
+    "label": "UZS – Uzbekistan (Uzbekistani Som)",
+    "searchText": "Uzbekistan"
+  },
+  {
+    "id": "VES",
+    "label": "VES – Venezuela (Venezuelan Bolívar)",
+    "searchText": "Venezuela"
+  },
+  {
+    "id": "VND",
+    "label": "VND – Vietnam (Vietnamese Dong)",
+    "searchText": "Vietnam"
+  },
+  {
+    "id": "VUV",
+    "label": "VUV – Vanuatu (Vanuatu Vatu)",
+    "searchText": "Vanuatu"
+  },
+  {
+    "id": "WST",
+    "label": "WST – Samoa (Samoan Tala)",
+    "searchText": "Samoa"
+  },
+  {
+    "id": "XAF",
+    "label": "XAF – Central African Republic (Central African CFA Franc)",
+    "searchText": "Central African Republic, Congo - Brazzaville, Cameroon, Gabon, Equatorial Guinea, Chad"
+  },
+  {
+    "id": "XCD",
+    "label": "XCD – Antigua & Barbuda (East Caribbean Dollar)",
+    "searchText": "Antigua & Barbuda, Anguilla, Dominica, Grenada, St. Kitts & Nevis, St. Lucia, Montserrat, St. Vincent & Grenadines"
+  },
+  {
+    "id": "XCG",
+    "label": "XCG – Curaçao (Caribbean guilder)",
+    "searchText": "Curaçao, Sint Maarten"
+  },
+  {
+    "id": "XOF",
+    "label": "XOF – Burkina Faso (West African CFA Franc)",
+    "searchText": "Burkina Faso, Benin, Côte d’Ivoire, Guinea-Bissau, Mali, Niger, Senegal, Togo"
+  },
+  {
+    "id": "XPF",
+    "label": "XPF – New Caledonia (CFP Franc)",
+    "searchText": "New Caledonia, French Polynesia, Wallis & Futuna"
+  },
+  {
+    "id": "YER",
+    "label": "YER – Yemen (Yemeni Rial)",
+    "searchText": "Yemen"
+  },
+  {
+    "id": "ZAR",
+    "label": "ZAR – South Africa (South African Rand)",
+    "searchText": "Lesotho, Namibia, South Africa"
+  },
+  {
+    "id": "ZMW",
+    "label": "ZMW – Zambia (Zambian Kwacha)",
+    "searchText": "Zambia"
+  },
+  {
+    "id": "ZWG",
+    "label": "ZWG – Zimbabwe (Zimbabwean Gold)",
+    "searchText": "Zimbabwe"
+  }
+]

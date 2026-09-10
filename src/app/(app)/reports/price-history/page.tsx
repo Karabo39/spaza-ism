@@ -28,9 +28,12 @@ export default async function PriceHistory({
     .order("created_at", { ascending: false })
     .limit(1000);
   if (error) throw error;
+  const ids=[...new Set((data??[]).flatMap(r=>r.performed_by?[r.performed_by]:[]))];
+  const people=ids.length?await db.from("profiles").select("id,full_name").in("id",ids):{data:[],error:null};if(people.error)throw people.error;
   const rows = (data ?? []).map((r) => ({
     ...r,
     date: dateTime(r.created_at),
+    changed_by: people.data?.find(p=>p.id===r.performed_by)?.full_name ?? (r.performed_by?"User unavailable":"Not recorded"),
   }));
   const columns = [
     { key: "product_name", label: "Product" },
@@ -39,6 +42,7 @@ export default async function PriceHistory({
     { key: "old_selling", label: "Previous price" },
     { key: "new_selling", label: "New price" },
     { key: "date", label: "Date" },
+    {key:"changed_by",label:"Changed by"},
     { key: "reason", label: "Event" },
   ];
   return (

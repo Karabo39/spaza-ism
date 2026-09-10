@@ -1,0 +1,33 @@
+do $$
+declare u uuid:=gen_random_uuid(); employee uuid:=gen_random_uuid(); target uuid; b uuid; s uuid; usa uuid; p uuid; c uuid; o uuid; i uuid; result jsonb; req uuid:=gen_random_uuid(); member uuid; blocked boolean; before_count integer;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'currency-owner@test.invalid','{}'),(employee,'currency-staff@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ result:=public.create_business('Currency tests','SA Shop');b:=(result->>'business_id')::uuid;s:=(result->>'store_id')::uuid;
+ usa:=public.create_location(b,'US Shop','store','US');
+ perform public.set_store_currency(usa,'USD');
+ if (select currency from public.stores where id=s)<>'ZAR' or (select currency from public.stores where id=usa)<>'USD' then raise exception 'ASSERT independent currencies';end if;
+ blocked:=false;begin perform public.set_store_currency(usa,'FAKE');exception when others then if sqlerrm<>'INVALID_CURRENCY' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT validates currency';end if;
+ p:=public.create_product(usa,'US item','US-1',null,null,5,10,0,0,'each',false);
+ perform public.receive_stock(usa,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',10)));
+ blocked:=false;begin perform public.set_store_currency(usa,'ZAR');exception when others then if sqlerrm<>'STORE_CURRENCY_HAS_HISTORY' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT historical currency protected';end if;
+ o:=public.create_order_with_contact(usa,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2)),req,'Guest order','{"name":"Order Guest","phone":"5551234","address":"Main Street"}');
+ if o<>public.create_order_with_contact(usa,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2)),req,'Guest order','{"name":"Order Guest","phone":"5551234","address":"Main Street"}') then raise exception 'ASSERT guest order retry';end if;
+ if (select count(*) from public.customers where store_id=usa)<>1 then raise exception 'ASSERT no duplicate contact';end if;
+ select customer_id into c from public.sales_orders where id=o;
+ if exists(select 1 from public.v_credit_customers where customer_id=c) then raise exception 'ASSERT guest not registered credit';end if;
+ perform public.process_sales_order(o,'confirm');i:=public.create_sales_invoice(o,current_date+30,'CASH');
+ if (select currency from public.sales_invoices where id=i)<>'USD' then raise exception 'ASSERT invoice snapshots store currency';end if;
+ perform public.issue_sales_invoice(i);perform public.post_invoice_entry(i,'PAYMENT',20,gen_random_uuid(),'CASH');perform public.issue_invoice_goods(i);
+ target:=public.create_product(s,'SA item','SA-1',null,null,5,10,0,0,'each',false);
+ blocked:=false;begin perform public.create_stock_transfer(usa,s,jsonb_build_array(jsonb_build_object('source_product_id',p,'destination_product_id',target,'quantity',1)),gen_random_uuid());exception when others then if sqlerrm<>'TRANSFER_CURRENCY_MISMATCH' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT no implicit currency conversion on transfers';end if;
+ reset role;member:=public.add_member_by_email(b,'currency-staff@test.invalid','employee');set local role authenticated;perform public.set_member_locations(member,array[usa]);
+ perform public.set_store_module_access(member,usa,'{"reports":false,"invoices":true,"returns":true,"settings":false}',0);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
+ result:=public.prepare_document_email('invoice',i,req,repeat('a',64),'buyer@test.invalid');
+ if nullif(result->>'id','') is null then raise exception 'ASSERT invoices user may email without reports';end if;
+ if result<>public.prepare_document_email('invoice',i,req,repeat('a',64),'buyer@test.invalid') then raise exception 'ASSERT email stable retry';end if;
+ blocked:=false;begin perform public.set_store_currency(usa,'EUR');exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT staff cannot change currency';end if;
+ blocked:=false;begin perform public.prepare_document_email('invoice',gen_random_uuid(),gen_random_uuid(),repeat('b',64),'buyer@test.invalid');exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT inaccessible document';end if;
+ raise exception 'TESTS_PASSED';
+end $$;
