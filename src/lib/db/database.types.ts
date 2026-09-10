@@ -136,8 +136,8 @@ export type Database = {
         Relationships: []
       }
       products: {
-        Row: { business_id: string; category_id: string | null; cost_price: number; created_at: string; created_by: string | null; default_supplier_id: string | null; id: string; is_active: boolean; min_stock_level: number; name: string; reorder_level: number; selling_price: number; sku: string | null; store_id: string; track_expiry: boolean; unit: string; updated_at: string }
-        Insert: { business_id: string; category_id?: string | null; cost_price?: number; created_at?: string; created_by?: string | null; default_supplier_id?: string | null; id?: string; is_active?: boolean; min_stock_level?: number; name: string; reorder_level?: number; selling_price?: number; sku?: string | null; store_id: string; track_expiry?: boolean; unit?: string; updated_at?: string }
+        Row: { description: string | null; business_id: string; category_id: string | null; cost_price: number; created_at: string; created_by: string | null; default_supplier_id: string | null; id: string; is_active: boolean; min_stock_level: number; name: string; reorder_level: number; selling_price: number; sku: string | null; store_id: string; track_expiry: boolean; unit: string; updated_at: string }
+        Insert: { description?: string | null; business_id: string; category_id?: string | null; cost_price?: number; created_at?: string; created_by?: string | null; default_supplier_id?: string | null; id?: string; is_active?: boolean; min_stock_level?: number; name: string; reorder_level?: number; selling_price?: number; sku?: string | null; store_id: string; track_expiry?: boolean; unit?: string; updated_at?: string }
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>
         Relationships: []
       }
@@ -323,6 +323,7 @@ export type Database = {
       customer_statement: { Args: { p_customer: string }; Returns: { id: string; created_at: string; txn_type: CreditTxnType; amount: number; balance_after: number; note: string | null }[] }
       product_sales_summary: { Args: { p_store: string; p_from?: string | null; p_to?: string | null }; Returns: { product_id: string; name: string; sold_qty: number; sold_value: number; current_qty: number }[] }
       create_product: { Args: { p_barcode?: string; p_category?: string; p_cost?: number; p_min?: number; p_name: string; p_reorder?: number; p_selling?: number; p_store: string; p_supplier?: string; p_track_expiry?: boolean; p_unit?: string }; Returns: string }
+      create_product_with_description: { Args: { p_description?: string; p_barcode?: string; p_category?: string; p_cost?: number; p_min?: number; p_name: string; p_reorder?: number; p_selling?: number; p_store: string; p_supplier?: string; p_track_expiry?: boolean; p_unit?: string }; Returns: string }
       receive_stock: { Args: { p_items: Json; p_note: string | null; p_reference: string | null; p_store: string; p_supplier: string | null }; Returns: string }
       reconcile_stock: { Args: { p_store: string }; Returns: { diff: number; ledger_qty: number; product_id: string; stock_qty: number }[] }
       record_credit_payment: { Args: { p_amount: number; p_customer: string; p_note?: string }; Returns: string }
@@ -350,6 +351,7 @@ export type StockTakeStatus = "IN_PROGRESS" | "PENDING_APPROVAL" | "COMPLETED" |
 
 type PublicSchema = Database["public"]
 export type ProductStock = {
+  description?: string | null;
   id: string; business_id: string; store_id: string; name: string; sku: string | null; unit: string;
   cost_price: number; selling_price: number; min_stock_level: number; reorder_level: number;
   track_expiry: boolean; is_active: boolean; category_id: string | null; default_supplier_id: string | null;

@@ -28,6 +28,7 @@ export function ProductEditDialog({
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState({
     name: product.name,
+    description: product.description ?? "",
     barcode,
     cost: String(product.cost_price),
     selling: String(product.selling_price),
@@ -52,6 +53,7 @@ export function ProductEditDialog({
       p_expected: product.undated_quantity ?? product.quantity,
       p_values: {
         name: form.name.trim(),
+        description: form.description.trim() || null,
         ...(form.barcode.trim() || barcode
           ? { barcode: form.barcode.trim(), expected_barcode: barcode }
           : {}),
@@ -107,6 +109,19 @@ export function ProductEditDialog({
                 Changing this barcode replaces it for scanning. Other barcodes
                 and stock history are kept.
               </p>
+            </div>
+            <div>
+              <Label htmlFor="e-description">Description (optional)</Label>
+              <textarea
+                id="e-description"
+                maxLength={1000}
+                rows={3}
+                className="focus-ring w-full resize-y rounded-md border border-border bg-input px-3 py-2 text-sm"
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
+                placeholder="Item details, size or other useful information"
+              />
+              <p className="text-xs text-muted">Up to 1,000 characters.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -33,6 +33,7 @@ function ProductRegisterDialogContent({
   const { store } = useStore();
   const [name, setName] = React.useState(initialName);
   const [barcode, setBarcode] = React.useState(initialBarcode);
+  const [description, setDescription] = React.useState("");
   const [selling, setSelling] = React.useState("");
   const [cost, setCost] = React.useState("");
   const [minLevel, setMinLevel] = React.useState("");
@@ -44,16 +45,20 @@ function ProductRegisterDialogContent({
     e.preventDefault();
     setLoading(true);
     const supabase = createClient();
-    const { data: id, error } = await supabase.rpc("create_product", {
-      p_store: store.id,
-      p_track_expiry: trackExpiry,
-      p_name: name.trim(),
-      p_barcode: barcode.trim() || undefined,
-      p_cost: Number(cost) || 0,
-      p_selling: Number(selling) || 0,
-      p_min: Number(minLevel) || 0,
-      p_reorder: Number(reorder) || 0,
-    });
+    const { data: id, error } = await supabase.rpc(
+      "create_product_with_description",
+      {
+        p_store: store.id,
+        p_track_expiry: trackExpiry,
+        p_name: name.trim(),
+        p_description: description.trim() || undefined,
+        p_barcode: barcode.trim() || undefined,
+        p_cost: Number(cost) || 0,
+        p_selling: Number(selling) || 0,
+        p_min: Number(minLevel) || 0,
+        p_reorder: Number(reorder) || 0,
+      },
+    );
     if (error || !id) {
       setLoading(false);
       toast.error(friendlyError(error?.message));
@@ -99,6 +104,19 @@ function ProductRegisterDialogContent({
               onChange={(e) => setBarcode(e.target.value)}
               placeholder="Scan or type"
             />
+          </div>
+          <div>
+            <Label htmlFor="p-description">Description (optional)</Label>
+            <textarea
+              id="p-description"
+              maxLength={1000}
+              rows={3}
+              className="focus-ring w-full resize-y rounded-md border border-border bg-input px-3 py-2 text-sm"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Item details, size or other useful information"
+            />
+            <p className="text-xs text-muted">Up to 1,000 characters.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

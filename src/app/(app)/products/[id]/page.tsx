@@ -85,6 +85,12 @@ export default async function ProductDetailPage({
         }
       />
 
+      {p.description && (
+        <p className="mb-6 whitespace-pre-wrap break-words rounded-lg border border-border bg-surface p-4 text-sm">
+          {p.description}
+        </p>
+      )}
+
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
           <CardContent className="p-4">
