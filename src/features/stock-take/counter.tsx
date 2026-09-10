@@ -176,6 +176,7 @@ export function StockTakeCounter({
             <TR>
               <TH>Product</TH>
               <TH>System at count</TH>
+              <TH>Still the Same</TH>
               <TH>Physical count</TH>
               <TH>Added stock expiry</TH>
               <TH>Variance</TH>
@@ -187,6 +188,26 @@ export function StockTakeCounter({
               <TR key={item.id}>
                 <TD>{item.products?.name ?? "—"}</TD>
                 <TD>{qty(item.system_qty)}</TD>
+                <TD>
+                  <input
+                    type="checkbox"
+                    aria-label={`Still the Same ${item.products?.name}`}
+                    disabled={closed || busy || saving > 0 || !online}
+                    checked={
+                      String(local[item.id] ?? item.counted_qty ?? "") !== "" &&
+                      Number(local[item.id] ?? item.counted_qty) ===
+                        Number(item.system_qty)
+                    }
+                    onChange={(e) =>
+                      setLocal((old) => ({
+                        ...old,
+                        [item.id]: e.target.checked
+                          ? String(item.system_qty)
+                          : "",
+                      }))
+                    }
+                  />
+                </TD>
                 <TD>
                   {closed ? (
                     item.counted_qty === null ? (

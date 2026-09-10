@@ -1,0 +1,9 @@
+import {beforeEach,expect,it,vi} from "vitest";
+import "@testing-library/jest-dom/vitest";
+import {cleanup,render,screen,fireEvent,waitFor} from "@testing-library/react";
+import {StockTakeCounter} from "@/features/stock-take/counter";
+const m=vi.hoisted(()=>({online:true,rpc:vi.fn().mockResolvedValue({error:null})}));
+vi.mock("@/lib/store-context",()=>({useStore:()=>({can:()=>true})}));vi.mock("@/lib/offline/offline-context",()=>({useOffline:()=>({online:m.online})}));vi.mock("next/navigation",()=>({useRouter:()=>({refresh:vi.fn()})}));vi.mock("@tanstack/react-query",()=>({useQueryClient:()=>({invalidateQueries:vi.fn()}),useQuery:()=>({data:[{id:"row",system_qty:250,counted_qty:null,counted:false,variance:null,products:{name:"Pink phone",track_expiry:false}}],refetch:vi.fn()})}));vi.mock("@/lib/supabase/client",()=>({createClient:()=>({rpc:m.rpc})}));vi.mock("@/features/reports/export-button",()=>({ExportButton:()=>null}));vi.mock("@/components/shell/toolbar-search",()=>({ToolbarSearch:()=>null}));
+beforeEach(()=>{cleanup();m.online=true;m.rpc.mockClear();});
+it("copies the displayed count but requires an explicit save",async()=>{render(<StockTakeCounter stockTakeId="take" status="IN_PROGRESS"/>);fireEvent.click(screen.getByLabelText("Still the Same Pink phone"));expect(screen.getByLabelText("Count Pink phone")).toHaveValue(250);expect(m.rpc).not.toHaveBeenCalled();fireEvent.click(screen.getByRole("button",{name:"Save count"}));await waitFor(()=>expect(m.rpc).toHaveBeenCalledWith("save_stock_take_count",{p_item:"row",p_quantity:250}));});
+it("disables the shortcut offline and on closed counts",()=>{m.online=false;const v=render(<StockTakeCounter stockTakeId="take" status="IN_PROGRESS"/>);expect(screen.getByRole("checkbox")).toBeDisabled();v.unmount();m.online=true;render(<StockTakeCounter stockTakeId="take" status="COMPLETED"/>);expect(screen.getByRole("checkbox")).toBeDisabled();});
