@@ -71,12 +71,10 @@ export default async function InvoicesPage({
             <Button asChild>
               <Link href="/invoices/quotes?create=1">Create Quotes</Link>
             </Button>
-            <Button asChild variant="secondary">
+            <Button asChild>
               <Link href="/invoices/quotes">View all quotes</Link>
             </Button>
-            <Link className="text-accent" href="/orders">
-              Create from order
-            </Link>
+            <Button asChild><Link href="/orders">Create from order</Link></Button>
           </div>
         }
       />

@@ -32,6 +32,10 @@ export function OrdersConsole({
   const router = useRouter();
   const { online, busy, request, run } = useBillingAction();
   const [customer, setCustomer] = useState<CreditCustomer | null>(null);
+  const [guestMode, setGuestMode] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestAddress, setGuestAddress] = useState("");
   const [pickCustomer, setPickCustomer] = useState(false);
   const [product, setProduct] = useState<ProductStock | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -125,7 +129,7 @@ export function OrdersConsole({
       const res = await createClient().rpc("create_sales_invoice", {
         p_order: current.id,
         p_due: due,
-        p_terms: terms,
+        p_terms: terms === "PAY_DELIVER" ? "CASH" : terms,
         p_discount: discount,
       });
       if (res.data) router.push(`/invoices/${res.data}`);
@@ -143,10 +147,54 @@ export function OrdersConsole({
         <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
           <div className="flex justify-between">
             <h2 className="font-semibold">New order</h2>
-            <Button variant="secondary" onClick={() => setPickCustomer(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setGuestMode(false);
+                setPickCustomer(true);
+              }}
+            >
               {customer?.name ?? "Choose customer"}
             </Button>
           </div>
+          <Button
+            variant={guestMode ? "primary" : "secondary"}
+            onClick={() => {
+              setGuestMode(true);
+              setCustomer(null);
+            }}
+          >
+            One-off customer
+          </Button>
+          {guestMode && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label>
+                Customer name
+                <Input
+                  required
+                  maxLength={200}
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                />
+              </label>
+              <label>
+                Contact number (optional)
+                <Input
+                  maxLength={50}
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                />
+              </label>
+              <label className="sm:col-span-2">
+                Address (optional)
+                <Input
+                  maxLength={1000}
+                  value={guestAddress}
+                  onChange={(e) => setGuestAddress(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
           <div className="grid gap-3 md:grid-cols-[1fr_9rem]">
             <LocationProductPicker
               location={store.id}
@@ -221,11 +269,22 @@ export function OrdersConsole({
           )}
           <Button
             loading={busy}
-            disabled={!online || !customer || !lines.length}
+            disabled={
+              !online ||
+              (guestMode ? !guestName.trim() : !customer) ||
+              !lines.length
+            }
             onClick={() => {
               const payload = {
                 p_store: store.id,
-                p_customer: customer!.customer_id,
+                p_customer: guestMode ? null : customer!.customer_id,
+                p_guest: guestMode
+                  ? {
+                      name: guestName.trim(),
+                      phone: guestPhone.trim(),
+                      address: guestAddress.trim(),
+                    }
+                  : null,
                 p_items: lines.map(({ product_id, quantity, unit_price }) => ({
                   product_id,
                   quantity,
@@ -235,7 +294,7 @@ export function OrdersConsole({
               };
               void run(
                 () =>
-                  createClient().rpc("create_sales_order", {
+                  createClient().rpc("create_order_with_contact", {
                     ...payload,
                     p_request: request(payload),
                   }),
@@ -243,6 +302,10 @@ export function OrdersConsole({
                 () => {
                   setLines([]);
                   setCustomer(null);
+                  setGuestMode(false);
+                  setGuestName("");
+                  setGuestPhone("");
+                  setGuestAddress("");
                   setNote("");
                 },
               );
@@ -255,9 +318,9 @@ export function OrdersConsole({
       <div className="flex justify-between">
         <h2 className="font-semibold">Recent orders</h2>
         {canModule("invoices") && (
-          <Link className="text-accent" href="/invoices">
-            View invoices
-          </Link>
+          <Button asChild>
+            <Link href="/invoices">View invoices</Link>
+          </Button>
         )}
       </div>
       {error && (
@@ -404,6 +467,7 @@ export function OrdersConsole({
                   <option value="CASH">Cash before collection</option>
                   <option value="CARD_EFT">Card/EFT before collection</option>
                   <option value="CREDIT">Customer credit account</option>
+                  <option value="PAY_DELIVER">Pay – To be Delivered</option>
                 </select>
               </div>
               <div>
@@ -418,6 +482,13 @@ export function OrdersConsole({
                   onChange={(e) => setDiscount(Number(e.target.value))}
                 />
               </div>
+              {terms === "PAY_DELIVER" && (
+                <p className="text-sm text-muted">
+                  Create the invoice and record payment next. It becomes Paid –
+                  To be Delivered only after full payment; release goods when
+                  delivered.
+                </p>
+              )}
               <Button
                 loading={busy}
                 disabled={
