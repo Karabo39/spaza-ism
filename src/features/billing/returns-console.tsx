@@ -2,7 +2,8 @@
 import { amountCents } from "@/features/cash-up/cash-utils";
 import { statusLabel } from "./status-label";
 import { useReturnSources } from "./use-return-sources";
-import { useState } from "react";
+import { SearchSelect } from "@/components/ui/search-select";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { DEFAULT_RETURN_REASONS, returnReasonText } from "./return-reasons";
 import { useQuery } from "@tanstack/react-query";
@@ -39,7 +40,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     initialInvoice ? "invoice" : "sale",
   );
   const [source, setSource] = useState(initialInvoice ?? "");
-  const [sourceSearch, setSourceSearch] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [lines, setLines] = useState<ReturnLine[]>([]);
   const [item, setItem] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -118,10 +119,28 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("goods_returns")
-        .select("*")
+        .select("*,goods_return_items(id,product_name,quantity)")
         .eq("store_id", store.id)
         .order("created_at", { ascending: false })
         .limit(200);
+      if (error) throw error;
+      return data;
+    },
+  });
+  const people = useQuery({
+    queryKey: [
+      "billing",
+      "return-people",
+      store.id,
+      returns.data?.map((r) => r.created_by).join(","),
+    ],
+    enabled: !!returns.data?.length,
+    queryFn: async () => {
+      const ids = [...new Set((returns.data ?? []).map((r) => r.created_by))];
+      const { data, error } = await createClient()
+        .from("profiles")
+        .select("id,full_name")
+        .in("id", ids);
       if (error) throw error;
       return data;
     },
@@ -225,43 +244,16 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             </select>
           </div>
           <div>
-            <Label htmlFor="return-source">
-              Select original sale / invoice
-            </Label>
-            <Input
-              aria-label="Find original sale or invoice"
-              className="mb-2"
-              placeholder="Search product, customer, date or reference"
-              value={sourceSearch}
-              onChange={(e) => setSourceSearch(e.target.value)}
-            />
-            <select
-              id="return-source"
-              className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
+            <SearchSelect
+              label="Select original sale / invoice"
+              options={sources.data ?? []}
               value={source}
-              onChange={(e) => {
-                setSource(e.target.value);
+              onChange={(id) => {
+                setSource(id);
                 setLines([]);
                 setItem("");
               }}
-            >
-              <option value="">Select a document</option>
-              {initialInvoice &&
-                !sources.data?.some((s) => s.id === initialInvoice) && (
-                  <option value={initialInvoice}>{initialInvoice}</option>
-                )}
-              {sources.data
-                ?.filter(
-                  (s) =>
-                    s.id === source ||
-                    s.label.toLowerCase().includes(sourceSearch.toLowerCase()),
-                )
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-            </select>
+            />
           </div>
         </div>
         <p className="text-xs text-muted">
@@ -295,13 +287,15 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
               onChange={(e) => setItem(e.target.value)}
             >
               <option value="">Select item</option>
-              {sourceItems.data?.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name} · {l.quantity} remaining ·{" "}
-                  {money(l.charged / l.originalQuantity, currency)} per unit
-                  charged
-                </option>
-              ))}
+              {sourceItems.data
+                ?.filter((l) => !lines.some((added) => added.item_id === l.id))
+                .map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name} · {l.quantity} remaining ·{" "}
+                    {money(l.charged / l.originalQuantity, currency)} per unit
+                    charged
+                  </option>
+                ))}
             </select>
             {item &&
               sourceItems.data
@@ -474,24 +468,51 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             <TH>Reference</TH>
             <TH>Status</TH>
             <TH>Reason</TH>
+            <TH>Returned by</TH>
             <TH>Value</TH>
           </TR>
         </THead>
         <TBody>
           {returns.data?.map((r) => (
-            <TR key={r.id}>
-              <TD>
-                <button
-                  className="focus-ring inline-flex items-center rounded-md border border-accent/40 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10"
-                  onClick={() => selectReturn(r.id)}
-                >
-                  {r.reference}
-                </button>
-              </TD>
-              <TD>{statusLabel(r.status)}</TD>
-              <TD>{r.reason}</TD>
-              <TD>{money(r.amount, currency)}</TD>
-            </TR>
+            <Fragment key={r.id}>
+              <TR>
+                <TD>
+                  <button
+                    className="focus-ring inline-flex items-center rounded-md border border-accent/40 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10"
+                    aria-expanded={expanded === r.id}
+                    onClick={() => {
+                      selectReturn(r.id);
+                      setExpanded(expanded === r.id ? null : r.id);
+                    }}
+                  >
+                    <span aria-hidden="true">
+                      {expanded === r.id ? "▾" : "▸"}
+                    </span>{" "}
+                    {r.reference}
+                  </button>
+                </TD>
+                <TD>{statusLabel(r.status)}</TD>
+                <TD>{r.reason}</TD>
+                <TD>
+                  {people.data?.find((p) => p.id === r.created_by)?.full_name ??
+                    "User unavailable"}
+                </TD>
+                <TD>{money(r.amount, currency)}</TD>
+              </TR>
+              {expanded === r.id && (
+                <TR>
+                  <TD colSpan={5}>
+                    <ul className="space-y-1 py-2">
+                      {(r.goods_return_items ?? []).map((l) => (
+                        <li key={l.id}>
+                          {l.quantity} × {l.product_name}
+                        </li>
+                      ))}
+                    </ul>
+                  </TD>
+                </TR>
+              )}
+            </Fragment>
           ))}
         </TBody>
       </Table>
