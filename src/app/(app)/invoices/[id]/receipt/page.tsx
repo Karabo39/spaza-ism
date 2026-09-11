@@ -1,10 +1,12 @@
+import {getSession} from "@/lib/session";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
 import {PrintReceipt} from "@/features/billing/print-receipt";
 import {money,dateOnly,dateTime} from "@/lib/format";
 export default async function ReceiptPage({params}:{params:Promise<{id:string}>}){
-  const {id}=await params;const db=await createClient();const {data:i,error}=await db.from("v_invoice_balances").select("*").eq("id",id).maybeSingle();if(error)throw error;if(!i)notFound();
+  const session=await getSession("invoices_view_invoices");if(!session?.activeStore)notFound();
+  const {id}=await params;const db=await createClient();const {data:i,error}=await db.from("v_invoice_balances").select("*").eq("id",id).eq("store_id",session.activeStore.id).maybeSingle();if(error)throw error;if(!i)notFound();
   const [lines,entries]=await Promise.all([db.from("sales_invoice_items").select("*").eq("invoice_id",id).order("product_name"),db.from("invoice_entries").select("*").eq("invoice_id",id).order("created_at")]);if(lines.error||entries.error)throw lines.error??entries.error;
   return <><div className="mb-4 flex justify-between print:hidden"><Link className="text-accent" href={`/invoices/${id}`}>Back to invoice</Link><PrintReceipt type="invoice" id={id}/></div><article id="receipt" className="mx-auto max-w-3xl bg-white p-8 text-black rounded-lg space-y-5">
     <header className="flex flex-wrap justify-between gap-4"><div><h1 className="text-2xl font-bold">{i.business_name}</h1><p>{i.store_name}</p></div><div><h2 className="text-xl font-semibold">{i.state==="DRAFT"?"Draft invoice":Number(i.paid)>0?"Invoice & payment receipt":"Invoice"}</h2><p className="text-xs break-all">{i.reference}</p></div></header>

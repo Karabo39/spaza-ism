@@ -38,7 +38,7 @@ beforeEach(() => {
       name: "Shop",
       businessName: "Company",
       currency: "USD",
-      modules: { invoices: true, returns: true, reports: false },
+      modules: { invoices: true, invoices_view_invoices: true, returns: true, reports: false },
     },
   });
   m.load.mockResolvedValue({

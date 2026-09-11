@@ -48,16 +48,18 @@ export default async function InvoicesPage({
   else if (sp.status) query = query.eq("status", sp.status);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
   if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
-  const { data, error } = await query
-    .order(
-      sp.sort === "due"
-        ? "due_date"
-        : sp.sort === "balance"
-          ? "outstanding"
-          : "created_at",
-      { ascending: sp.sort === "due" },
-    )
-    .limit(500);
+  const { data, error } = store.modules.invoices_view_invoices
+    ? await query
+        .order(
+          sp.sort === "due"
+            ? "due_date"
+            : sp.sort === "balance"
+              ? "outstanding"
+              : "created_at",
+          { ascending: sp.sort === "due" },
+        )
+        .limit(500)
+    : { data: [], error: null };
   if (error) throw error;
   const rows = data ?? [];
   return (
@@ -68,186 +70,209 @@ export default async function InvoicesPage({
         crumbs={[{ label: "Sales" }, { label: "Invoicing" }]}
         actions={
           <div className="flex flex-wrap gap-4">
-            <Button asChild>
-              <Link href="/invoices/quotes?create=1">Create Quotes</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/invoices/quotes">View all quotes</Link>
-            </Button>
-            <Button asChild><Link href="/orders">Create from order</Link></Button>
+            {store.modules.invoices_create_quotes && (
+              <Button asChild>
+                <Link href="/invoices/quotes?create=1">Create Quotes</Link>
+              </Button>
+            )}
+            {store.modules.invoices_view_quotes && (
+              <Button asChild>
+                <Link href="/invoices/quotes">View all quotes</Link>
+              </Button>
+            )}
+            {store.modules.invoices_create_from_order && (
+              <Button asChild>
+                <Link href="/orders">Create from order</Link>
+              </Button>
+            )}
           </div>
         }
       />
-      <InvoiceSummary storeId={store.id} currency={store.currency} />
-      <form className="mb-5 flex flex-wrap gap-3">
-        <input
-          className="rounded border border-border bg-input px-3 py-2"
-          name="reference"
-          aria-label="Invoice number"
-          placeholder="Invoice number"
-          defaultValue={sp.reference}
-        />
-        <input
-          className="rounded border border-border bg-input px-3 py-2"
-          name="referenceFrom"
-          aria-label="Invoice number from"
-          placeholder="Invoice number from"
-          defaultValue={sp.referenceFrom}
-        />
-        <input
-          className="rounded border border-border bg-input px-3 py-2"
-          name="referenceTo"
-          aria-label="Invoice number to"
-          placeholder="Invoice number to"
-          defaultValue={sp.referenceTo}
-        />
-        <select
-          className="rounded border border-border bg-input px-3 py-2"
-          name="method"
-          aria-label="Invoice payment terms"
-          defaultValue={sp.method ?? ""}
-        >
-          <option value="">All payment terms</option>
-          <option value="CASH">Cash</option>
-          <option value="CARD_EFT">Card/EFT</option>
-          <option value="CREDIT">Credit</option>
-        </select>
-        <input
-          className="rounded border border-border bg-input px-3 py-2"
-          name="q"
-          aria-label="Customer name"
-          placeholder="Customer name"
-          defaultValue={sp.q}
-        />
-        <select
-          name="paidMethod"
-          aria-label="Actual payment method"
-          defaultValue={sp.paidMethod ?? ""}
-          className="rounded border border-border bg-input px-3 py-2"
-        >
-          <option value="">All receipt methods</option>
-          <option value="CASH">Paid in cash</option>
-          <option value="CARD_EFT">Paid by Card/EFT</option>
-          <option value="CREDIT">Store credit applied</option>
-        </select>
-        <select
-          className="rounded border border-border bg-input px-3 py-2"
-          name="status"
-          aria-label="Invoice status"
-          defaultValue={sp.status ?? ""}
-        >
-          <option value="">All statuses</option>
-          <option value="PAID_AWAITING_DELIVERY">Paid – To be Delivered</option>
-          {[
-            "DRAFT",
-            "UNPAID",
-            "PARTIALLY_PAID",
-            "PAID",
-            "OVERDUE",
-            "CREDITED",
-            "CANCELLED",
-            "VOID",
-          ].map((s) => (
-            <option key={s} value={s}>
-              {s.replaceAll("_", " ")}
-            </option>
-          ))}
-        </select>
-        <select
-          name="sort"
-          aria-label="Invoice sort"
-          defaultValue={sp.sort ?? "newest"}
-          className="rounded border border-border bg-input px-3"
-        >
-          <option value="newest">Newest first</option>
-          <option value="due">Due date</option>
-          <option value="balance">Largest balance</option>
-        </select>
-        <input
-          type="date"
-          name="from"
-          aria-label="From date"
-          defaultValue={sp.from}
-          className="rounded border border-border bg-input px-2"
-        />
-        <input
-          type="date"
-          name="to"
-          aria-label="To date"
-          defaultValue={sp.to}
-          className="rounded border border-border bg-input px-2"
-        />
-        <button className="rounded bg-primary px-4 py-2">Apply filters</button>
-      </form>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">
-          {rows.length} invoices shown
-          {rows.length === 500 ? " — latest 500; narrow your filters" : ""}.
-          Outstanding in these results:{" "}
-          {money(
-            rows.reduce((n, r) => n + Math.max(Number(r.outstanding), 0), 0),
-            store.currency,
-          )}
-        </p>
-        <ExportButton
-          module="invoices"
-          rows={rows.map((r) => ({
-            reference: r.reference,
-            customer: r.customer_name,
-            status: invoiceStatusLabel(r),
-            terms: r.terms,
-            methods: r.payment_methods.join(", "),
-            due: r.due_date,
-            total: r.total,
-            paid: r.paid,
-            credits: r.credits,
-            debits: r.debits,
-            outstanding: r.outstanding,
-          }))}
-          columns={[
-            { key: "reference", label: "Invoice" },
-            { key: "customer", label: "Customer" },
-            { key: "status", label: "Status" },
-            { key: "terms", label: "Payment terms" },
-            { key: "methods", label: "Receipt methods" },
-            { key: "due", label: "Due" },
-            { key: "total", label: "Total" },
-            { key: "paid", label: "Payments" },
-            { key: "credits", label: "Credit notes" },
-            { key: "debits", label: "Debit notes" },
-            { key: "outstanding", label: "Outstanding" },
-          ]}
-          filename="invoices"
-        />
-      </div>
-      <Table>
-        <THead>
-          <TR>
-            <TH>Invoice</TH>
-            <TH>Customer</TH>
-            <TH>Status</TH>
-            <TH>Due</TH>
-            <TH>Total</TH>
-            <TH>Outstanding</TH>
-          </TR>
-        </THead>
-        <TBody>
-          {rows.map((i) => (
-            <TR key={i.id}>
-              <TD>
-                <Link className="text-accent" href={`/invoices/${i.id}`}>
-                  {i.reference}
-                </Link>
-              </TD>
-              <TD>{i.customer_name}</TD>
-              <TD>{invoiceStatusLabel(i)}</TD>
-              <TD>{dateOnly(i.due_date)}</TD>
-              <TD>{money(i.total, store.currency)}</TD>
-              <TD>{money(i.outstanding, store.currency)}</TD>
-            </TR>
-          ))}
-        </TBody>
-      </Table>
+      <InvoiceSummary
+        storeId={store.id}
+        currency={store.currency}
+        permissions={store.modules}
+      />
+      {store.modules.invoices_view_invoices && (
+        <>
+          <form className="mb-5 flex flex-wrap gap-3">
+            <input
+              className="rounded border border-border bg-input px-3 py-2"
+              name="reference"
+              aria-label="Invoice number"
+              placeholder="Invoice number"
+              defaultValue={sp.reference}
+            />
+            <input
+              className="rounded border border-border bg-input px-3 py-2"
+              name="referenceFrom"
+              aria-label="Invoice number from"
+              placeholder="Invoice number from"
+              defaultValue={sp.referenceFrom}
+            />
+            <input
+              className="rounded border border-border bg-input px-3 py-2"
+              name="referenceTo"
+              aria-label="Invoice number to"
+              placeholder="Invoice number to"
+              defaultValue={sp.referenceTo}
+            />
+            <select
+              className="rounded border border-border bg-input px-3 py-2"
+              name="method"
+              aria-label="Invoice payment terms"
+              defaultValue={sp.method ?? ""}
+            >
+              <option value="">All payment terms</option>
+              <option value="CASH">Cash</option>
+              <option value="CARD_EFT">Card/EFT</option>
+              <option value="CREDIT">Credit</option>
+            </select>
+            <input
+              className="rounded border border-border bg-input px-3 py-2"
+              name="q"
+              aria-label="Customer name"
+              placeholder="Customer name"
+              defaultValue={sp.q}
+            />
+            <select
+              name="paidMethod"
+              aria-label="Actual payment method"
+              defaultValue={sp.paidMethod ?? ""}
+              className="rounded border border-border bg-input px-3 py-2"
+            >
+              <option value="">All receipt methods</option>
+              <option value="CASH">Paid in cash</option>
+              <option value="CARD_EFT">Paid by Card/EFT</option>
+              <option value="CREDIT">Store credit applied</option>
+            </select>
+            <select
+              className="rounded border border-border bg-input px-3 py-2"
+              name="status"
+              aria-label="Invoice status"
+              defaultValue={sp.status ?? ""}
+            >
+              <option value="">All statuses</option>
+              <option value="PAID_AWAITING_DELIVERY">
+                Paid – To be Delivered
+              </option>
+              {[
+                "DRAFT",
+                "UNPAID",
+                "PARTIALLY_PAID",
+                "PAID",
+                "OVERDUE",
+                "CREDITED",
+                "CANCELLED",
+                "VOID",
+              ].map((s) => (
+                <option key={s} value={s}>
+                  {s.replaceAll("_", " ")}
+                </option>
+              ))}
+            </select>
+            <select
+              name="sort"
+              aria-label="Invoice sort"
+              defaultValue={sp.sort ?? "newest"}
+              className="rounded border border-border bg-input px-3"
+            >
+              <option value="newest">Newest first</option>
+              <option value="due">Due date</option>
+              <option value="balance">Largest balance</option>
+            </select>
+            <input
+              type="date"
+              name="from"
+              aria-label="From date"
+              defaultValue={sp.from}
+              className="rounded border border-border bg-input px-2"
+            />
+            <input
+              type="date"
+              name="to"
+              aria-label="To date"
+              defaultValue={sp.to}
+              className="rounded border border-border bg-input px-2"
+            />
+            <button className="rounded bg-primary px-4 py-2">
+              Apply filters
+            </button>
+          </form>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">
+              {rows.length} invoices shown
+              {rows.length === 500 ? " — latest 500; narrow your filters" : ""}.
+              Outstanding in these results:{" "}
+              {money(
+                rows.reduce(
+                  (n, r) => n + Math.max(Number(r.outstanding), 0),
+                  0,
+                ),
+                store.currency,
+              )}
+            </p>
+            <ExportButton
+              module="invoices"
+              rows={rows.map((r) => ({
+                reference: r.reference,
+                customer: r.customer_name,
+                status: invoiceStatusLabel(r),
+                terms: r.terms,
+                methods: r.payment_methods.join(", "),
+                due: r.due_date,
+                total: r.total,
+                paid: r.paid,
+                credits: r.credits,
+                debits: r.debits,
+                outstanding: r.outstanding,
+              }))}
+              columns={[
+                { key: "reference", label: "Invoice" },
+                { key: "customer", label: "Customer" },
+                { key: "status", label: "Status" },
+                { key: "terms", label: "Payment terms" },
+                { key: "methods", label: "Receipt methods" },
+                { key: "due", label: "Due" },
+                { key: "total", label: "Total" },
+                { key: "paid", label: "Payments" },
+                { key: "credits", label: "Credit notes" },
+                { key: "debits", label: "Debit notes" },
+                { key: "outstanding", label: "Outstanding" },
+              ]}
+              filename="invoices"
+            />
+          </div>
+          <Table>
+            <THead>
+              <TR>
+                <TH>Invoice</TH>
+                <TH>Customer</TH>
+                <TH>Status</TH>
+                <TH>Due</TH>
+                <TH>Total</TH>
+                <TH>Outstanding</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {rows.map((i) => (
+                <TR key={i.id}>
+                  <TD>
+                    <Link className="text-accent" href={`/invoices/${i.id}`}>
+                      {i.reference}
+                    </Link>
+                  </TD>
+                  <TD>{i.customer_name}</TD>
+                  <TD>{invoiceStatusLabel(i)}</TD>
+                  <TD>{dateOnly(i.due_date)}</TD>
+                  <TD>{money(i.total, store.currency)}</TD>
+                  <TD>{money(i.outstanding, store.currency)}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        </>
+      )}
     </>
   );
 }

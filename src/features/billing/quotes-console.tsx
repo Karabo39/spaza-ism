@@ -25,15 +25,18 @@ import { money } from "@/lib/format";
 import type { SalesQuote } from "@/lib/db/database.types";
 
 export function QuotesConsole() {
-  const { store, currency } = useStore();
+  const { store, currency, canModule } = useStore();
   const [selected, setSelected] = useState<string | null>(null);
   const params = useSearchParams();
-  const [creating, setCreating] = useState(params.get("create") === "1");
+  const [creating, setCreating] = useState(
+    params.get("create") === "1" && canModule("invoices_create_quotes"),
+  );
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const term = useDebouncedValue(search.trim());
   const query = useQuery({
     queryKey: ["billing", "quotes", store.id, term, page],
+    enabled: canModule("invoices_view_quotes"),
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("sales_quotes")
@@ -53,25 +56,29 @@ export function QuotesConsole() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-3">
-        <Button
-          onClick={() => {
-            setSelected(null);
-            setCreating(true);
-          }}
-        >
-          Create Quotes
-        </Button>
-        <Input
-          aria-label="Search quotations by customer"
-          placeholder="Search customer"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-        />
+        {canModule("invoices_create_quotes") && (
+          <Button
+            onClick={() => {
+              setSelected(null);
+              setCreating(true);
+            }}
+          >
+            Create Quotes
+          </Button>
+        )}
+        {canModule("invoices_view_quotes") && (
+          <Input
+            aria-label="Search quotations by customer"
+            placeholder="Search customer"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+          />
+        )}
       </div>
-      {creating ? (
+      {creating && canModule("invoices_create_quotes") ? (
         <QuoteEditor
           key={`new:${store.id}`}
           saved={(id) => {
@@ -82,57 +89,61 @@ export function QuotesConsole() {
           }}
           cancel={() => setCreating(false)}
         />
-      ) : current ? (
+      ) : current && canModule("invoices_view_quotes") ? (
         <QuoteDetail key={`${current.id}:${current.version}`} quote={current} />
       ) : null}
-      <h2 className="font-semibold">Saved quotes</h2>
-      {query.error ? (
-        <p role="alert">
-          Could not load quotations.{" "}
-          <Button onClick={() => query.refetch()}>Retry</Button>
-        </p>
-      ) : query.isLoading ? (
-        <p>Loading quotations...</p>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {query.data?.map((q) => (
-            <button
-              className="min-w-0 break-words rounded-lg border border-border bg-surface p-4 text-left hover:border-primary"
-              key={q.id}
-              onClick={() => {
-                setSelected(q.id);
-                setCreating(false);
-              }}
+      {canModule("invoices_view_quotes") && (
+        <>
+          <h2 className="font-semibold">Saved quotes</h2>
+          {query.error ? (
+            <p role="alert">
+              Could not load quotations.{" "}
+              <Button onClick={() => query.refetch()}>Retry</Button>
+            </p>
+          ) : query.isLoading ? (
+            <p>Loading quotations...</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {query.data?.map((q) => (
+                <button
+                  className="min-w-0 break-words rounded-lg border border-border bg-surface p-4 text-left hover:border-primary"
+                  key={q.id}
+                  onClick={() => {
+                    setSelected(q.id);
+                    setCreating(false);
+                  }}
+                >
+                  <p className="font-semibold break-all">{q.reference}</p>
+                  <p>
+                    {q.customer_name} · {money(q.total, currency)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {statusLabel(quoteStatus(q))} · Valid until {q.valid_until}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+          {query.data?.length === 0 && <p>No quotations found.</p>}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              disabled={page === 0 || query.isFetching}
+              onClick={() => setPage(page - 1)}
             >
-              <p className="font-semibold break-all">{q.reference}</p>
-              <p>
-                {q.customer_name} · {money(q.total, currency)}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {statusLabel(quoteStatus(q))} · Valid until {q.valid_until}
-              </p>
-            </button>
-          ))}
-        </div>
+              Previous quotes
+            </Button>
+            <span>Page {page + 1}</span>
+            <Button
+              variant="secondary"
+              disabled={query.isFetching || (query.data?.length ?? 0) < 50}
+              onClick={() => setPage(page + 1)}
+            >
+              Next quotes
+            </Button>
+          </div>
+        </>
       )}
-      {query.data?.length === 0 && <p>No quotations found.</p>}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="secondary"
-          disabled={page === 0 || query.isFetching}
-          onClick={() => setPage(page - 1)}
-        >
-          Previous quotes
-        </Button>
-        <span>Page {page + 1}</span>
-        <Button
-          variant="secondary"
-          disabled={query.isFetching || (query.data?.length ?? 0) < 50}
-          onClick={() => setPage(page + 1)}
-        >
-          Next quotes
-        </Button>
-      </div>
     </div>
   );
 }
@@ -216,7 +227,7 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
     { key: "valid_until", label: "Valid until" },
     { key: "note", label: "Notes" },
   ];
-  if (edit)
+  if (edit && canModule("invoices_create_quotes"))
     return (
       <QuoteEditor
         quote={q}
@@ -256,11 +267,13 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
         filename={`quotation-${q.reference}`}
       />
       <div className="flex flex-wrap gap-3">
-        {q.status === "DRAFT" && active && (
-          <Button variant="secondary" onClick={() => setEdit(true)}>
-            Edit draft
-          </Button>
-        )}
+        {q.status === "DRAFT" &&
+          active &&
+          canModule("invoices_create_quotes") && (
+            <Button variant="secondary" onClick={() => setEdit(true)}>
+              Edit draft
+            </Button>
+          )}
         {active &&
           ["SENT", "ACCEPTED", "CANCELLED"]
             .filter(
@@ -294,7 +307,7 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
                     : "Cancel quotation"}
               </Button>
             ))}
-        {active && canModule("orders") && (
+        {active && canModule("orders_new") && (
           <Button
             onClick={() =>
               q.status === "ACCEPTED"
@@ -305,7 +318,7 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
             Review conversion to order
           </Button>
         )}
-        {q.order_id && (
+        {q.order_id && canModule("orders_recent") && (
           <Link href={`/orders?order=${q.order_id}`} className="text-accent">
             Open Orders — converted quotation
           </Link>
@@ -443,7 +456,6 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
           )}
         </DialogContent>
       </Dialog>
-
     </section>
   );
 }

@@ -23,7 +23,7 @@ async function authorized(type: "invoice" | "return", id: string) {
         { status: 401 },
       ),
     };
-  if (!store.modules[type === "invoice" ? "invoices" : "returns"])
+  if (!store.modules[type === "invoice" ? "invoices_view_invoices" : "returns"])
     return {
       response: Response.json(
         { error: "You do not have access to this document module." },
