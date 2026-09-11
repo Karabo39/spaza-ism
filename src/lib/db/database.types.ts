@@ -239,6 +239,7 @@ export type Database = {
       }
     }
     Functions: {
+      smtp_delivery: { Args: { p_key: string; p_token?: string; p_provider?: string }; Returns: Json };
       assign_stock_expiry: { Args: {p_product: string; p_expiry: string; p_quantity: number; p_expected: number}; Returns: undefined }
       save_product_details: { Args: {p_product: string; p_values: Json; p_expiry?: string; p_expected?: number}; Returns: undefined }
       registration_open: { Args: Record<string, never>; Returns: boolean }
