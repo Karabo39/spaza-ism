@@ -1,10 +1,14 @@
+import nodemailer from "npm:nodemailer@10.0.3";
+import { smtpOptions, sendSmtp } from "../_shared/smtp.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.4";
 import { invitationHandler } from "./handler.ts";
 
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const emailKey = Deno.env.get("RESEND_API_KEY");
-const sender = Deno.env.get("REPORT_EMAIL_FROM");
+const smtp = smtpOptions((key) => Deno.env.get(key));
+const sender =
+  Deno.env.get("INVITATION_EMAIL_FROM")?.trim() ||
+  Deno.env.get("REPORT_EMAIL_FROM")?.trim();
 const appUrl =
   Deno.env.get("INVITATION_APP_URL") ?? "https://posinventory.shop";
 const admin = createClient(url, key, {
@@ -12,7 +16,7 @@ const admin = createClient(url, key, {
 });
 Deno.serve(
   invitationHandler({
-    configured: !!(url && key && emailKey && sender),
+    configured: !!(url && key && smtp && sender),
     appUrl,
     authenticate: async (token) => {
       if (!token) return null;
@@ -41,17 +45,34 @@ Deno.serve(
       };
     },
     send: async (recipient, subject, text, idempotencyKey) => {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        signal: AbortSignal.timeout(15000),
-        headers: {
-          Authorization: `Bearer ${emailKey}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey,
-        },
-        body: JSON.stringify({ from: sender, to: [recipient], subject, text }),
-      });
-      if (!response.ok) throw new Error("EMAIL_DELIVERY_FAILED");
+      const db = admin;
+      if (!smtp) throw new Error("SMTP_NOT_CONFIGURED");
+      const transport = nodemailer.createTransport(smtp);
+      try {
+        await sendSmtp(
+          idempotencyKey,
+          { from: sender!, to: [recipient], subject, text },
+          {
+            begin: async (p_key) => {
+              const { data, error } = await db.rpc("smtp_delivery", { p_key });
+              if (error) throw new Error("SMTP_RESERVATION_FAILED");
+              return data;
+            },
+            finish: async (p_key, p_token, p_provider) => {
+              const { error } = await db.rpc("smtp_delivery", {
+                p_key,
+                p_token,
+                p_provider,
+              });
+              if (error) throw new Error("SMTP_RECORD_FAILED");
+            },
+          },
+          (message) => transport.sendMail(message),
+        );
+        return;
+      } finally {
+        transport.close();
+      }
     },
     finish: async (delivery, user, sent) => {
       const { error } = await admin.rpc("finish_employee_invitation_delivery", {
