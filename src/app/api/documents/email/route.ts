@@ -1,3 +1,4 @@
+import { emailConfigured, sendEmail } from "@/lib/email";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
@@ -5,6 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 import { loadEmailDocument } from "@/features/billing/document-email";
 import { reportFile } from "@/features/reports/export-data";
 export const runtime = "nodejs";
+function documentSender() {
+  return (
+    process.env.INVOICE_EMAIL_FROM?.trim() ||
+    process.env.REPORT_EMAIL_FROM?.trim()
+  );
+}
 const documentSchema = z.object({
   type: z.enum(["invoice", "return"]),
   id: z.string().uuid(),
@@ -62,8 +69,7 @@ export async function GET(request: Request) {
       {
         recipient: result.document.recipient,
         reference: result.document.reference,
-        configured:
-          !!process.env.RESEND_API_KEY && !!process.env.REPORT_EMAIL_FROM,
+        configured: emailConfigured() && !!documentSender(),
       },
       { headers: { "Cache-Control": "no-store" } },
     );
@@ -93,7 +99,8 @@ export async function POST(request: Request) {
   try {
     const result = await authorized(body.type, body.id);
     if (result.response) return result.response;
-    if (!process.env.RESEND_API_KEY || !process.env.REPORT_EMAIL_FROM)
+    const sender = documentSender();
+    if (!emailConfigured() || !sender)
       return Response.json(
         {
           error:
@@ -138,36 +145,18 @@ export async function POST(request: Request) {
       { ...document.data, createdAt: job.created_at, fileId: job.id },
       "pdf",
     );
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      signal: AbortSignal.timeout(15000),
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": `document-${job.id}`,
-      },
-      body: JSON.stringify({
-        from: process.env.REPORT_EMAIL_FROM,
-        to: [body.recipient],
-        subject: document.data.title,
-        text: `Please find your ${body.type === "invoice" ? "invoice" : "return receipt"} attached. Reference: ${document.reference}`,
-        attachments: [
-          {
-            filename: `${document.reference.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`,
-            content: Buffer.from(await file.arrayBuffer()).toString("base64"),
-          },
-        ],
-      }),
-    });
-    if (!response.ok)
-      return Response.json(
+    const provider = await sendEmail(db, `document-${job.id}`, {
+      from: sender,
+      to: [body.recipient],
+      subject: document.data.title,
+      text: `Please find your ${body.type === "invoice" ? "invoice" : "return receipt"} attached. Reference: ${document.reference}`,
+      attachments: [
         {
-          error:
-            "Email delivery was not confirmed. Retry with the same details.",
+          filename: `${document.reference.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`,
+          content: Buffer.from(await file.arrayBuffer()).toString("base64"),
         },
-        { status: 502 },
-      );
-    const provider = (await response.json()) as { id: string };
+      ],
+    });
     const completed = await db.rpc("complete_report_email", {
       p_job: job.id,
       p_provider: provider.id,
@@ -183,7 +172,10 @@ export async function POST(request: Request) {
     return Response.json({ sent: true });
   } catch {
     return Response.json(
-      { error: "Could not confirm delivery. Retry with the same details." },
+      {
+        error:
+          "Delivery is unconfirmed. Check the recipient inbox or ask your administrator before starting a new delivery.",
+      },
       { status: 502 },
     );
   }

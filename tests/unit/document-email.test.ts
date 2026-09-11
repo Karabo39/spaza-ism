@@ -16,6 +16,10 @@ vi.mock("@/features/billing/document-email", () => ({
   loadEmailDocument: m.load,
 }));
 vi.mock("@/features/reports/export-data", () => ({ reportFile: m.file }));
+vi.mock("@/lib/email", () => ({
+  emailConfigured: () => !!process.env.SMTP_PASSWORD,
+  sendEmail: (...args: unknown[]) => m.fetch(...args),
+}));
 const id = "00000000-0000-4000-8000-000000000001";
 function request(extra = {}, origin = "https://pos.test") {
   return new Request("https://pos.test/api/documents/email", {
@@ -38,7 +42,12 @@ beforeEach(() => {
       name: "Shop",
       businessName: "Company",
       currency: "USD",
-      modules: { invoices: true, invoices_view_invoices: true, returns: true, reports: false },
+      modules: {
+        invoices: true,
+        invoices_view_invoices: true,
+        returns: true,
+        reports: false,
+      },
     },
   });
   m.load.mockResolvedValue({
@@ -65,9 +74,9 @@ beforeEach(() => {
     ),
   );
   m.file.mockResolvedValue(new Blob(["pdf"]));
-  vi.stubEnv("RESEND_API_KEY", "test-key");
+  vi.stubEnv("SMTP_PASSWORD", "test-key");
   vi.stubEnv("REPORT_EMAIL_FROM", "sender@example.test");
-  vi.stubGlobal("fetch", m.fetch);
+  vi.stubEnv("INVOICE_EMAIL_FROM", "");
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -98,20 +107,21 @@ it("checks origin and email format", async () => {
   expect(m.load).not.toHaveBeenCalled();
 });
 it("does not send when the sender is unconfigured", async () => {
-  vi.stubEnv("RESEND_API_KEY", "");
+  vi.stubEnv("SMTP_PASSWORD", "");
   expect((await POST(request())).status).toBe(503);
   expect(m.fetch).not.toHaveBeenCalled();
 });
 it("uses authoritative document data and stable provider retries", async () => {
   m.fetch
     .mockRejectedValueOnce(new Error("network"))
-    .mockResolvedValueOnce(Response.json({ id: "provider" }));
+    .mockResolvedValueOnce({ id: "provider" });
   expect((await POST(request({ rows: [{ amount: 1 }] }))).status).toBe(502);
   expect((await POST(request({ rows: [{ amount: 1 }] }))).status).toBe(200);
   expect(m.file.mock.calls[0][0].rows).toEqual([{ amount: 100 }]);
-  expect(
-    m.fetch.mock.calls.map((c) => c[1].headers["Idempotency-Key"]),
-  ).toEqual(["document-job", "document-job"]);
+  expect(m.fetch.mock.calls.map((c) => c[1])).toEqual([
+    "document-job",
+    "document-job",
+  ]);
   expect(m.rpc).toHaveBeenCalledWith("complete_report_email", {
     p_job: "job",
     p_provider: "provider",
@@ -121,4 +131,26 @@ it("does not send a completed job again", async () => {
   m.rpc.mockResolvedValue({ data: { id: "job", sent: true }, error: null });
   expect((await POST(request())).status).toBe(200);
   expect(m.fetch).not.toHaveBeenCalled();
+});
+it("uses the invoice sender for documents independently of the report sender", async () => {
+  vi.stubEnv(
+    "INVOICE_EMAIL_FROM",
+    "POS INVENTORY <invoice@posinventory.store>",
+  );
+  vi.stubEnv("REPORT_EMAIL_FROM", "");
+  m.fetch.mockResolvedValue({ id: "provider" });
+  const preview = await GET(
+    new Request(`https://pos.test/api/documents/email?type=invoice&id=${id}`),
+  );
+  expect(await preview.json()).toMatchObject({ configured: true });
+  expect((await POST(request())).status).toBe(200);
+  expect(m.fetch.mock.calls[0][2].from).toBe(
+    "POS INVENTORY <invoice@posinventory.store>",
+  );
+});
+it("keeps the existing sender as a fallback for return receipts", async () => {
+  vi.stubEnv("INVOICE_EMAIL_FROM", "   ");
+  m.fetch.mockResolvedValue({ id: "provider" });
+  expect((await POST(request({ type: "return" }))).status).toBe(200);
+  expect(m.fetch.mock.calls[0][2].from).toBe("sender@example.test");
 });

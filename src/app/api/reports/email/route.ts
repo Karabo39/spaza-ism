@@ -1,3 +1,4 @@
+import { emailConfigured, sendEmail } from "@/lib/email";
 import { BRAND_NAME } from "@/lib/brand";
 import { createHash } from "node:crypto";
 import { z } from "zod";
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
       { status: 401 },
     );
 
-  if (!process.env.RESEND_API_KEY || !process.env.REPORT_EMAIL_FROM)
+  if (!emailConfigured() || !process.env.REPORT_EMAIL_FROM)
     return Response.json(
       {
         error:
@@ -112,38 +113,20 @@ export async function POST(request: Request) {
       { ...body, createdAt: job.created_at, fileId: job.id },
       body.format,
     );
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      signal: AbortSignal.timeout(15000),
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": `report-${job.id}`,
-      },
-      body: JSON.stringify({
-        from: process.env.REPORT_EMAIL_FROM,
-        to: [body.recipient],
-        subject: `${BRAND_NAME} report: ${body.title}`,
-        text: `${body.title}\n${body.subtitle ?? ""}\n${body.rows.length} exported rows.`,
-        attachments: [
-          {
-            filename: `${body.filename}.${body.format}`,
-            content: Buffer.from(await attachment.arrayBuffer()).toString(
-              "base64",
-            ),
-          },
-        ],
-      }),
-    });
-    if (!response.ok)
-      return Response.json(
+    const result = await sendEmail(db, `report-${job.id}`, {
+      from: process.env.REPORT_EMAIL_FROM,
+      to: [body.recipient],
+      subject: `${BRAND_NAME} report: ${body.title}`,
+      text: `${body.title}\n${body.subtitle ?? ""}\n${body.rows.length} exported rows.`,
+      attachments: [
         {
-          error:
-            "The email provider did not confirm delivery. Retry with the same details.",
+          filename: `${body.filename}.${body.format}`,
+          content: Buffer.from(await attachment.arrayBuffer()).toString(
+            "base64",
+          ),
         },
-        { status: 502 },
-      );
-    const result = (await response.json()) as { id: string };
+      ],
+    });
     const completed = await db.rpc("complete_report_email", {
       p_job: job.id,
       p_provider: result.id,
@@ -161,7 +144,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error:
-          "Could not confirm delivery. Reconnect and retry with the same details.",
+          "Delivery is unconfirmed. Check the recipient inbox or ask your administrator before starting a new delivery.",
       },
       { status: 502 },
     );
