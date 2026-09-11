@@ -1,10 +1,23 @@
 "use client";
 import Link from "next/link";
 import { useStore } from "@/lib/store-context";
-import { moduleForPath } from "@/lib/modules";
-import { PackagePlus, PackageMinus, Search, Tag, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
+import { moduleForPath, type ModuleKey } from "@/lib/modules";
+import {
+  PackagePlus,
+  PackageMinus,
+  Search,
+  Tag,
+  SlidersHorizontal,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
-const ACTIONS: { href: string; label: string; icon: LucideIcon; primary?: boolean }[] = [
+const ACTIONS: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  primary?: boolean;
+}[] = [
   { href: "/goods-out", label: "Goods Out", icon: PackageMinus, primary: true },
   { href: "/goods-in", label: "Goods In", icon: PackagePlus },
   { href: "/check-stock", label: "Check Stock", icon: Search },
@@ -17,7 +30,9 @@ export function QuickActions() {
   const { canModule } = useStore();
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {ACTIONS.filter((a) => canModule(moduleForPath(a.href)!)).map((a) => {
+      {ACTIONS.filter((a) =>
+        canModule(("dashboard_" + moduleForPath(a.href)) as ModuleKey),
+      ).map((a) => {
         const Icon = a.icon;
         return (
           <Link
@@ -29,7 +44,9 @@ export function QuickActions() {
                 : "border-border bg-surface hover:bg-surface-2"
             }`}
           >
-            <Icon className={`size-6 ${a.primary ? "text-primary-hover" : "text-muted-foreground"}`} />
+            <Icon
+              className={`size-6 ${a.primary ? "text-primary-hover" : "text-muted-foreground"}`}
+            />
             <span className="text-sm font-medium">{a.label}</span>
           </Link>
         );

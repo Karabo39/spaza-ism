@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import { money, qty, friendlyError } from "@/lib/format";
 
 export function LocationOverview() {
-  const { store, stores, can, setStore } = useStore();
+  const { store, stores, can, canModule, setStore } = useStore();
   const { online } = useOffline();
-  const allowed = can("owner");
+  const allowed = can("owner") && canModule("dashboard_locations");
   const { data, isLoading, error } = useQuery({
     queryKey: ["location-overview", store.businessId],
     enabled: allowed && online,

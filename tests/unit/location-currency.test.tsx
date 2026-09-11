@@ -15,6 +15,7 @@ vi.mock("@/lib/store-context", () => ({
     store: { id: state.active, businessId: "biz" },
     stores: state.stores,
     can: () => true,
+    canModule: () => true,
     currency: state.active === "sa" ? "ZAR" : "USD",
     setStore: vi.fn(),
   }),
