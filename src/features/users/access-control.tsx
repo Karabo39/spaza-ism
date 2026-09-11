@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { PermissionTree } from "./permission-tree";
 import { ReturnAccess } from "./return-access";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -9,9 +10,8 @@ import { useStore } from "@/lib/store-context";
 import { useOffline } from "@/lib/offline/offline-context";
 import { createClient } from "@/lib/supabase/client";
 import {
-  MODULES,
-  ROLE_RANK,
-  modulePermissions,
+  PERMISSIONS,
+  permissionSettings,
   type ModulePermissions,
 } from "@/lib/modules";
 import type { MembershipRole, Json } from "@/lib/db/database.types";
@@ -162,7 +162,7 @@ export function AccessControl() {
 export function PermissionEditor({ member }: { member: MemberAccess }) {
   const { store } = useStore();
   const { online } = useOffline();
-  const initial = modulePermissions(member.role, member.permissions);
+  const initial = permissionSettings(member.role, member.permissions);
   const [permissions, setPermissions] =
     React.useState<ModulePermissions>(initial);
   const [saved, setSaved] = React.useState(initial);
@@ -170,7 +170,7 @@ export function PermissionEditor({ member }: { member: MemberAccess }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   const owner = member.role === "owner";
-  const dirty = MODULES.some((m) => permissions[m.key] !== saved[m.key]);
+  const dirty = PERMISSIONS.some((m) => permissions[m.key] !== saved[m.key]);
   async function save() {
     if (!online || busy || owner) return;
     setBusy(true);
@@ -212,50 +212,17 @@ export function PermissionEditor({ member }: { member: MemberAccess }) {
           <p className="mt-1 text-sm text-muted-foreground">
             {owner
               ? "Owners always have all modules so they can manage and recover access."
-              : "Enable the modules this person needs. Existing manager approvals still apply within each module."}
+              : "Expand Dashboard, Orders or Invoicing to choose individual options. Parent and linked-module access are required. Existing manager approvals still apply."}
           </p>
         </div>
       </div>
-      <div className="grid gap-6 p-5 md:grid-cols-2 xl:grid-cols-3">
-        {[...new Set(MODULES.map((m) => m.group))].map((group) => (
-          <fieldset key={group}>
-            <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-              {group}
-            </legend>
-            <div className="space-y-1">
-              {MODULES.filter((m) => m.group === group).map((m) => {
-                const eligible = ROLE_RANK[member.role] >= ROLE_RANK[m.role];
-                return (
-                  <label
-                    className={`flex min-h-11 items-center gap-3 rounded-md px-2 py-2 text-sm ${!eligible ? "text-muted" : "hover:bg-surface-2"}`}
-                    key={m.key}
-                  >
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
-                      checked={permissions[m.key]}
-                      disabled={owner || !eligible || busy || !online}
-                      onChange={(e) =>
-                        setPermissions((prev) => ({
-                          ...prev,
-                          [m.key]: e.target.checked,
-                        }))
-                      }
-                    />
-                    <span>
-                      {m.label}
-                      {!eligible && (
-                        <span className="block text-xs capitalize">
-                          {m.role} role required
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-        ))}
+      <div className="p-5">
+        <PermissionTree
+          role={member.role}
+          permissions={permissions}
+          onChange={setPermissions}
+          disabled={busy || !online}
+        />
       </div>
       {!owner && (
         <div className="flex flex-wrap items-center gap-3 border-t border-border p-5">

@@ -15,7 +15,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
 import { useOffline } from "@/lib/offline/offline-context";
-import { MODULES } from "@/lib/modules";
+import { PermissionTree } from "./permission-tree";
+import { MODULES, permissionSettings } from "@/lib/modules";
 import { dateTime } from "@/lib/format";
 import type {
   EmployeeInvitation,
@@ -250,7 +251,6 @@ function InvitationEditor({
   const lock = useRef(false);
   const request = useRef<{ payload: string; id: string } | null>(null);
   const locations = stores.filter((s) => s.businessId === store.businessId);
-  const rank = { employee: 1, manager: 2, owner: 3 };
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!review) {
@@ -456,33 +456,21 @@ function InvitationEditor({
                         </label>
                       </legend>
                       {assignments[location.id] && (
-                        <div className="grid gap-1 sm:grid-cols-2">
-                          {MODULES.filter(
-                            (m) => rank[m.role] <= rank[role],
-                          ).map((m) => (
-                            <label
-                              key={m.key}
-                              className="flex min-h-11 items-center gap-2 text-sm"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={
-                                  assignments[location.id][m.key] ?? false
-                                }
-                                onChange={(e) =>
-                                  setAssignments((old) => ({
-                                    ...old,
-                                    [location.id]: {
-                                      ...old[location.id],
-                                      [m.key]: e.target.checked,
-                                    },
-                                  }))
-                                }
-                              />
-                              {m.label}
-                            </label>
-                          ))}
-                        </div>
+                        <PermissionTree
+                          role={role}
+                          permissions={permissionSettings(role, {
+                            ...Object.fromEntries(
+                              MODULES.map((m) => [m.key, false]),
+                            ),
+                            ...assignments[location.id],
+                          })}
+                          onChange={(next) =>
+                            setAssignments((old) => ({
+                              ...old,
+                              [location.id]: next,
+                            }))
+                          }
+                        />
                       )}
                     </fieldset>
                   ))}

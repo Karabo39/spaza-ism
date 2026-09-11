@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { PermissionEditor } from "@/features/users/access-control";
 const mock = vi.hoisted(() => ({ storeId: "store-a", rpc: vi.fn(), online: true }));
 vi.mock("@/lib/store-context", () => ({ useStore: () => ({ store: { id: mock.storeId, name: "Shop A" } }) }));
@@ -38,3 +38,18 @@ describe("Access Control editor", () => {
 });
 
 vi.mock("@/features/users/return-access", () => ({ ReturnAccess: () => null }));
+
+it("expands child permissions, preserves choices under a disabled parent and saves them",async()=>{
+ cleanup(); mock.online=true;mock.rpc.mockReset(); mock.rpc.mockResolvedValue({data:4,error:null});
+ render(<PermissionEditor member={member}/>);
+ fireEvent.click(screen.getByRole("button",{name:"Expand Orders"}));
+ const options=within(screen.getByRole("group",{name:"Orders options"}));
+ fireEvent.click(options.getByRole("checkbox",{name:"New Order"}));
+ fireEvent.click(screen.getByRole("checkbox",{name:"Orders"}));
+ expect(options.getByRole("checkbox",{name:"New Order"})).toBeDisabled();
+ expect(options.getByRole("checkbox",{name:"Recent Orders"})).toBeChecked();
+ fireEvent.click(screen.getByRole("checkbox",{name:"Orders"}));
+ expect(options.getByRole("checkbox",{name:"New Order"})).not.toBeChecked();
+ fireEvent.click(screen.getByRole("button",{name:"Save access"}));
+ await waitFor(()=>expect(mock.rpc).toHaveBeenCalledWith("set_store_module_access",expect.objectContaining({p_store:"store-a",p_permissions:expect.objectContaining({orders:true,orders_new:false,orders_recent:true})})));
+});
