@@ -27,3 +27,17 @@ describe("store module permissions", () => {
     expect(firstModulePath(modulePermissions("employee", null))).toBe("/no-access");
   });
 });
+
+describe("child permissions",()=>{
+ it("requires parent and destination while retaining role limits",()=>{
+  expect(modulePermissions("employee",{orders:false,orders_new:true}).orders_new).toBe(false);
+  expect(modulePermissions("employee",{dashboard:true,dashboard_check_stock:true,check_stock:false}).dashboard_check_stock).toBe(false);
+  expect(modulePermissions("employee",{dashboard_adjust:true}).dashboard_adjust).toBe(false);
+  expect(modulePermissions("employee",{invoices_summary:false,invoices_outstanding:true}).invoices_outstanding).toBe(false);
+ });
+ it("preserves legacy defaults and independently denies children",()=>{
+  const p=modulePermissions("employee",{orders_new:false,invoices_paid:false});
+  expect(p.orders_new).toBe(false);expect(p.orders_recent).toBe(true);
+  expect(p.invoices_paid).toBe(false);expect(p.invoices_outstanding).toBe(true);
+ });
+});

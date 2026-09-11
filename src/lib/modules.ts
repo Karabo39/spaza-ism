@@ -1,3 +1,5 @@
+import { MODULE_FEATURES } from "./module-features";
+export { MODULE_FEATURES };
 import type { MembershipRole } from "@/lib/db/database.types";
 
 export const MODULES = [
@@ -170,7 +172,8 @@ export const MODULES = [
     group: "Administration",
   },
 ] as const;
-export type ModuleKey = (typeof MODULES)[number]["key"];
+export const PERMISSIONS = [...MODULES, ...MODULE_FEATURES] as const;
+export type ModuleKey = (typeof PERMISSIONS)[number]["key"];
 export type ModulePermissions = Record<ModuleKey, boolean>;
 export const ROLE_RANK: Record<MembershipRole, number> = {
   employee: 1,
@@ -179,14 +182,14 @@ export const ROLE_RANK: Record<MembershipRole, number> = {
 };
 
 /** No row means the existing role defaults. A malformed row fails closed. */
-export function modulePermissions(
+export function permissionSettings(
   role: MembershipRole,
   overrides: unknown = {},
 ): ModulePermissions {
   const valid =
     !!overrides && typeof overrides === "object" && !Array.isArray(overrides);
   return Object.fromEntries(
-    MODULES.map((m) => {
+    PERMISSIONS.map((m) => {
       const value = valid
         ? (overrides as Record<string, unknown>)[m.key]
         : false;
@@ -197,6 +200,23 @@ export function modulePermissions(
             (value === undefined || value === true)),
       ];
     }),
+  ) as ModulePermissions;
+}
+/** Effective permissions include the parent and linked-module requirements. */
+export function modulePermissions(
+  role: MembershipRole,
+  overrides: unknown = {},
+): ModulePermissions {
+  const values = permissionSettings(role, overrides);
+  const allowed = (key: ModuleKey): boolean => {
+    if (!values[key]) return false;
+    const feature = MODULE_FEATURES.find((f) => f.key === key);
+    return (
+      !feature || (allowed(feature.parent) && feature.requires.every(allowed))
+    );
+  };
+  return Object.fromEntries(
+    PERMISSIONS.map((p) => [p.key, allowed(p.key)]),
   ) as ModulePermissions;
 }
 export function moduleForPath(path: string): ModuleKey | undefined {
