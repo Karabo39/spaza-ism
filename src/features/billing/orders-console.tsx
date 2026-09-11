@@ -48,6 +48,7 @@ export function OrdersConsole({
   const [reason, setReason] = useState("");
   const { data: orders, error } = useQuery({
     queryKey: ["billing", "orders", store.id],
+    enabled: canModule("orders_recent"),
     queryFn: async () => {
       const { data, error } = await createClient().rpc(
         "order_workflow_summary",
@@ -64,7 +65,7 @@ export function OrdersConsole({
     null;
   const { data: items } = useQuery({
     queryKey: ["billing", "order-items", current?.id],
-    enabled: !!current,
+    enabled: !!current && canModule("orders_recent"),
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("sales_order_items")
@@ -124,7 +125,13 @@ export function OrdersConsole({
     setQuantity(1);
   }
   async function createInvoice() {
-    if (!current || current.invoice || current.status !== "CONFIRMED") return;
+    if (
+      !canModule("invoices_create_from_order") ||
+      !current ||
+      current.invoice ||
+      current.status !== "CONFIRMED"
+    )
+      return;
     await run(async () => {
       const res = await createClient().rpc("create_sales_invoice", {
         p_order: current.id,
@@ -132,41 +139,44 @@ export function OrdersConsole({
         p_terms: terms === "PAY_DELIVER" ? "CASH" : terms,
         p_discount: discount,
       });
-      if (res.data) router.push(`/invoices/${res.data}`);
+      if (res.data && canModule("invoices_view_invoices"))
+        router.push(`/invoices/${res.data}`);
       return res;
     }, "Invoice draft created");
   }
   return (
     <div className="space-y-6">
+      {!canModule("orders_new") && !canModule("orders_recent") && <p className="rounded-lg border border-border p-5 text-sm text-muted">No Orders options are enabled at this store. Ask your owner to update Access Control.</p>}
       {!online && (
         <p className="text-warning">
           Orders and invoices require a connection.
         </p>
       )}
-      {store.locationType !== "warehouse" && (
+      {canModule("orders_new") && store.locationType !== "warehouse" && (
         <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
-          <div className="flex justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">New order</h2>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setGuestMode(false);
-                setPickCustomer(true);
-              }}
-            >
-              {customer?.name ?? "Choose customer"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={() => {
+                  setGuestMode(false);
+                  setPickCustomer(true);
+                }}
+              >
+                {customer?.name ?? "Choose customer"}
+              </Button>
+              <Button
+                aria-pressed={guestMode}
+                variant="primary"
+                onClick={() => {
+                  setGuestMode(true);
+                  setCustomer(null);
+                }}
+              >
+                Once-off customer
+              </Button>
+            </div>
           </div>
-          <Button
-            aria-pressed={guestMode}
-            variant={guestMode ? "primary" : "secondary"}
-            onClick={() => {
-              setGuestMode(true);
-              setCustomer(null);
-            }}
-          >
-            One-off customer
-          </Button>
           {guestMode && (
             <div className="grid gap-3 sm:grid-cols-2">
               <label>
@@ -216,7 +226,6 @@ export function OrdersConsole({
               />
               <Button
                 className="mt-3 w-full"
-                variant="secondary"
                 onClick={add}
                 disabled={
                   !product ||
@@ -316,223 +325,238 @@ export function OrdersConsole({
           </Button>
         </section>
       )}
-      <div className="flex justify-between">
-        <h2 className="font-semibold">Recent orders</h2>
-        {canModule("invoices") && (
-          <Button asChild>
-            <Link href="/invoices">View invoices</Link>
-          </Button>
-        )}
-      </div>
-      {error && (
-        <p role="alert" className="text-danger">
-          Could not load orders.
-        </p>
-      )}
-      {orders?.length === 200 && (
-        <p className="text-sm text-muted">Latest 200 orders.</p>
-      )}
-      <Table>
-        <THead>
-          <TR>
-            <TH>Reference</TH>
-            <TH>Customer</TH>
-            <TH>Status</TH>
-            <TH>Created</TH>
-          </TR>
-        </THead>
-        <TBody>
-          {orders?.map((o) => (
-            <TR key={o.id}>
-              <TD>
-                <button
-                  className="text-accent text-left"
-                  onClick={() => {
-                    setSelected(o);
-                    setDiscount(Number(o.quoted_discount ?? 0));
-                    setReason("");
-                  }}
-                >
-                  {o.reference}
-                </button>
-              </TD>
-              <TD>{o.customer_name}</TD>
-              <TD>{statusLabel(o.status)}</TD>
-              <TD>{dateTime(o.created_at)}</TD>
-            </TR>
-          ))}
-        </TBody>
-      </Table>
-      {current && (
-        <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
-          <h2 className="font-semibold">
-            {current.reference} · {statusLabel(current.status)}
-          </h2>
-          <p>
-            {current.customer_name} · {current.note}
-          </p>
-          {items?.map((l) => (
-            <p key={l.id} className="text-sm">
-              {l.quantity} × {l.product_name} — {money(l.line_total, currency)}
-            </p>
-          ))}
-          {current.invoice ? (
-            <section
-              aria-label="Order summary"
-              className="rounded-lg border border-border p-4 space-y-3"
-            >
-              <h3 className="font-semibold">Order summary</h3>
-              <p className="break-all">Invoice {current.invoice.reference}</p>
-              <p>
-                Payment: {statusLabel(current.invoice.status)} ·{" "}
-                {current.invoice.goods_issued_at
-                  ? `Goods released ${dateTime(current.invoice.goods_issued_at)}`
-                  : "Awaiting goods release"}
-              </p>
-              <div className="grid gap-3 sm:grid-cols-4">
-                {[
-                  ["Invoice total", current.invoice.total],
-                  ["Payments", current.invoice.paid],
-                  ["Credit notes", current.invoice.credits],
-                  ["Outstanding", current.invoice.outstanding],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-sm text-muted">{label}</p>
-                    <p className="font-semibold">
-                      {money(Number(value), currency)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              {canModule("invoices") && (
-                <Link
-                  className="text-accent"
-                  href={`/invoices/${current.invoice.id}`}
-                >
-                  View invoice and payment history
-                </Link>
-              )}
-            </section>
-          ) : (
-            <p className="text-sm">
-              Subtotal: {money(invoiceTotals.subtotal, currency)} · Discount:{" "}
-              {money(invoiceTotals.discount, currency)} · Tax (
-              {current.quoted_tax_percent ?? billing.data ?? 0}
-              %): {money(invoiceTotals.tax, currency)} · Estimated invoice
-              total: {money(invoiceTotals.total, currency)}. Final amounts are
-              shown on the generated invoice.
-            </p>
-          )}
-          {!current.invoice && !invoiceTotals.valid && (
+      {canModule("orders_recent") && (
+        <>
+          <div className="flex justify-between">
+            <h2 className="font-semibold">Recent orders</h2>
+            {canModule("invoices_view_invoices") && (
+              <Button asChild>
+                <Link href="/invoices">View invoices</Link>
+              </Button>
+            )}
+          </div>
+          {error && (
             <p role="alert" className="text-danger">
-              The discount must be between zero and the subtotal.
+              Could not load orders.
             </p>
           )}
-          {current.status === "DRAFT" && (
-            <Button
-              loading={busy}
-              disabled={!online}
-              onClick={() =>
-                run(
-                  () =>
-                    createClient().rpc("process_sales_order", {
-                      p_order: current.id,
-                      p_action: "confirm",
-                    }),
-                  "Order confirmed",
-                )
-              }
-            >
-              Confirm order
-            </Button>
+          {orders?.length === 200 && (
+            <p className="text-sm text-muted">Latest 200 orders.</p>
           )}
-          {current.status === "CONFIRMED" && !current.invoice && (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div>
-                <Label htmlFor="invoice-due">Payment due</Label>
-                <Input
-                  id="invoice-due"
-                  type="date"
-                  value={due}
-                  onChange={(e) => setDue(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="invoice-terms">Payment terms</Label>
-                <select
-                  id="invoice-terms"
-                  className="h-10 w-full rounded border border-border bg-input px-2"
-                  value={terms}
-                  onChange={(e) => setTerms(e.target.value)}
+          <Table>
+            <THead>
+              <TR>
+                <TH>Reference</TH>
+                <TH>Customer</TH>
+                <TH>Status</TH>
+                <TH>Created</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {orders?.map((o) => (
+                <TR key={o.id}>
+                  <TD>
+                    <button
+                      className="text-accent text-left"
+                      onClick={() => {
+                        setSelected(o);
+                        setDiscount(Number(o.quoted_discount ?? 0));
+                        setReason("");
+                      }}
+                    >
+                      {o.reference}
+                    </button>
+                  </TD>
+                  <TD>{o.customer_name}</TD>
+                  <TD>{statusLabel(o.status)}</TD>
+                  <TD>{dateTime(o.created_at)}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+          {current && (
+            <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
+              <h2 className="font-semibold">
+                {current.reference} · {statusLabel(current.status)}
+              </h2>
+              <p>
+                {current.customer_name} · {current.note}
+              </p>
+              {items?.map((l) => (
+                <p key={l.id} className="text-sm">
+                  {l.quantity} × {l.product_name} —{" "}
+                  {money(l.line_total, currency)}
+                </p>
+              ))}
+              {current.invoice ? (
+                <section
+                  aria-label="Order summary"
+                  className="rounded-lg border border-border p-4 space-y-3"
                 >
-                  <option value="CASH">Cash before collection</option>
-                  <option value="CARD_EFT">Card/EFT before collection</option>
-                  <option value="CREDIT">Customer credit account</option>
-                  <option value="PAY_DELIVER">Pay – To be Delivered</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="invoice-discount">Discount amount</Label>
-                <Input
-                  id="invoice-discount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={discount}
-                  disabled={current.quoted_discount != null}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
-                />
-              </div>
-              {terms === "PAY_DELIVER" && (
-                <p className="text-sm text-muted">
-                  Create the invoice and record payment next. It becomes Paid –
-                  To be Delivered only after full payment; release goods when
-                  delivered.
+                  <h3 className="font-semibold">Order summary</h3>
+                  <p className="break-all">
+                    Invoice {current.invoice.reference}
+                  </p>
+                  <p>
+                    Payment: {statusLabel(current.invoice.status)} ·{" "}
+                    {current.invoice.goods_issued_at
+                      ? `Goods released ${dateTime(current.invoice.goods_issued_at)}`
+                      : "Awaiting goods release"}
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    {[
+                      ["Invoice total", current.invoice.total],
+                      ["Payments", current.invoice.paid],
+                      ["Credit notes", current.invoice.credits],
+                      ["Outstanding", current.invoice.outstanding],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <p className="text-sm text-muted">{label}</p>
+                        <p className="font-semibold">
+                          {money(Number(value), currency)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {canModule("invoices_view_invoices") && (
+                    <Link
+                      className="text-accent"
+                      href={`/invoices/${current.invoice.id}`}
+                    >
+                      View invoice and payment history
+                    </Link>
+                  )}
+                </section>
+              ) : (
+                <p className="text-sm">
+                  Subtotal: {money(invoiceTotals.subtotal, currency)} ·
+                  Discount: {money(invoiceTotals.discount, currency)} · Tax (
+                  {current.quoted_tax_percent ?? billing.data ?? 0}
+                  %): {money(invoiceTotals.tax, currency)} · Estimated invoice
+                  total: {money(invoiceTotals.total, currency)}. Final amounts
+                  are shown on the generated invoice.
                 </p>
               )}
-              <Button
-                loading={busy}
-                disabled={
-                  !online ||
-                  !due ||
-                  !invoiceTotals.valid ||
-                  billing.data === undefined
-                }
-                onClick={createInvoice}
-              >
-                Create invoice
-              </Button>
-            </div>
+              {!current.invoice && !invoiceTotals.valid && (
+                <p role="alert" className="text-danger">
+                  The discount must be between zero and the subtotal.
+                </p>
+              )}
+              {current.status === "DRAFT" && (
+                <Button
+                  loading={busy}
+                  disabled={!online}
+                  onClick={() =>
+                    run(
+                      () =>
+                        createClient().rpc("process_sales_order", {
+                          p_order: current.id,
+                          p_action: "confirm",
+                        }),
+                      "Order confirmed",
+                    )
+                  }
+                >
+                  Confirm order
+                </Button>
+              )}
+              {canModule("invoices_create_from_order") &&
+                current.status === "CONFIRMED" &&
+                !current.invoice && (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <Label htmlFor="invoice-due">Payment due</Label>
+                      <Input
+                        id="invoice-due"
+                        type="date"
+                        value={due}
+                        onChange={(e) => setDue(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="invoice-terms">Payment terms</Label>
+                      <select
+                        id="invoice-terms"
+                        className="h-10 w-full rounded border border-border bg-input px-2"
+                        value={terms}
+                        onChange={(e) => setTerms(e.target.value)}
+                      >
+                        <option value="CASH">Cash before collection</option>
+                        <option value="CARD_EFT">
+                          Card/EFT before collection
+                        </option>
+                        <option value="CREDIT">Customer credit account</option>
+                        <option value="PAY_DELIVER">
+                          Pay – To be Delivered
+                        </option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="invoice-discount">Discount amount</Label>
+                      <Input
+                        id="invoice-discount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={discount}
+                        disabled={current.quoted_discount != null}
+                        onChange={(e) => setDiscount(Number(e.target.value))}
+                      />
+                    </div>
+                    {terms === "PAY_DELIVER" && (
+                      <p className="text-sm text-muted">
+                        Create the invoice and record payment next. It becomes
+                        Paid – To be Delivered only after full payment; release
+                        goods when delivered.
+                      </p>
+                    )}
+                    <Button
+                      loading={busy}
+                      disabled={
+                        !online ||
+                        !due ||
+                        !invoiceTotals.valid ||
+                        billing.data === undefined
+                      }
+                      onClick={createInvoice}
+                    >
+                      Create invoice
+                    </Button>
+                  </div>
+                )}
+              {current.can_cancel && (
+                <div className="flex gap-2">
+                  <Input
+                    aria-label="Order cancellation reason"
+                    placeholder="Cancellation reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                  <Button
+                    variant="secondary"
+                    disabled={!online || busy || !reason.trim()}
+                    onClick={() =>
+                      run(
+                        () =>
+                          createClient().rpc("process_sales_order", {
+                            p_order: current.id,
+                            p_action: "cancel",
+                            p_reason: reason,
+                          }),
+                        "Order cancelled",
+                      )
+                    }
+                  >
+                    Cancel order
+                  </Button>
+                </div>
+              )}
+              {current.status === "DRAFT" && (
+                <PurchaseOrder order={current.id} />
+              )}
+            </section>
           )}
-          {current.can_cancel && (
-            <div className="flex gap-2">
-              <Input
-                aria-label="Order cancellation reason"
-                placeholder="Cancellation reason"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-              <Button
-                variant="secondary"
-                disabled={!online || busy || !reason.trim()}
-                onClick={() =>
-                  run(
-                    () =>
-                      createClient().rpc("process_sales_order", {
-                        p_order: current.id,
-                        p_action: "cancel",
-                        p_reason: reason,
-                      }),
-                    "Order cancelled",
-                  )
-                }
-              >
-                Cancel order
-              </Button>
-            </div>
-          )}
-          {current.status === "DRAFT" && <PurchaseOrder order={current.id} />}
-        </section>
+        </>
       )}
       <CustomerPicker
         open={pickCustomer}

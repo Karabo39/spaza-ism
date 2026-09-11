@@ -2,13 +2,13 @@ import { beforeEach, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { OrdersConsole } from "@/features/billing/orders-console";
-const mocks = vi.hoisted(() => ({ invoices: true, status: "COMPLETED" }));
+const mocks = vi.hoisted(() => ({ invoices: true, recent: true, newOrder: true, status: "COMPLETED" }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/lib/store-context", () => ({
   useStore: () => ({
     store: { id: "s", businessId: "b" },
     currency: "ZAR",
-    canModule: () => mocks.invoices,
+    canModule: (key: string) => key === "orders_recent" ? mocks.recent : key === "orders_new" ? mocks.newOrder : mocks.invoices,
   }),
 }));
 vi.mock("@/features/billing/use-billing-action", () => ({
@@ -88,3 +88,13 @@ it("keeps the summary available for Orders-only staff without linking denied mod
 });
 
 vi.mock("@/features/billing/purchase-order", () => ({ PurchaseOrder: () => null }));
+
+it("shows new and recent order areas independently",()=>{
+ mocks.recent=false;mocks.newOrder=true;render(<OrdersConsole/>);
+ expect(screen.getByRole("heading",{name:"New order"})).toBeInTheDocument();
+ expect(screen.queryByRole("heading",{name:"Recent orders"})).not.toBeInTheDocument();cleanup();
+ mocks.recent=true;mocks.newOrder=false;render(<OrdersConsole/>);
+ expect(screen.queryByRole("heading",{name:"New order"})).not.toBeInTheDocument();
+ expect(screen.getByRole("heading",{name:"Recent orders"})).toBeInTheDocument();
+ mocks.newOrder=true;
+});
