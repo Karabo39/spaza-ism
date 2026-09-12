@@ -10,6 +10,9 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      sale_receipts: { Row: { sale_id: string; store_id: string; reference: string; snapshot: Json; request_payload: Json; created_at: string }; Insert: never; Update: never; Relationships: [] }
+      receipt_preferences: { Row: { store_id: string; second_copy: boolean; paper_format: string; delay_seconds: number }; Insert: never; Update: never; Relationships: [] }
+      receipt_print_events: { Row: { id: string; sale_id: string; performed_by: string; action: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
       employee_invitations: { Row: EmployeeInvitation; Insert: never; Update: never; Relationships: [] }
       sales_quotes: { Row: SalesQuote; Insert: never; Update: never; Relationships: [] }
       sales_purchase_orders: { Row: PurchaseOrder; Insert: never; Update: never; Relationships: [] }
@@ -239,6 +242,9 @@ export type Database = {
       }
     }
     Functions: {
+      complete_checkout: { Args: { p_store: string; p_items: Json; p_payments: Json; p_request: string; p_customer?: string | null; p_credit?: boolean; p_override?: boolean; p_override_token?: string; p_till?: string | null }; Returns: string }
+      record_receipt_print: { Args: { p_sale: string; p_action: string }; Returns: undefined }
+      save_receipt_preferences: { Args: { p_store: string; p_second: boolean; p_delay: number; p_paper?: string }; Returns: undefined }
       smtp_delivery: { Args: { p_key: string; p_token?: string; p_provider?: string }; Returns: Json };
       assign_stock_expiry: { Args: {p_product: string; p_expiry: string; p_quantity: number; p_expected: number}; Returns: undefined }
       save_product_details: { Args: {p_product: string; p_values: Json; p_expiry?: string; p_expected?: number}; Returns: undefined }
@@ -381,6 +387,7 @@ export type BillingSettings = {
 };
 
 export type SalesOrder = {
+  ordered_by_name: string | null;
   id: string;
   business_id: string;
   store_id: string;
@@ -409,6 +416,8 @@ export type SalesOrderItem = {
 };
 
 export type SalesInvoice = {
+  ordered_by_name: string | null;
+  invoiced_by_name: string | null;
   id: string;
   business_id: string;
   store_id: string;
