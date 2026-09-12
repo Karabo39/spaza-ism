@@ -16,7 +16,7 @@ export default async function GoodsOutPage() {
       <PageHeader
         title="Goods Out"
         crumbs={[{ label: "Operations" }, { label: "Goods Out" }]}
-        description="Scan products, choose Cash, Card/EFT or Credit, and record the sale."
+        description="Scan products, choose Cash, Card, EFT, Split or Credit, and record the sale."
       />
       <GoodsOutConsole />
     </>

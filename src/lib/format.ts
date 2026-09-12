@@ -100,6 +100,11 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("INVALID_AMOUNT")) return "Enter a valid amount greater than zero.";
   if (m.includes("NO_CHANGE")) return "The new quantity is the same as the current quantity.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
+  if (m.includes("PAYMENT_UNDERPAID")) return "Collect the remaining balance before completing this sale.";
+  if (m.includes("NONCASH_OVERPAYMENT")) return "Card and EFT amounts cannot exceed the balance due.";
+  if (m.includes("PAYMENT_CONFIRMATION_REQUIRED")) return "Confirm that the card or EFT payment succeeded.";
+  if (m.includes("DUPLICATE_PAYMENT_METHOD")) return "Use one payment amount per method.";
+  if (m.includes("INVALID_PAYMENT") || m.includes("INVALID_PRICE") || m.includes("INVALID_SALE_TOTAL")) return "Check the prices and payment amounts. Use no more than two decimal places.";
   if (m.includes("NO_ITEMS")) return "Add at least one item first.";
   if (m.includes("duplicate key") && m.includes("barcode")) return "That barcode is already used by another product.";
   return m || "Something went wrong. Please try again.";

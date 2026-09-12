@@ -12,6 +12,9 @@ import type { ProductStock } from "@/lib/db/database.types";
  */
 
 export type QueuedSale = {
+  actorId?: string;
+  payments?: import("@/features/goods-out/payments").Payment[];
+  till?: string;
   id: string;
   storeId: string;
   items: { product_id: string; quantity: number; unit_price: number }[];
@@ -146,4 +149,21 @@ export async function removeQueuedSale(id: string) {
   const db = await getDB();
   if (!db) return;
   await db.delete("salesQueue", id);
+}
+
+/** Persist the outbox entry and mirrored quantities together, exactly once. */
+export async function enqueueSaleAndAdjust(sale: QueuedSale): Promise<void> {
+  const pending = getDB();
+  if (!pending) throw new Error("Offline storage unavailable");
+  const db = await pending;
+  const tx = db.transaction(["salesQueue", "products"], "readwrite");
+  const existing = await tx.objectStore("salesQueue").get(sale.id);
+  if (!existing) {
+    await tx.objectStore("salesQueue").add(sale);
+    for (const item of sale.items) {
+      const product = await tx.objectStore("products").get(item.product_id);
+      if (product && product._store === sale.storeId) await tx.objectStore("products").put({ ...product, quantity: Math.max(0, Number(product.quantity) - item.quantity) });
+    }
+  }
+  await tx.done;
 }

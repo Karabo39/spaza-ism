@@ -34,7 +34,14 @@ export async function flushSaleQueue(storeId: string): Promise<FlushResult> {
   let synced = 0, failed = 0;
 
   for (const sale of queued) {
-    const { error } = await supabase.rpc("complete_sale", {
+    if (sale.actorId) {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || data.user?.id !== sale.actorId) continue;
+    }
+    const { error } = sale.payments ? await supabase.rpc("complete_checkout", {
+      p_store: sale.storeId, p_items: sale.items, p_payments: sale.payments,
+      p_request: sale.id, p_customer: null, p_credit: false, p_override: false, p_till: sale.till ?? "",
+    }) : await supabase.rpc("complete_sale", {
       p_store: sale.storeId,
       p_sale_type: "CASH",
       p_customer: null,

@@ -12,9 +12,11 @@ import {
 export function PrintReceipt({
   type,
   id,
+  onPrint,
 }: {
-  type: "invoice" | "return";
+  type: "invoice" | "return" | "sale";
   id: string;
+  onPrint?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -81,7 +83,9 @@ export function PrintReceipt({
   }
   return (
     <div className="flex flex-wrap gap-2 print:hidden">
-      <Button onClick={() => window.print()}>Print / save PDF</Button>
+      <Button onClick={onPrint ?? (() => window.print())}>
+        Print / save PDF
+      </Button>
       <Button onClick={prepare}>Email document</Button>
       <Dialog
         open={open}
