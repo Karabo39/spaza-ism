@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   replaceProductMirror, localFindByBarcode, localSearch, localAdjustQuantity,
-  enqueueSale, listQueuedSales, updateQueuedSale, removeQueuedSale, type QueuedSale,
+  enqueueSaleAndAdjust, enqueueSale, listQueuedSales, updateQueuedSale, removeQueuedSale, type QueuedSale,
 } from "@/lib/offline/db";
 import type { ProductStock } from "@/lib/db/database.types";
 
@@ -69,4 +69,13 @@ describe("offline sales outbox", () => {
     await removeQueuedSale("s1");
     expect(await listQueuedSales(STORE)).toHaveLength(0);
   });
+});
+
+it("queues payment details and adjusts stock once across repeated offline saves", async () => {
+  await replaceProductMirror(STORE, [product("atomic", "Atomic", 10)], []);
+  const sale: QueuedSale = { id: "atomic-sale", actorId: "cashier", storeId: STORE, items: [{ product_id: "atomic", quantity: 2, unit_price: 10 }], total: 20, payments: [{ method: "CASH", amount: 50 }], createdAt: Date.now(), status: "pending" };
+  await Promise.all([enqueueSaleAndAdjust(sale), enqueueSaleAndAdjust(sale)]);
+  expect((await localSearch(STORE, "Atomic"))[0].quantity).toBe(8);
+  expect((await listQueuedSales(STORE)).find(s => s.id === sale.id)?.payments).toEqual(sale.payments);
+  await removeQueuedSale(sale.id);
 });
