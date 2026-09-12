@@ -5,6 +5,7 @@ export type OrderWorkflow = SalesOrder & {
   quoted_discount?: number | null;
   can_cancel: boolean;
   invoice: null | {
+    invoiced_by_name?: string | null;
     id: string;
     reference: string;
     state: string;

@@ -13,14 +13,14 @@ function documentSender() {
   );
 }
 const documentSchema = z.object({
-  type: z.enum(["invoice", "return"]),
+  type: z.enum(["invoice", "return", "sale"]),
   id: z.string().uuid(),
 });
 const sendSchema = documentSchema.extend({
   recipient: z.string().trim().email().max(254),
   requestId: z.string().uuid(),
 });
-async function authorized(type: "invoice" | "return", id: string) {
+async function authorized(type: "invoice" | "return" | "sale", id: string) {
   const session = await getSession();
   const store = session?.activeStore;
   if (!store)
@@ -30,7 +30,15 @@ async function authorized(type: "invoice" | "return", id: string) {
         { status: 401 },
       ),
     };
-  if (!store.modules[type === "invoice" ? "invoices_view_invoices" : "returns"])
+  if (
+    !store.modules[
+      type === "invoice"
+        ? "invoices_view_invoices"
+        : type === "sale"
+          ? "goods_out"
+          : "returns"
+    ]
+  )
     return {
       response: Response.json(
         { error: "You do not have access to this document module." },
@@ -149,7 +157,7 @@ export async function POST(request: Request) {
       from: sender,
       to: [body.recipient],
       subject: document.data.title,
-      text: `Please find your ${body.type === "invoice" ? "invoice" : "return receipt"} attached. Reference: ${document.reference}`,
+      text: `Please find your ${body.type === "invoice" ? "invoice" : body.type === "sale" ? "sales receipt" : "return receipt"} attached. Reference: ${document.reference}`,
       attachments: [
         {
           filename: `${document.reference.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`,

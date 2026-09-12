@@ -217,6 +217,8 @@ export default async function InvoicesPage({
               rows={rows.map((r) => ({
                 reference: r.reference,
                 customer: r.customer_name,
+                ordered_by: r.ordered_by_name || "Not recorded",
+                invoiced_by: r.invoiced_by_name || "Not recorded",
                 status: invoiceStatusLabel(r),
                 terms: r.terms,
                 methods: r.payment_methods.join(", "),
@@ -230,6 +232,8 @@ export default async function InvoicesPage({
               columns={[
                 { key: "reference", label: "Invoice" },
                 { key: "customer", label: "Customer" },
+                { key: "ordered_by", label: "Ordered By" },
+                { key: "invoiced_by", label: "Invoiced By" },
                 { key: "status", label: "Status" },
                 { key: "terms", label: "Payment terms" },
                 { key: "methods", label: "Receipt methods" },
@@ -243,11 +247,13 @@ export default async function InvoicesPage({
               filename="invoices"
             />
           </div>
+          <h2 className="mb-3 font-semibold">Recent Invoices</h2>
           <Table>
             <THead>
               <TR>
                 <TH>Invoice</TH>
                 <TH>Customer</TH>
+                <TH>Invoiced By</TH>
                 <TH>Status</TH>
                 <TH>Due</TH>
                 <TH>Total</TH>
@@ -263,6 +269,7 @@ export default async function InvoicesPage({
                     </Link>
                   </TD>
                   <TD>{i.customer_name}</TD>
+                  <TD>{i.invoiced_by_name || "Not recorded"}</TD>
                   <TD>{invoiceStatusLabel(i)}</TD>
                   <TD>{dateOnly(i.due_date)}</TD>
                   <TD>{money(i.total, store.currency)}</TD>

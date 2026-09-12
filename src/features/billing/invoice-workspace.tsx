@@ -146,7 +146,7 @@ export function InvoiceWorkspace({
       <p className="text-sm text-muted">
         {i.customer_name} · {i.terms.replace("_", "/")} · Due{" "}
         {dateOnly(i.due_date)} · {invoiceStatusLabel(i)} · Salesperson:{" "}
-        {i.salesperson}
+        {i.salesperson} · Ordered By: {i.ordered_by_name || "Not recorded"} · Invoiced By: {i.invoiced_by_name || "Not recorded"}
       </p>
       <Table>
         <THead>

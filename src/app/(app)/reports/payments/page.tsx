@@ -67,7 +67,7 @@ export default async function PaymentReport({
         </p>
       )}
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        {["CASH", "CARD_EFT", "CREDIT"].map((method) => (
+        {["CASH", "CARD", "EFT", "CARD_EFT", "CREDIT"].map((method) => (
           <div
             key={method}
             className="rounded-lg border border-border bg-surface p-4"

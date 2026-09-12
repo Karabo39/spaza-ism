@@ -348,6 +348,7 @@ export function OrdersConsole({
               <TR>
                 <TH>Reference</TH>
                 <TH>Customer</TH>
+                <TH>Ordered By</TH>
                 <TH>Status</TH>
                 <TH>Created</TH>
               </TR>
@@ -368,6 +369,7 @@ export function OrdersConsole({
                     </button>
                   </TD>
                   <TD>{o.customer_name}</TD>
+                  <TD>{o.ordered_by_name || "Not recorded"}</TD>
                   <TD>{statusLabel(o.status)}</TD>
                   <TD>{dateTime(o.created_at)}</TD>
                 </TR>
@@ -380,7 +382,7 @@ export function OrdersConsole({
                 {current.reference} · {statusLabel(current.status)}
               </h2>
               <p>
-                {current.customer_name} · {current.note}
+                {current.customer_name} · Ordered By: {current.ordered_by_name || "Not recorded"} · {current.note}
               </p>
               {items?.map((l) => (
                 <p key={l.id} className="text-sm">
@@ -395,7 +397,7 @@ export function OrdersConsole({
                 >
                   <h3 className="font-semibold">Order summary</h3>
                   <p className="break-all">
-                    Invoice {current.invoice.reference}
+                    Invoice {current.invoice.reference} · Invoiced By: {current.invoice.invoiced_by_name || "Not recorded"}
                   </p>
                   <p>
                     Payment: {statusLabel(current.invoice.status)} ·{" "}

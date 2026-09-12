@@ -4,7 +4,7 @@ import { dateTime, dateOnly } from "@/lib/format";
 import type { ExportData } from "@/features/reports/export-data";
 export async function loadEmailDocument(
   db: SupabaseClient<Database>,
-  type: "invoice" | "return",
+  type: "invoice" | "return" | "sale",
   id: string,
   storeId: string,
   storeName: string,
@@ -17,6 +17,47 @@ export async function loadEmailDocument(
     { key: "unit", label: "Unit price" },
     { key: "amount", label: "Amount" },
   ];
+  if (type === "sale") {
+    const { data, error } = await db
+      .from("sale_receipts")
+      .select("snapshot")
+      .eq("sale_id", id)
+      .eq("store_id", storeId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    const r =
+      data.snapshot as import("@/features/goods-out/payments").SaleReceipt;
+    const m = (value: number) => documentMoney(value, r.currency);
+    return {
+      recipient: "",
+      reference: r.reference,
+      data: {
+        title: `Sales receipt ${r.reference}`,
+        subtitle: `${r.business} · ${r.store} · ${dateTime(r.created_at)}
+Cashier: ${r.cashier} · Till: ${r.till || "Not recorded"} · ${r.status}
+Transaction: ${r.id}`,
+        columns,
+        rows: [
+          ...r.items.map((i) => ({
+            description: i.name,
+            quantity: i.quantity,
+            unit: m(i.unit_price),
+            amount: m(i.total),
+          })),
+          { description: "Discount", amount: m(r.discount) },
+          { description: "VAT: not separately calculated" },
+          { description: "Total", amount: m(r.total) },
+          ...r.payments.map((p) => ({
+            description: `${p.method} ${p.reference ?? ""}`,
+            amount: m(p.amount),
+          })),
+          { description: "Cash received", amount: m(r.cash_tendered) },
+          { description: "Change", amount: m(r.change) },
+        ],
+      },
+    };
+  }
   if (type === "invoice") {
     const { data: i, error } = await db
       .from("v_invoice_balances")
@@ -77,6 +118,7 @@ export async function loadEmailDocument(
         title: `${i.state === "DRAFT" ? "Draft invoice" : "Invoice / receipt"} ${i.reference}`,
         subtitle: `${i.business_name} · ${i.store_name}
 Customer: ${i.customer_name} · ${i.currency} · Due ${dateOnly(i.due_date)} · ${i.status}
+Ordered By: ${i.ordered_by_name || "Not recorded"} · Invoiced By: ${i.invoiced_by_name || "Not recorded"}
 Salesperson: ${i.salesperson} · Goods: ${i.goods_issued_at ? dateTime(i.goods_issued_at) : "Awaiting delivery"}`,
         columns,
         rows,

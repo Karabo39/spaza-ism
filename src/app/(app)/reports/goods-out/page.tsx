@@ -59,27 +59,67 @@ export default async function GoodsOutReport({
     : { data: [], error: null };
   if (peopleError) throw peopleError;
   const names = new Map((people ?? []).map((p) => [p.id, p.full_name]));
+  const { data: receiptRows, error: receiptError } = rows.length
+    ? await supabase
+        .from("sale_receipts")
+        .select("sale_id,snapshot")
+        .eq("store_id", store.id)
+        .in(
+          "sale_id",
+          rows.map((r) => r.id),
+        )
+    : { data: [], error: null };
+  if (receiptError) throw receiptError;
+  const receipts = new Map(
+    (receiptRows ?? []).map((r) => [
+      r.sale_id,
+      r.snapshot as import("@/features/goods-out/payments").SaleReceipt,
+    ]),
+  );
+  const paymentType = (r: (typeof rows)[number]) =>
+    receipts
+      .get(r.id)
+      ?.payments.map((p) => p.method)
+      .join(" + ") || r.sale_type;
+  const paymentAmount = (
+    r: (typeof rows)[number],
+    methods: string[],
+    legacy: string,
+  ) => {
+    const receipt = receipts.get(r.id);
+    return receipt
+      ? receipt.payments
+          .filter((p) => methods.includes(p.method))
+          .reduce((sum, p) => sum + Number(p.amount), 0)
+      : r.sale_type === legacy
+        ? Number(r.total_amount)
+        : 0;
+  };
   const salesperson = (r: (typeof rows)[number]) =>
-    names.get(r.performed_by) || "User unavailable";
+    receipts.get(r.id)?.cashier ||
+    names.get(r.performed_by) ||
+    "User unavailable";
   const approver = (r: (typeof rows)[number]) =>
     r.credit_override
       ? r.authorized_by
         ? names.get(r.authorized_by) || "User unavailable"
         : "Not recorded"
       : "—";
-  const cash = rows
-    .filter((r) => r.sale_type === "CASH")
-    .reduce((s, r) => s + Number(r.total_amount), 0);
+  const cash = rows.reduce(
+    (sum, r) => sum + paymentAmount(r, ["CASH"], "CASH"),
+    0,
+  );
   const credit = rows
     .filter((r) => r.sale_type === "CREDIT")
     .reduce((s, r) => s + Number(r.total_amount), 0);
-  const card = rows
-    .filter((r) => r.sale_type === "CARD_EFT")
-    .reduce((s, r) => s + Number(r.total_amount), 0);
+  const card = rows.reduce(
+    (sum, r) => sum + paymentAmount(r, ["CARD", "EFT"], "CARD_EFT"),
+    0,
+  );
 
   const exportRows = rows.map((r) => ({
     date: dateTime(r.created_at),
-    type: r.sale_type,
+    type: paymentType(r),
     customer: r.customers?.name ?? "",
     items: r.goods_out_items?.length ?? 0,
     total: r.total_amount,
@@ -184,7 +224,7 @@ export default async function GoodsOutReport({
                     <Badge
                       variant={r.sale_type === "CASH" ? "accent" : "primary"}
                     >
-                      {r.sale_type}
+                      {paymentType(r)}
                     </Badge>
                     {r.credit_override ? (
                       <Badge variant="danger" className="ml-1">
