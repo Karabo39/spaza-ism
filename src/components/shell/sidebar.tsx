@@ -2,7 +2,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { X, ChevronDown, ChevronRight } from "lucide-react";
 import { BusinessLogo } from "@/features/settings/business-logo";
 import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
@@ -22,8 +22,54 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { role, store, canModule } = useStore();
+  const { role, store, user, canModule } = useStore();
 
+  const storageKey = `pos-navigation:${user.id}:${store.businessId}`;
+  const subscribe = React.useCallback((notify: () => void) => {
+    window.addEventListener("storage", notify);
+    window.addEventListener("pos-navigation-change", notify);
+    return () => {
+      window.removeEventListener("storage", notify);
+      window.removeEventListener("pos-navigation-change", notify);
+    };
+  }, []);
+  const [memory, setMemory] = React.useState<{
+    key: string;
+    value: string;
+  } | null>(null);
+  const saved = React.useSyncExternalStore(
+    subscribe,
+    () => {
+      try {
+        return localStorage.getItem(storageKey) ?? "[]";
+      } catch {
+        return "[]";
+      }
+    },
+    () => "[]",
+  );
+  let collapsed: string[] = [];
+  try {
+    const value: unknown = JSON.parse(
+      memory?.key === storageKey ? memory.value : saved,
+    );
+    if (Array.isArray(value))
+      collapsed = value.filter((v): v is string => typeof v === "string");
+  } catch {
+    /* Invalid preferences use expanded sections. */
+  }
+  function toggle(label: string) {
+    const next = collapsed.includes(label)
+      ? collapsed.filter((v) => v !== label)
+      : [...collapsed, label];
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      setMemory({ key: storageKey, value: JSON.stringify(next) });
+    }
+    window.dispatchEvent(new Event("pos-navigation-change"));
+  }
+  const dashboard = NAV.flatMap((g) => g.items).find((i) => i.href === "/");
   return (
     <>
       {mobileOpen ? (
@@ -70,17 +116,47 @@ export function Sidebar({
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3">
+          {dashboard && itemVisible(dashboard, role, canModule) && (
+            <Link
+              href="/"
+              onClick={onClose}
+              className={cn(
+                "mb-4 flex items-center gap-3 rounded-md px-3 py-2 text-sm",
+                pathname === "/"
+                  ? "bg-primary/15 font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-surface-2",
+              )}
+            >
+              <dashboard.icon className="size-4" />
+              {dashboard.label}
+            </Link>
+          )}
           {NAV.map((group) => {
-            const items = group.items.filter((i) =>
-              itemVisible(i, role, canModule),
+            const items = group.items.filter(
+              (i) => i.href !== "/" && itemVisible(i, role, canModule),
             );
             if (items.length === 0) return null;
             return (
               <div key={group.label} className="mb-4">
-                <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
+                <button
+                  type="button"
+                  aria-expanded={!collapsed.includes(group.label)}
+                  aria-controls={`nav-${group.label.replaceAll(" ", "-")}`}
+                  onClick={() => toggle(group.label)}
+                  className="flex w-full items-center justify-between rounded px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted/70 focus-visible:outline-2 focus-visible:outline-primary"
+                >
                   {group.label}
-                </p>
-                <ul className="space-y-0.5">
+                  {collapsed.includes(group.label) ? (
+                    <ChevronRight className="size-3.5" />
+                  ) : (
+                    <ChevronDown className="size-3.5" />
+                  )}
+                </button>
+                <ul
+                  id={`nav-${group.label.replaceAll(" ", "-")}`}
+                  hidden={collapsed.includes(group.label)}
+                  className="space-y-0.5"
+                >
                   {items.map((item) => {
                     const active = isActive(pathname, item.href);
                     const Icon = item.icon;
