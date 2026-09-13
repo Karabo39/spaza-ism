@@ -38,7 +38,7 @@ begin
  perform public.issue_sales_invoice(iid);perform public.post_invoice_entry(iid,'PAYMENT',20.7,gen_random_uuid(),'CASH','PAY-TEST');perform public.issue_invoice_goods(iid);
  select id into line from public.sales_invoice_items where invoice_id=iid;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
- rid:=public.submit_goods_return('invoice',iid,jsonb_build_array(jsonb_build_object('item_id',line,'quantity',1,'condition','EXPIRED','action','WRITE_OFF')),'Expired','Inspected',gen_random_uuid());
+ rid:=public.submit_goods_return('invoice',iid,jsonb_build_array(jsonb_build_object('item_id',line,'quantity',1,'condition','EXPIRED','action','WRITE_OFF','expiry_date',current_date-1)),'Expired','Inspected',gen_random_uuid());
  blocked:=false;begin perform public.process_goods_return(rid,true);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT employee needs delegation';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);

@@ -78,9 +78,11 @@ it("submits a new product and description together", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Add product" }));
   await waitFor(() =>
     expect(rpc).toHaveBeenCalledWith(
-      "create_product_with_description",
+      "create_product_catalog",
       expect.objectContaining({
-        p_description: "Line one\nLine two",
+        p_values: expect.objectContaining({
+          description: "Line one\nLine two",
+        }),
         p_name: "Item",
       }),
     ),

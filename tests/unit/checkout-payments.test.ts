@@ -63,3 +63,33 @@ describe("checkout payments", () => {
     ).toEqual([]);
   });
 });
+
+it("combines card and EFT while preserving legacy split drafts", () => {
+  const draft = {
+    ...emptyPayments,
+    cash: "50",
+    card: "70",
+    eft: "500",
+    cardConfirmed: true,
+    eftConfirmed: true,
+  };
+  expect(paymentSummary("SPLIT_COMBINED", draft, 100)).toMatchObject({
+    valid: true,
+    change: 20,
+    payments: [
+      { method: "CASH", amount: 50 },
+      { method: "CARD_EFT", amount: 70 },
+    ],
+  });
+  expect(
+    paymentSummary("CARD_EFT", { ...draft, cardConfirmed: false }, 70).valid,
+  ).toBe(false);
+  expect(paymentSummary("CARD_EFT", draft, 60).valid).toBe(false);
+  expect(
+    paymentSummary(
+      "SPLIT",
+      { ...draft, eft: "10", card: "40" },
+      100,
+    ).payments.map((p) => p.method),
+  ).toEqual(["CASH", "CARD", "EFT"]);
+});

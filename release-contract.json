@@ -15,6 +15,7 @@
     "product_description_v1",
     "detailed_permissions_v1",
     "checkout_receipts_v1",
-    "document_staff_v1"
+    "document_staff_v1",
+    "warehouse_receiving_v1"
   ]
 }

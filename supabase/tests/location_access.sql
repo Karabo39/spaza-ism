@@ -70,6 +70,8 @@ begin
   if not blocked then raise exception 'ASSERT unassigned adjustment denied'; end if;
   if exists(select 1 from public.audit_logs where store_id=other_shop or store_id is null) then raise exception 'ASSERT manager audit isolation'; end if;
 
+  perform set_config('request.jwt.claims', jsonb_build_object('sub',owner_id,'role','authenticated')::text, true);
+  perform public.set_store_module_access(employee_member,shop,'{"goods_in_new_stock":true}',0);
   perform set_config('request.jwt.claims', jsonb_build_object('sub',employee_id,'role','authenticated')::text, true);
   if exists(select 1 from public.stock where store_id=warehouse) then raise exception 'ASSERT warehouse stock hidden'; end if;
   perform public.receive_stock(shop,null,null,null,jsonb_build_array(jsonb_build_object('product_id',shop_product,'quantity',3)));
@@ -99,6 +101,8 @@ begin
 
   perform set_config('request.jwt.claims', jsonb_build_object('sub',owner_id,'role','authenticated')::text, true);
   perform public.set_member_locations(employee_member,array[]::uuid[]);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub',owner_id,'role','authenticated')::text, true);
+
   perform set_config('request.jwt.claims', jsonb_build_object('sub',employee_id,'role','authenticated')::text, true);
   if exists(select 1 from public.stores) or app.has_store_access(shop) then raise exception 'ASSERT revoked access immediate'; end if;
   set local role anon;
