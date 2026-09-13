@@ -4,6 +4,13 @@ import type { MembershipRole } from "@/lib/db/database.types";
 
 export const MODULES = [
   {
+    key: "warehouse",
+    label: "Warehouse",
+    href: "/warehouse",
+    role: "employee",
+    group: "Administration",
+  },
+  {
     key: "dashboard",
     label: "Dashboard",
     href: "/",
@@ -47,7 +54,7 @@ export const MODULES = [
   },
   {
     key: "returns",
-    label: "Goods Return",
+    label: "Goods Return / Refunds",
     href: "/returns",
     role: "employee",
     group: "Daily work",
@@ -131,7 +138,7 @@ export const MODULES = [
   },
   {
     key: "cash_up",
-    label: "Cash-up",
+    label: "Cash Up",
     href: "/cash-up",
     role: "employee",
     group: "Oversight",
@@ -197,7 +204,14 @@ export function permissionSettings(
         m.key,
         role === "owner" ||
           (ROLE_RANK[role] >= ROLE_RANK[m.role] &&
-            (value === undefined || value === true)),
+            (value === true ||
+              (value === undefined &&
+                (role !== "employee" ||
+                  ![
+                    "warehouse",
+                    "goods_in_new_stock",
+                    "goods_in_receive_transfer",
+                  ].includes(m.key))))),
       ];
     }),
   ) as ModulePermissions;

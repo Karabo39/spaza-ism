@@ -1,6 +1,48 @@
 // Per-store child permissions. Parents and dependencies must also be enabled.
 export const MODULE_FEATURES = [
   {
+    key: "goods_in_new_stock",
+    label: "Receive New Stock / Supplier",
+    parent: "goods_in",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "goods_in_receive_transfer",
+    label: "Receive Stock Transfer",
+    parent: "goods_in",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "operations_transfer_create",
+    label: "Create Transfers",
+    parent: "operations",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "operations_transfer_dispatch",
+    label: "Dispatch Transfers",
+    parent: "operations",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "operations_transfer_modify",
+    label: "Submit / Cancel Transfers",
+    parent: "operations",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "operations_transfer_view",
+    label: "View Transfers",
+    parent: "operations",
+    role: "employee",
+    requires: [],
+  },
+  {
     key: "dashboard_goods_in",
     label: "Goods In",
     parent: "dashboard",

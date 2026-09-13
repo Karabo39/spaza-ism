@@ -1,7 +1,25 @@
 import {
-  LayoutDashboard, PackagePlus, PackageMinus, Search, Tag, Users, SlidersHorizontal,
-  ClipboardList, Boxes, Truck, BarChart3, UserCog, Settings, ScrollText,
-  CalendarClock, ArrowRightLeft, FileSpreadsheet, Store, ShieldCheck, Wallet,
+  LayoutDashboard,
+  PackagePlus,
+  PackageMinus,
+  Search,
+  Tag,
+  Users,
+  SlidersHorizontal,
+  ClipboardList,
+  Boxes,
+  Truck,
+  BarChart3,
+  UserCog,
+  Settings,
+  ScrollText,
+  CalendarClock,
+  ArrowRightLeft,
+  FileSpreadsheet,
+  Store,
+  Warehouse,
+  ShieldCheck,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { MembershipRole } from "@/lib/db/database.types";
@@ -25,17 +43,26 @@ export const NAV: NavGroup[] = [
       { href: "/goods-out", label: "Goods Out", icon: PackageMinus },
       { href: "/orders", label: "Orders", icon: ClipboardList },
       { href: "/invoices", label: "Invoicing", icon: ScrollText },
-      { href: "/returns", label: "Goods Return", icon: ArrowRightLeft },
+      {
+        href: "/returns",
+        label: "Goods Return / Refunds",
+        icon: ArrowRightLeft,
+      },
       { href: "/check-stock", label: "Check Stock", icon: Search },
       { href: "/check-price", label: "Check Price", icon: Tag },
       { href: "/credit", label: "Credit Customers", icon: Users },
-      { href: "/cash-up", label: "Cash-up", icon: Wallet },
+      { href: "/cash-up", label: "Cash Up", icon: Wallet },
     ],
   },
   {
     label: "Stock Control",
     items: [
-      { href: "/adjust", label: "Adjust Stock", icon: SlidersHorizontal, minRole: "manager" },
+      {
+        href: "/adjust",
+        label: "Adjust Stock",
+        icon: SlidersHorizontal,
+        minRole: "manager",
+      },
       { href: "/stock-take", label: "Stock Take", icon: ClipboardList },
       { href: "/expiry", label: "Expiry", icon: CalendarClock },
     ],
@@ -46,7 +73,12 @@ export const NAV: NavGroup[] = [
       { href: "/products", label: "Products", icon: Boxes },
       { href: "/operations", label: "Operations", icon: ArrowRightLeft },
       { href: "/suppliers", label: "Suppliers", icon: Truck },
-      { href: "/imports", label: "Data Imports and Exports", icon: FileSpreadsheet, minRole: "manager" },
+      {
+        href: "/imports",
+        label: "Data Imports and Exports",
+        icon: FileSpreadsheet,
+        minRole: "manager",
+      },
     ],
   },
   {
@@ -57,16 +89,38 @@ export const NAV: NavGroup[] = [
     label: "Administration",
     items: [
       { href: "/stores", label: "My Stores", icon: Store, minRole: "owner" },
-      { href: "/access-control", label: "Access Control", icon: ShieldCheck, minRole: "owner" },
+      { href: "/warehouse", label: "Warehouse", icon: Warehouse },
+      {
+        href: "/access-control",
+        label: "Access Control",
+        icon: ShieldCheck,
+        minRole: "owner",
+      },
       { href: "/users", label: "Users", icon: UserCog, minRole: "owner" },
       { href: "/audit", label: "Audit", icon: ScrollText, minRole: "manager" },
-      { href: "/settings", label: "Settings", icon: Settings, minRole: "manager" },
+      {
+        href: "/settings",
+        label: "Settings",
+        icon: Settings,
+        minRole: "manager",
+      },
     ],
   },
 ];
 
-const RANK: Record<MembershipRole, number> = { employee: 1, manager: 2, owner: 3 };
-export function itemVisible(item: NavItem, role: MembershipRole, canModule?: (module: ModuleKey) => boolean): boolean {
+const RANK: Record<MembershipRole, number> = {
+  employee: 1,
+  manager: 2,
+  owner: 3,
+};
+export function itemVisible(
+  item: NavItem,
+  role: MembershipRole,
+  canModule?: (module: ModuleKey) => boolean,
+): boolean {
   const moduleKey = moduleForPath(item.href);
-  return (!item.minRole || RANK[role] >= RANK[item.minRole]) && (!canModule || (!!moduleKey && canModule(moduleKey)));
+  return (
+    (!item.minRole || RANK[role] >= RANK[item.minRole]) &&
+    (!canModule || (!!moduleKey && canModule(moduleKey)))
+  );
 }

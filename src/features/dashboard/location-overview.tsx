@@ -36,8 +36,7 @@ export function LocationOverview() {
       <CardHeader>
         <CardTitle>All business locations</CardTitle>
         <CardDescription>
-          Stock held at each store and warehouse. Warehouse stock is separate
-          from stock available for sale.
+          Stock held at selling stores. Open Warehouse for warehouse balances.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -63,36 +62,40 @@ export function LocationOverview() {
               </TR>
             </THead>
             <TBody>
-              {(data ?? []).map((s) => (
-                <TR key={s.location_id}>
-                  <TD>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setStore(s.location_id)}
-                    >
-                      {s.name}
-                      {s.location_id === store.id ? " (active)" : ""}
-                    </Button>
-                  </TD>
-                  <TD className="capitalize">{s.location_type}</TD>
-                  <TD className="text-right tabular-nums">{s.product_count}</TD>
-                  <TD className="text-right tabular-nums">
-                    {qty(s.stock_quantity)}
-                  </TD>
-                  <TD className="text-right tabular-nums">
-                    {stores.find((location) => location.id === s.location_id)
-                      ?.currency
-                      ? money(
-                          s.stock_value,
-                          stores.find(
-                            (location) => location.id === s.location_id,
-                          )!.currency,
-                        )
-                      : "Currency unavailable"}
-                  </TD>
-                </TR>
-              ))}
+              {(data ?? [])
+                .filter((s) => s.location_type === "store")
+                .map((s) => (
+                  <TR key={s.location_id}>
+                    <TD>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setStore(s.location_id)}
+                      >
+                        {s.name}
+                        {s.location_id === store.id ? " (active)" : ""}
+                      </Button>
+                    </TD>
+                    <TD className="capitalize">{s.location_type}</TD>
+                    <TD className="text-right tabular-nums">
+                      {s.product_count}
+                    </TD>
+                    <TD className="text-right tabular-nums">
+                      {qty(s.stock_quantity)}
+                    </TD>
+                    <TD className="text-right tabular-nums">
+                      {stores.find((location) => location.id === s.location_id)
+                        ?.currency
+                        ? money(
+                            s.stock_value,
+                            stores.find(
+                              (location) => location.id === s.location_id,
+                            )!.currency,
+                          )
+                        : "Currency unavailable"}
+                    </TD>
+                  </TR>
+                ))}
             </TBody>
           </Table>
         )}

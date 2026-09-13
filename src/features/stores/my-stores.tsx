@@ -99,7 +99,10 @@ export function MyStores() {
       ) : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {stores
-          .filter((s) => s.businessId === store.businessId)
+          .filter(
+            (s) =>
+              s.businessId === store.businessId && s.locationType === "store",
+          )
           .map((s) => {
             const active = s.id === store.id;
             const totals = overview.data?.find((t) => t.location_id === s.id);
@@ -136,7 +139,9 @@ export function MyStores() {
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Stock value</dt>
-                    <dd className={`mt-1 inline-flex rounded-md border px-2 py-1 font-medium ${totals && totals.stock_value>0?"border-success/30 bg-success/10 text-success":"border-danger/30 bg-danger/10 text-danger"}`}>
+                    <dd
+                      className={`mt-1 inline-flex rounded-md border px-2 py-1 font-medium ${totals && totals.stock_value > 0 ? "border-success/30 bg-success/10 text-success" : "border-danger/30 bg-danger/10 text-danger"}`}
+                    >
                       {totals ? money(totals.stock_value, s.currency) : "—"}
                     </dd>
                   </div>
