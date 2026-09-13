@@ -246,6 +246,10 @@ export type Database = {
       record_receipt_print: { Args: { p_sale: string; p_action: string }; Returns: undefined }
       save_receipt_preferences: { Args: { p_store: string; p_second: boolean; p_delay: number; p_paper?: string }; Returns: undefined }
       smtp_delivery: { Args: { p_key: string; p_token?: string; p_provider?: string }; Returns: Json };
+      transfer_detail: { Args: {p_transfer: string}; Returns: Json }
+      correct_batch_expiry: { Args: {p_batch: string; p_expiry: string; p_expected_expiry: string | null; p_expected_quantity: number; p_reason: string}; Returns: undefined }
+      warehouse_summary: { Args: {p_business: string}; Returns: {location_id: string; name: string; currency: string; product_count: number; stock_quantity: number; stock_value: number}[] }
+      create_product_catalog: { Args: {p_store: string; p_name: string; p_values: Json}; Returns: string }
       assign_stock_expiry: { Args: {p_product: string; p_expiry: string; p_quantity: number; p_expected: number}; Returns: undefined }
       save_product_details: { Args: {p_product: string; p_values: Json; p_expiry?: string; p_expected?: number}; Returns: undefined }
       registration_open: { Args: Record<string, never>; Returns: boolean }
