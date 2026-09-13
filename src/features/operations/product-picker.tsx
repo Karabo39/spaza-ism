@@ -40,11 +40,11 @@ function LegacyProductPicker({
     enabled: !!location,
     queryFn: async () => {
       const { data, error } = await createClient()
-        .from("v_product_stock")
+        .from("v_product_catalog")
         .select("*")
         .eq("store_id", location)
         .eq("is_active", true)
-        .ilike("name", `%${term}%`)
+        .ilike("search_text", `%${term}%`)
         .order("name")
         .limit(100);
       if (error) throw error;
@@ -60,7 +60,7 @@ function LegacyProductPicker({
       <Label htmlFor={id}>{label}</Label>
       <Input
         aria-label={`Search ${label.toLowerCase()}`}
-        placeholder="Search product name"
+        placeholder="Search name, SKU or barcode"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         disabled={!location}
@@ -77,7 +77,8 @@ function LegacyProductPicker({
         <option value="">{isLoading ? "Loading…" : "Select product"}</option>
         {rows.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.name} · {qty(p.quantity)} {p.unit}
+            {p.name}
+            {p.sku ? ` · SKU: ${p.sku}` : ""} · {qty(p.quantity)} {p.unit}
           </option>
         ))}
       </select>
@@ -112,11 +113,11 @@ function SearchProductPicker({
     enabled: !!location && open,
     queryFn: async () => {
       const { data, error } = await createClient()
-        .from("v_product_stock")
+        .from("v_product_catalog")
         .select("*")
         .eq("store_id", location)
         .eq("is_active", true)
-        .ilike("name", `%${term.replace(/[\\%_]/g, "\\$&")}%`)
+        .ilike("search_text", `%${term.replace(/[\\%_]/g, "\\$&")}%`)
         .order("name")
         .limit(100);
       if (error) throw error;
@@ -151,7 +152,7 @@ function SearchProductPicker({
             open && data.length && !isFetching ? `${id}-${index}` : undefined
           }
           className="pr-12"
-          placeholder="Search product name"
+          placeholder="Search name, SKU or barcode"
           disabled={!location}
           value={value?.name ?? search}
           onChange={(e) => {
@@ -233,6 +234,7 @@ function SearchProductPicker({
                 >
                   <span className="block break-words font-medium">
                     {p.name}
+                    {p.sku ? ` · SKU: ${p.sku}` : ""}
                   </span>
                   <span className="block text-xs text-muted">
                     {money(Number(p.selling_price), currency)} ·{" "}

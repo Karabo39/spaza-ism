@@ -25,8 +25,16 @@ export type QueuedSale = {
 };
 
 interface SpazaDB extends DBSchema {
-  products: { key: string; value: ProductStock & { _store: string }; indexes: { by_store: string } };
-  barcodes: { key: string; value: { barcode: string; product_id: string; store_id: string }; indexes: { by_store: string } };
+  products: {
+    key: string;
+    value: ProductStock & { _store: string };
+    indexes: { by_store: string };
+  };
+  barcodes: {
+    key: string;
+    value: { barcode: string; product_id: string; store_id: string };
+    indexes: { by_store: string };
+  };
   salesQueue: { key: string; value: QueuedSale; indexes: { by_store: string } };
   meta: { key: string; value: { key: string; value: number } };
 }
@@ -66,15 +74,22 @@ export async function replaceProductMirror(
   const bStore = tx.objectStore("barcodes");
 
   // Clear this store's existing rows, then write fresh.
-  for (const key of await pStore.index("by_store").getAllKeys(storeId)) await pStore.delete(key);
-  for (const key of await bStore.index("by_store").getAllKeys(storeId)) await bStore.delete(key);
+  for (const key of await pStore.index("by_store").getAllKeys(storeId))
+    await pStore.delete(key);
+  for (const key of await bStore.index("by_store").getAllKeys(storeId))
+    await bStore.delete(key);
   for (const p of products) await pStore.put({ ...p, _store: storeId });
   for (const b of barcodes) await bStore.put(b);
-  await tx.objectStore("meta").put({ key: `sync:${storeId}`, value: Date.now() });
+  await tx
+    .objectStore("meta")
+    .put({ key: `sync:${storeId}`, value: Date.now() });
   await tx.done;
 }
 
-export async function localFindByBarcode(storeId: string, code: string): Promise<ProductStock | null> {
+export async function localFindByBarcode(
+  storeId: string,
+  code: string,
+): Promise<ProductStock | null> {
   const db = await getDB();
   if (!db) return null;
   const bc = await db.get("barcodes", code.trim());
@@ -94,12 +109,23 @@ export async function localFindById(id: string): Promise<ProductStock | null> {
   return (await db.get("products", id)) ?? null;
 }
 
-export async function localSearch(storeId: string, term: string): Promise<ProductStock[]> {
+export async function localSearch(
+  storeId: string,
+  term: string,
+): Promise<ProductStock[]> {
   const db = await getDB();
   if (!db) return [];
   const all = await db.getAllFromIndex("products", "by_store", storeId);
   const t = term.trim().toLowerCase();
-  return (t ? all.filter((p) => p.name.toLowerCase().includes(t)) : all)
+  return (
+    t
+      ? all.filter(
+          (p) =>
+            p.name.toLowerCase().includes(t) ||
+            (p.sku ?? "").toLowerCase().includes(t),
+        )
+      : all
+  )
     .filter((p) => p.is_active)
     .slice(0, 20);
 }
@@ -162,7 +188,11 @@ export async function enqueueSaleAndAdjust(sale: QueuedSale): Promise<void> {
     await tx.objectStore("salesQueue").add(sale);
     for (const item of sale.items) {
       const product = await tx.objectStore("products").get(item.product_id);
-      if (product && product._store === sale.storeId) await tx.objectStore("products").put({ ...product, quantity: Math.max(0, Number(product.quantity) - item.quantity) });
+      if (product && product._store === sale.storeId)
+        await tx.objectStore("products").put({
+          ...product,
+          quantity: Math.max(0, Number(product.quantity) - item.quantity),
+        });
     }
   }
   await tx.done;

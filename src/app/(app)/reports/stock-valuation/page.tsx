@@ -35,6 +35,7 @@ export default async function StockValuationReport() {
 
   const exportRows = rows.map((r) => ({
     name: r.name,
+    sku: r.sku,
     category: r.category_name ?? "",
     quantity: Number(r.quantity),
     cost: Number(r.cost_price),
@@ -44,6 +45,7 @@ export default async function StockValuationReport() {
   }));
   const columns = [
     { key: "name", label: "Product" },
+    { key: "sku", label: "SKU" },
     { key: "category", label: "Category" },
     { key: "quantity", label: "Quantity" },
     { key: "cost", label: "Cost" },
@@ -118,7 +120,14 @@ export default async function StockValuationReport() {
             <TBody>
               {rows.map((r) => (
                 <TR key={r.id}>
-                  <TD className="font-medium">{r.name}</TD>
+                  <TD className="font-medium">
+                    {r.name}
+                    {r.sku && (
+                      <span className="block text-xs text-muted">
+                        SKU: {r.sku}
+                      </span>
+                    )}
+                  </TD>
                   <TD className="text-muted">{r.category_name ?? "—"}</TD>
                   <TD className="text-right tabular-nums">{qty(r.quantity)}</TD>
                   <TD className="text-right tabular-nums text-muted-foreground">

@@ -166,6 +166,9 @@ export function AdjustConsole() {
         <div className="space-y-4 rounded-lg border border-border bg-surface p-5">
           <div>
             <h2 className="text-lg font-semibold">{product.name}</h2>
+            {product.sku && (
+              <p className="text-sm text-muted">SKU: {product.sku}</p>
+            )}
             <p className="text-sm text-muted">
               Current stock:{" "}
               <span className="tabular-nums text-foreground">

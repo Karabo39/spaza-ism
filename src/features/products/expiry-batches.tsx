@@ -24,7 +24,10 @@ export function ExpiryBatches({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
-    <section className="mb-5 space-y-3 rounded-lg border border-border bg-surface p-5">
+    <section
+      id="expiry-batches"
+      className="mb-5 space-y-3 rounded-lg border border-border bg-surface p-5"
+    >
       <h2 className="font-semibold">Expiry batches</h2>
       <p className="text-sm text-muted">
         Dates apply to batches. Expired and undated tracked stock cannot be
@@ -35,6 +38,9 @@ export function ExpiryBatches({
           <li className="flex justify-between gap-3 py-2 text-sm" key={b.id}>
             <span>{b.expiry_date ?? "Date required"}</span>
             <span>{qty(b.quantity)} units</span>
+            {can("manager") && b.quantity > 0 && b.expiry_date && (
+              <BatchCorrection batch={b} />
+            )}
           </li>
         ))}
       </ul>
@@ -110,5 +116,82 @@ export function ExpiryBatches({
         </p>
       )}
     </section>
+  );
+}
+
+function BatchCorrection({
+  batch,
+}: {
+  batch: { id: string; quantity: number; expiry_date: string | null };
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(batch.expiry_date || "");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const lock = useRef(false);
+  return (
+    <div>
+      <Button size="sm" variant="secondary" onClick={() => setOpen(!open)}>
+        Correct date
+      </Button>
+      {open && (
+        <form
+          className="mt-2 space-y-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (lock.current) return;
+            lock.current = true;
+            setBusy(true);
+            setError("");
+            try {
+              const { error } = await createClient().rpc(
+                "correct_batch_expiry",
+                {
+                  p_batch: batch.id,
+                  p_expiry: date,
+                  p_expected_expiry: batch.expiry_date,
+                  p_expected_quantity: batch.quantity,
+                  p_reason: reason,
+                },
+              );
+              if (error) throw error;
+              setOpen(false);
+              router.refresh();
+            } catch (e) {
+              setError(friendlyError((e as Error).message));
+            } finally {
+              setBusy(false);
+              lock.current = false;
+            }
+          }}
+        >
+          <Input
+            aria-label="Corrected batch expiry"
+            type="date"
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          <Input
+            aria-label="Reason for expiry correction"
+            required
+            maxLength={500}
+            placeholder="Reason for correction"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <p className="text-xs text-muted">
+            Applies to these {qty(batch.quantity)} units only. Original receipts
+            stay unchanged.
+          </p>
+          <Button type="submit" loading={busy}>
+            Save corrected date
+          </Button>
+          {error && <p role="alert">{error}</p>}
+        </form>
+      )}
+    </div>
   );
 }

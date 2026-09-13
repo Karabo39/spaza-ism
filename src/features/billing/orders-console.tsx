@@ -20,6 +20,7 @@ import type { OrderWorkflow } from "./order-workflow";
 import { orderTotals } from "./order-totals";
 import type { CreditCustomer, ProductStock } from "@/lib/db/database.types";
 type Line = {
+  sku?: string | null;
   product_id: string;
   name: string;
   quantity: number;
@@ -116,6 +117,7 @@ export function OrdersConsole({
             {
               product_id: product.id,
               name: product.name,
+              sku: product.sku,
               quantity,
               unit_price: Number(product.selling_price),
             },
@@ -146,7 +148,12 @@ export function OrdersConsole({
   }
   return (
     <div className="space-y-6">
-      {!canModule("orders_new") && !canModule("orders_recent") && <p className="rounded-lg border border-border p-5 text-sm text-muted">No Orders options are enabled at this store. Ask your owner to update Access Control.</p>}
+      {!canModule("orders_new") && !canModule("orders_recent") && (
+        <p className="rounded-lg border border-border p-5 text-sm text-muted">
+          No Orders options are enabled at this store. Ask your owner to update
+          Access Control.
+        </p>
+      )}
       {!online && (
         <p className="text-warning">
           Orders and invoices require a connection.
@@ -245,7 +252,8 @@ export function OrdersConsole({
               className="flex items-center justify-between border-b border-border py-2 text-sm"
             >
               <span>
-                {l.quantity} × {l.name} ·{" "}
+                {l.quantity} × {l.name}
+                {l.sku ? ` · SKU: ${l.sku}` : ""} ·{" "}
                 {money(l.quantity * l.unit_price, currency)}
               </span>
               <Button
@@ -382,7 +390,8 @@ export function OrdersConsole({
                 {current.reference} · {statusLabel(current.status)}
               </h2>
               <p>
-                {current.customer_name} · Ordered By: {current.ordered_by_name || "Not recorded"} · {current.note}
+                {current.customer_name} · Ordered By:{" "}
+                {current.ordered_by_name || "Not recorded"} · {current.note}
               </p>
               {items?.map((l) => (
                 <p key={l.id} className="text-sm">
@@ -397,7 +406,8 @@ export function OrdersConsole({
                 >
                   <h3 className="font-semibold">Order summary</h3>
                   <p className="break-all">
-                    Invoice {current.invoice.reference} · Invoiced By: {current.invoice.invoiced_by_name || "Not recorded"}
+                    Invoice {current.invoice.reference} · Invoiced By:{" "}
+                    {current.invoice.invoiced_by_name || "Not recorded"}
                   </p>
                   <p>
                     Payment: {statusLabel(current.invoice.status)} ·{" "}

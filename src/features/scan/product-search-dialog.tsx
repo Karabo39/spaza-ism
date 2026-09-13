@@ -51,7 +51,7 @@ function ProductSearchDialogContent({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             autoFocus
-            placeholder="Search by name…"
+            placeholder="Search name, SKU or barcode…"
             className="h-11 min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
           />
         </div>
@@ -83,6 +83,7 @@ function ProductSearchDialogContent({
               >
                 <div className="min-w-0 flex-1 break-words">
                   <p className="text-sm font-medium">{p.name}</p>
+                  {p.sku && <p className="text-xs text-muted">SKU: {p.sku}</p>}
                   <p className="text-xs text-muted">
                     In stock: {qty(p.quantity)} {p.unit}
                   </p>

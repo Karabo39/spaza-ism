@@ -184,6 +184,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
       return data?.return_reasons ?? DEFAULT_RETURN_REASONS;
     },
   });
+  const expiryRequired = reason.trim().toLowerCase() === "expired";
   const reasonValid =
     reasonSettings.data?.includes(reason) &&
     (reason.toLowerCase() !== "other" || !!reasonDetail.trim());
@@ -191,6 +192,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
     const found = sourceItems.data?.find((l) => l.id === item);
     if (
       !found ||
+      (expiryRequired && !expiry) ||
       quantity <= 0 ||
       quantity > found.quantity ||
       lines.some((l) => l.item_id === item)
@@ -277,6 +279,33 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             connection.
           </p>
         )}
+        <Label htmlFor="return-reason">Reason for return</Label>
+        <select
+          id="return-reason"
+          className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        >
+          <option value="">Choose a configured reason</option>
+          {reasonSettings.data?.map((r) => (
+            <option key={r}>{r}</option>
+          ))}
+        </select>
+        {reasonSettings.error && (
+          <p role="alert" className="text-danger">
+            Could not load return reasons. Refresh before submitting.
+          </p>
+        )}
+        <Label htmlFor="return-reason-detail">
+          Explanation{" "}
+          {reason.toLowerCase() === "other" ? "(required)" : "(optional)"}
+        </Label>
+        <Input
+          id="return-reason-detail"
+          maxLength={900}
+          value={reasonDetail}
+          onChange={(e) => setReasonDetail(e.target.value)}
+        />
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <Label htmlFor="return-product">Product sold</Label>
@@ -354,8 +383,12 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             </select>
           </div>
           <div>
-            <Label htmlFor="return-expiry">Expiry on returned item</Label>
+            <Label htmlFor="return-expiry">
+              Expiry on returned item{" "}
+              {expiryRequired ? "(required)" : "(optional)"}
+            </Label>
             <Input
+              required={expiryRequired}
               id="return-expiry"
               type="date"
               value={expiry}
@@ -365,7 +398,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           <Button
             className="self-end"
             variant="secondary"
-            disabled={!item || quantity <= 0}
+            disabled={!item || quantity <= 0 || (expiryRequired && !expiry)}
             onClick={add}
           >
             Add return item
@@ -377,7 +410,8 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             className="flex items-center justify-between border-b border-border py-2"
           >
             <p className="text-sm">
-              {l.quantity} × {l.name} · {l.condition} · {statusLabel(l.action)}
+              {l.quantity} × {l.name} · {l.condition} · {statusLabel(l.action)}{" "}
+              · Expiry: {l.expiry_date || "Not supplied"}
             </p>
             <Button
               variant="ghost"
@@ -389,33 +423,16 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
             </Button>
           </div>
         ))}
-        <Label htmlFor="return-reason">Reason for return</Label>
-        <select
-          id="return-reason"
-          className="h-11 sm:h-10 min-w-0 w-full rounded border border-border bg-input px-2"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        >
-          <option value="">Choose a configured reason</option>
-          {reasonSettings.data?.map((r) => (
-            <option key={r}>{r}</option>
-          ))}
-        </select>
-        {reasonSettings.error && (
+        {expiryRequired && lines.some((l) => !l.expiry_date) && (
           <p role="alert" className="text-danger">
-            Could not load return reasons. Refresh before submitting.
+            Expired returns require a date on every item. Remove and add any
+            undated items with their expiry date.
           </p>
         )}
-        <Label htmlFor="return-reason-detail">
-          Explanation{" "}
-          {reason.toLowerCase() === "other" ? "(required)" : "(optional)"}
-        </Label>
-        <Input
-          id="return-reason-detail"
-          maxLength={900}
-          value={reasonDetail}
-          onChange={(e) => setReasonDetail(e.target.value)}
-        />
+        <p className="text-xs text-muted">
+          Returned stock with expiry tracking and no date stays unavailable for
+          sale until its batch is dated.
+        </p>
         <Label htmlFor="return-inspection">Inspection findings</Label>
         <Input
           id="return-inspection"
@@ -425,7 +442,11 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
         <Button
           loading={busy}
           disabled={
-            !online || !lines.length || !reasonValid || !inspection.trim()
+            !online ||
+            !lines.length ||
+            !reasonValid ||
+            !inspection.trim() ||
+            (expiryRequired && lines.some((l) => !l.expiry_date))
           }
           onClick={() => {
             const payload = {

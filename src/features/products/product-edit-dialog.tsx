@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ export function ProductEditDialog({
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState({
     name: product.name,
+    sku: product.sku ?? "",
     description: product.description ?? "",
     barcode,
     cost: String(product.cost_price),
@@ -53,6 +55,7 @@ export function ProductEditDialog({
       p_expected: product.undated_quantity ?? product.quantity,
       p_values: {
         name: form.name.trim(),
+        sku: form.sku.trim() || null,
         description: form.description.trim() || null,
         ...(form.barcode.trim() || barcode
           ? { barcode: form.barcode.trim(), expected_barcode: barcode }
@@ -94,6 +97,15 @@ export function ProductEditDialog({
                 required
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="e-sku">SKU (optional, internal use)</Label>
+              <Input
+                id="e-sku"
+                maxLength={128}
+                value={form.sku}
+                onChange={(e) => set("sku", e.target.value)}
               />
             </div>
             <div>
@@ -206,6 +218,15 @@ export function ProductEditDialog({
                     </p>
                   </div>
                 )}
+              {form.track_expiry && product.quantity > 0 && (
+                <Link
+                  className="block text-sm text-accent"
+                  href={`/products/${product.id}#expiry-batches`}
+                  onClick={() => setOpen(false)}
+                >
+                  View and correct individual batch expiry dates
+                </Link>
+              )}
               {form.track_expiry && product.quantity === 0 && (
                 <p className="text-xs text-muted">
                   No stock yet. Enter the expiry when stock is received.

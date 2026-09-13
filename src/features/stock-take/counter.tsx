@@ -22,7 +22,7 @@ type Item = {
   counted: boolean;
   variance: number | null;
   counted_expiry: string | null;
-  products: { name: string; track_expiry: boolean } | null;
+  products: { sku: string | null; name: string; track_expiry: boolean } | null;
 };
 export function StockTakeCounter({
   stockTakeId,
@@ -51,7 +51,7 @@ export function StockTakeCounter({
       const { data, error } = await createClient()
         .from("stock_take_items")
         .select(
-          "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,products(name,track_expiry)",
+          "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,products(name,sku,track_expiry)",
         )
         .eq("stock_take_id", stockTakeId)
         .order("product_id");
@@ -62,7 +62,9 @@ export function StockTakeCounter({
   const items = (data ?? []).filter(
     (i) =>
       !filter ||
-      (i.products?.name ?? "").toLowerCase().includes(filter.toLowerCase()),
+      `${i.products?.name ?? ""} ${i.products?.sku ?? ""}`
+        .toLowerCase()
+        .includes(filter.toLowerCase()),
   );
   const counted = (data ?? []).filter((i) => i.counted).length;
   async function save(item: Item) {
@@ -124,6 +126,7 @@ export function StockTakeCounter({
   if (isLoading) return <LoadingRows cols={6} />;
   const exportRows = items.map((i) => ({
     name: i.products?.name,
+    sku: i.products?.sku,
     system: Number(i.system_qty),
     counted: i.counted_qty === null ? "" : Number(i.counted_qty),
     variance: i.variance === null ? "" : Number(i.variance),
@@ -162,6 +165,7 @@ export function StockTakeCounter({
           rows={exportRows}
           columns={[
             { key: "name", label: "Product" },
+            { key: "sku", label: "SKU" },
             { key: "system", label: "System at count" },
             { key: "counted", label: "Physical count" },
             { key: "variance", label: "Variance" },
@@ -186,7 +190,14 @@ export function StockTakeCounter({
           <TBody>
             {items.map((item) => (
               <TR key={item.id}>
-                <TD>{item.products?.name ?? "—"}</TD>
+                <TD>
+                  {item.products?.name ?? "—"}
+                  {item.products?.sku && (
+                    <p className="text-xs text-muted">
+                      SKU: {item.products.sku}
+                    </p>
+                  )}
+                </TD>
                 <TD>{qty(item.system_qty)}</TD>
                 <TD>
                   <input

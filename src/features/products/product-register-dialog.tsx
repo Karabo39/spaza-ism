@@ -32,6 +32,7 @@ function ProductRegisterDialogContent({
 }) {
   const { store } = useStore();
   const [name, setName] = React.useState(initialName);
+  const [sku, setSku] = React.useState("");
   const [barcode, setBarcode] = React.useState(initialBarcode);
   const [description, setDescription] = React.useState("");
   const [selling, setSelling] = React.useState("");
@@ -45,20 +46,20 @@ function ProductRegisterDialogContent({
     e.preventDefault();
     setLoading(true);
     const supabase = createClient();
-    const { data: id, error } = await supabase.rpc(
-      "create_product_with_description",
-      {
-        p_store: store.id,
-        p_track_expiry: trackExpiry,
-        p_name: name.trim(),
-        p_description: description.trim() || undefined,
-        p_barcode: barcode.trim() || undefined,
-        p_cost: Number(cost) || 0,
-        p_selling: Number(selling) || 0,
-        p_min: Number(minLevel) || 0,
-        p_reorder: Number(reorder) || 0,
+    const { data: id, error } = await supabase.rpc("create_product_catalog", {
+      p_store: store.id,
+      p_name: name.trim(),
+      p_values: {
+        sku: sku.trim() || null,
+        description: description.trim() || null,
+        barcode: barcode.trim() || null,
+        cost: Number(cost) || 0,
+        selling: Number(selling) || 0,
+        min: Number(minLevel) || 0,
+        reorder: Number(reorder) || 0,
+        track_expiry: trackExpiry,
       },
-    );
+    });
     if (error || !id) {
       setLoading(false);
       toast.error(friendlyError(error?.message));
@@ -85,6 +86,15 @@ function ProductRegisterDialogContent({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <div>
+            <Label htmlFor="product-sku">SKU (optional, internal use)</Label>
+            <Input
+              id="product-sku"
+              maxLength={128}
+              value={sku}
+              onChange={(e) => setSku(e.target.value)}
+            />
+          </div>
           <div>
             <Label htmlFor="p-name">Product name</Label>
             <Input

@@ -26,7 +26,7 @@ export default async function AdjustmentsReport({
   let query = supabase
     .from("stock_adjustments")
     .select(
-      "id, reason, quantity_before, quantity_after, delta, note, created_at, products(name)",
+      "id, reason, quantity_before, quantity_after, delta, note, created_at, products(name,sku)",
     )
     .eq("store_id", store.id);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
@@ -43,12 +43,13 @@ export default async function AdjustmentsReport({
     delta: number;
     note: string | null;
     created_at: string;
-    products: { name: string } | null;
+    products: { name: string; sku: string | null } | null;
   }[];
 
   const exportRows = rows.map((r) => ({
     date: dateTime(r.created_at),
     product: r.products?.name ?? "",
+    sku: r.products?.sku ?? "",
     reason: REASON_LABELS[r.reason] ?? r.reason,
     before: r.quantity_before,
     after: r.quantity_after,
@@ -58,6 +59,7 @@ export default async function AdjustmentsReport({
   const columns = [
     { key: "date", label: "Date" },
     { key: "product", label: "Product" },
+    { key: "sku", label: "SKU" },
     { key: "reason", label: "Reason" },
     { key: "before", label: "Before" },
     { key: "after", label: "After" },
@@ -115,7 +117,14 @@ export default async function AdjustmentsReport({
                   <TD className="text-xs text-muted whitespace-nowrap">
                     {dateTime(r.created_at)}
                   </TD>
-                  <TD className="font-medium">{r.products?.name ?? "—"}</TD>
+                  <TD className="font-medium">
+                    {r.products?.name ?? "—"}
+                    {r.products?.sku && (
+                      <p className="text-xs text-muted">
+                        SKU: {r.products.sku}
+                      </p>
+                    )}
+                  </TD>
                   <TD>
                     <Badge variant="neutral">
                       {REASON_LABELS[r.reason] ?? r.reason}

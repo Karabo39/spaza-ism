@@ -26,7 +26,7 @@ export default async function MovementsReport({
   let query = supabase
     .from("stock_movements")
     .select(
-      "id, movement_type, quantity_delta, quantity_before, quantity_after, reason, created_at, products(name)",
+      "id, movement_type, quantity_delta, quantity_before, quantity_after, reason, created_at, products(name,sku)",
     )
     .eq("store_id", store.id);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
@@ -43,12 +43,13 @@ export default async function MovementsReport({
     quantity_after: number;
     reason: string | null;
     created_at: string;
-    products: { name: string } | null;
+    products: { name: string; sku: string | null } | null;
   }[];
 
   const exportRows = rows.map((m) => ({
     date: dateTime(m.created_at),
     product: m.products?.name ?? "",
+    sku: m.products?.sku ?? "",
     type: MOVEMENT_META[m.movement_type]?.label ?? m.movement_type,
     change: m.quantity_delta,
     before: m.quantity_before,
@@ -58,6 +59,7 @@ export default async function MovementsReport({
   const columns = [
     { key: "date", label: "Date" },
     { key: "product", label: "Product" },
+    { key: "sku", label: "SKU" },
     { key: "type", label: "Type" },
     { key: "change", label: "Change" },
     { key: "before", label: "Before" },
