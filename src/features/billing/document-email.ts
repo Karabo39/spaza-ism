@@ -1,3 +1,4 @@
+import { receiptCustomer } from "@/features/goods-out/receipt-customer";
 import type { Database } from "@/lib/db/database.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { dateTime, dateOnly } from "@/lib/format";
@@ -28,6 +29,7 @@ export async function loadEmailDocument(
     if (!data) return null;
     const r =
       data.snapshot as import("@/features/goods-out/payments").SaleReceipt;
+    const customerName = await receiptCustomer(db, r, storeId);
     const m = (value: number) => documentMoney(value, r.currency);
     return {
       recipient: "",
@@ -36,6 +38,7 @@ export async function loadEmailDocument(
         title: `Sales receipt ${r.reference}`,
         subtitle: `${r.business} · ${r.store} · ${dateTime(r.created_at)}
 Cashier: ${r.cashier} · Till: ${r.till || "Not recorded"} · ${r.status}
+${r.status === "CREDIT" ? `Customer: ${customerName || "Not recorded"}` : ""}
 Transaction: ${r.id}`,
         columns,
         rows: [
@@ -49,7 +52,7 @@ Transaction: ${r.id}`,
           { description: "VAT: not separately calculated" },
           { description: "Total", amount: m(r.total) },
           ...r.payments.map((p) => ({
-            description: `${p.method} ${p.reference ?? ""}`,
+            description: `${p.method.replace("_", " / ")} ${p.reference ?? ""}`,
             amount: m(p.amount),
           })),
           { description: "Cash received", amount: m(r.cash_tendered) },

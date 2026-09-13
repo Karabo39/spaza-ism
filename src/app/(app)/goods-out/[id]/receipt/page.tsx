@@ -1,3 +1,4 @@
+import { receiptCustomer } from "@/features/goods-out/receipt-customer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -23,6 +24,11 @@ export default async function ReceiptPage({
   if (error) throw error;
   if (!data) notFound();
   const receipt = data.snapshot as SaleReceipt;
+  const customerName = await receiptCustomer(
+    db,
+    receipt,
+    session.activeStore.id,
+  );
   const [prefs, events] = await Promise.all([
     db
       .from("receipt_preferences")
@@ -67,6 +73,9 @@ export default async function ReceiptPage({
             {dateTime(receipt.created_at)} · {receipt.status}
           </p>
           <p>Cashier: {receipt.cashier}</p>
+          {receipt.status === "CREDIT" && (
+            <p>Customer: {customerName || "Not recorded"}</p>
+          )}
           <p>Till: {receipt.till || "Not recorded"}</p>
         </div>
         <table className="w-full text-sm">
@@ -108,8 +117,9 @@ export default async function ReceiptPage({
         <section>
           <h3 className="font-semibold">Payment details</h3>
           {receipt.payments.map((p) => (
-            <p key={p.method}>
-              {p.method}: {money(p.amount, receipt.currency)}{" "}
+            <p key={p.method.replace("_", " / ")}>
+              {p.method.replace("_", " / ")}:{" "}
+              {money(p.amount, receipt.currency)}{" "}
               {p.reference && `· ${p.reference}`}
             </p>
           ))}

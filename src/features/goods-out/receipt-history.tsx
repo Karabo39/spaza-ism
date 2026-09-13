@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { dateTime, money } from "@/lib/format";
+import { receiptCustomer } from "./receipt-customer";
 import type { SaleReceipt } from "./payments";
 export function ReceiptHistory({ refreshKey }: { refreshKey: string | null }) {
   const { store, can } = useStore();
@@ -31,7 +32,16 @@ export function ReceiptHistory({ refreshKey }: { refreshKey: string | null }) {
         );
       const { data, error } = await q;
       if (error) throw error;
-      return data;
+      return Promise.all(
+        (data ?? []).map(async (row) => ({
+          ...row,
+          customerName: await receiptCustomer(
+            db,
+            row.snapshot as SaleReceipt,
+            store.id,
+          ),
+        })),
+      );
     },
   });
   const prefs = useQuery({
@@ -105,6 +115,11 @@ export function ReceiptHistory({ refreshKey }: { refreshKey: string | null }) {
                   <p className="text-xs text-muted">
                     {dateTime(row.created_at)} · {receipt.cashier} ·{" "}
                     {receipt.status}
+                    {row.customerName
+                      ? ` · Customer: ${row.customerName}`
+                      : receipt.status === "CREDIT"
+                        ? " · Customer not recorded on original receipt"
+                        : ""}
                   </p>
                 </div>
                 <span>{money(receipt.total, receipt.currency)}</span>

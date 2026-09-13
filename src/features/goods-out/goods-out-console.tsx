@@ -38,6 +38,7 @@ import {
 import { ReceiptHistory } from "./receipt-history";
 
 type Line = {
+  sku?: string | null;
   productId: string;
   name: string;
   unit: string;
@@ -155,6 +156,7 @@ export function GoodsOutConsole() {
         {
           productId: p.id,
           name: p.name,
+          sku: p.sku,
           unit: p.unit,
           quantity: 1,
           unitPrice: Number(p.selling_price),
@@ -289,7 +291,13 @@ export function GoodsOutConsole() {
       toast.error("Select a customer for credit sale");
       return;
     }
-    if (saleType === "CREDIT" && wouldExceed && !uncertain && !override && !approvalToken) {
+    if (
+      saleType === "CREDIT" &&
+      wouldExceed &&
+      !uncertain &&
+      !override &&
+      !approvalToken
+    ) {
       toast.error(
         "Ask a manager to approve this amount before completing the sale.",
       );
@@ -378,7 +386,11 @@ export function GoodsOutConsole() {
           error?.message.includes("REQUEST_CONFLICT") ||
           isNetworkError(error?.message) ||
           !/^[0-9A-Z]{5}$/.test(error?.code ?? "");
-        if (saleType === "CASH" && unconfirmed && !error?.message.includes("REQUEST_CONFLICT")) {
+        if (
+          saleType === "CASH" &&
+          unconfirmed &&
+          !error?.message.includes("REQUEST_CONFLICT")
+        ) {
           setBusy(true);
           await saveOffline();
           setBusy(false);
@@ -395,7 +407,7 @@ export function GoodsOutConsole() {
       toast.success(
         saleType === "CREDIT"
           ? `Credit sale to ${customer?.name} — ${money(total, currency)}`
-          : `${saleType === "SPLIT" ? "Split payment" : saleType} sale complete — ${money(total, currency)}`,
+          : `${saleType.startsWith("SPLIT") ? "Split payment" : saleType === "CARD_EFT" ? "Card / EFT" : saleType} sale complete — ${money(total, currency)}`,
       );
       clearJournal();
       setSavedTotal(total);
@@ -527,6 +539,9 @@ export function GoodsOutConsole() {
                       <TR key={l.productId}>
                         <TD>
                           <p className="font-medium">{l.name}</p>
+                          {l.sku && (
+                            <p className="text-xs text-muted">SKU: {l.sku}</p>
+                          )}
                           <p
                             className={cn(
                               "text-xs",
@@ -611,7 +626,7 @@ export function GoodsOutConsole() {
           <div>
             <p className="mb-2 text-xs font-medium text-muted">Payment type</p>
             <div className="grid grid-cols-3 gap-2">
-              {(["CASH", "CARD", "EFT", "SPLIT", "CREDIT"] as const).map(
+              {(["CASH", "CARD_EFT", "SPLIT_COMBINED", "CREDIT"] as const).map(
                 (mode) => (
                   <button
                     key={mode}
@@ -628,10 +643,10 @@ export function GoodsOutConsole() {
                         : "border-border hover:bg-surface-2",
                     )}
                   >
-                    {mode === "SPLIT"
-                      ? "Split"
-                      : mode === "EFT"
-                        ? "EFT"
+                    {mode === "SPLIT_COMBINED"
+                      ? "Split Payment"
+                      : mode === "CARD_EFT"
+                        ? "Card / EFT"
                         : mode.charAt(0) + mode.slice(1).toLowerCase()}
                   </button>
                 ),

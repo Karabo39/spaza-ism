@@ -1,6 +1,13 @@
-export type PaymentMode = "CASH" | "CARD" | "EFT" | "SPLIT" | "CREDIT";
+export type PaymentMode =
+  | "CASH"
+  | "CARD"
+  | "EFT"
+  | "SPLIT"
+  | "SPLIT_COMBINED"
+  | "CARD_EFT"
+  | "CREDIT";
 export type Payment = {
-  method: "CASH" | "CARD" | "EFT";
+  method: "CASH" | "CARD" | "EFT" | "CARD_EFT";
   amount: number;
   reference?: string;
   confirmed?: boolean;
@@ -23,6 +30,12 @@ export const emptyPayments: PaymentDraft = {
   cardConfirmed: false,
   eftConfirmed: false,
 };
+export function paymentMethods(mode: PaymentMode): Payment["method"][] {
+  if (mode === "CREDIT") return [];
+  if (mode === "SPLIT") return ["CASH", "CARD", "EFT"]; // Preserve recovered legacy checkout payloads.
+  if (mode === "SPLIT_COMBINED") return ["CASH", "CARD_EFT"];
+  return [mode];
+}
 export function paymentSummary(
   mode: PaymentMode,
   draft: PaymentDraft,
@@ -30,9 +43,14 @@ export function paymentSummary(
 ) {
   const payments: Payment[] = [];
   let error = "";
-  for (const method of ["CASH", "CARD", "EFT"] as const) {
-    if (mode !== method && mode !== "SPLIT") continue;
-    const raw = draft[method.toLowerCase() as "cash" | "card" | "eft"].trim();
+  for (const method of paymentMethods(mode)) {
+    const raw =
+      draft[
+        (method === "CARD_EFT" ? "card" : method.toLowerCase()) as
+          | "cash"
+          | "card"
+          | "eft"
+      ].trim();
     if (!raw) continue;
     if (
       !/^\d+(\.\d{1,2})?$/.test(raw) ||
@@ -44,10 +62,10 @@ export function paymentSummary(
     }
     const amount = Number(raw);
     if (!amount) continue;
-    const key = method === "CARD" ? "card" : "eft";
+    const key = method !== "EFT" ? "card" : "eft";
     const confirmed = method === "CASH" || draft[`${key}Confirmed`];
     if (!confirmed)
-      error = `Confirm that the ${method === "CARD" ? "card" : "EFT"} payment succeeded.`;
+      error = `Confirm that the ${method === "CARD_EFT" ? "Card / EFT" : method === "CARD" ? "card" : "EFT"} payment succeeded.`;
     payments.push({
       method,
       amount,
@@ -89,6 +107,8 @@ export type SaleReceipt = {
   store: string;
   business: string;
   currency: string;
+  customer_id?: string | null;
+  customer_name?: string | null;
   cashier: string;
   cashier_id: string;
   till: string | null;
