@@ -1,3 +1,4 @@
+import { WarehouseCatalogTools } from "@/features/operations/warehouse-catalog-tools";
 import { WarehouseLocations } from "@/features/operations/warehouse-locations";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -20,6 +21,16 @@ export default async function WarehouseStockPage() {
     p_business: session.activeStore.businessId,
   });
   if (summary.error) throw summary.error;
+  const metadata = locations.length
+    ? await supabase
+        .from("stores")
+        .select("id,code")
+        .in(
+          "id",
+          locations.map((s) => s.id),
+        )
+    : { data: [], error: null };
+  if (metadata.error) throw metadata.error;
   const { data, error } = locations.length
     ? await supabase
         .from("v_product_catalog")
@@ -46,23 +57,31 @@ export default async function WarehouseStockPage() {
         description="Stock held in your permitted warehouses. These quantities are separate from each shop's saleable stock."
         crumbs={[{ label: "Administration" }, { label: "Warehouse" }]}
         actions={
-          <ExportButton
-            rows={rows}
-            filename="warehouse-stock"
-            columns={[
-              { key: "location", label: "Warehouse" },
-              { key: "name", label: "Product" },
-              { key: "sku", label: "SKU" },
-              { key: "cost_price", label: "Unit cost" },
-              { key: "quantity", label: "Quantity" },
-              { key: "unit", label: "Unit" },
-              { key: "stock_value", label: "Cost value" },
-              { key: "currency", label: "Currency" },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <WarehouseCatalogTools />
+            <ExportButton
+              rows={rows}
+              filename="warehouse-stock"
+              columns={[
+                { key: "location", label: "Warehouse" },
+                { key: "name", label: "Product" },
+                { key: "sku", label: "SKU" },
+                { key: "cost_price", label: "Unit cost" },
+                { key: "quantity", label: "Quantity" },
+                { key: "unit", label: "Unit" },
+                { key: "stock_value", label: "Cost value" },
+                { key: "currency", label: "Currency" },
+              ]}
+            />
+          </div>
         }
       />
-      <WarehouseLocations rows={summary.data ?? []} />
+      <WarehouseLocations
+        rows={(summary.data ?? []).map((row) => ({
+          ...row,
+          code: metadata.data?.find((s) => s.id === row.location_id)?.code,
+        }))}
+      />
       <h2 className="my-5 text-lg font-semibold">Warehouse stock</h2>
       {!locations.length ? (
         <p className="text-muted">
