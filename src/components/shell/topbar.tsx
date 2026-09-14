@@ -97,22 +97,24 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
               <MenuLabel>
                 {online ? "Switch location" : "Connect to switch locations"}
               </MenuLabel>
-              {stores.map((s) => (
-                <MenuItem
-                  key={s.id}
-                  disabled={!online}
-                  onSelect={() => setStore(s.id)}
-                >
-                  <span className="flex-1 truncate">
-                    {s.name}
-                    {s.locationType === "warehouse" ? " · Warehouse" : ""}
-                  </span>
-                  <span className="text-xs text-muted">{s.businessName}</span>
-                  {s.id === store.id ? (
-                    <Check className="size-4 text-primary-hover" />
-                  ) : null}
-                </MenuItem>
-              ))}
+              {stores
+                .filter((s) => s.locationType === "store")
+                .map((s) => (
+                  <MenuItem
+                    key={s.id}
+                    disabled={!online}
+                    onSelect={() => setStore(s.id)}
+                  >
+                    <span className="flex-1 truncate">
+                      {s.name}
+                      {s.locationType === "warehouse" ? " · Warehouse" : ""}
+                    </span>
+                    <span className="text-xs text-muted">{s.businessName}</span>
+                    {s.id === store.id ? (
+                      <Check className="size-4 text-primary-hover" />
+                    ) : null}
+                  </MenuItem>
+                ))}
             </MenuContent>
           </Menu>
         ) : (

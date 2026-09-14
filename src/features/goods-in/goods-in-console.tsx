@@ -280,7 +280,12 @@ export function GoodsInConsole() {
             className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm"
           >
             {stores
-              .filter((s) => s.businessId === store.businessId)
+              .filter(
+                (s) =>
+                  s.businessId === store.businessId &&
+                  s.locationType === store.locationType &&
+                  (store.locationType !== "warehouse" || s.id === store.id),
+              )
               .map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} ·{" "}

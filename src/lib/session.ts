@@ -1,3 +1,4 @@
+import { activeSellingStore } from "./location-scope";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
@@ -133,13 +134,7 @@ const loadSession = cache(async (): Promise<Session | null> => {
 
   const cookieStore = await cookies();
   const preferred = cookieStore.get(ACTIVE_STORE_COOKIE)?.value;
-  const activeStore =
-    sessionStores.find(
-      (s) => s.id === preferred && Object.values(s.modules).some(Boolean),
-    ) ??
-    sessionStores.find((s) => Object.values(s.modules).some(Boolean)) ??
-    sessionStores[0] ??
-    null;
+  const activeStore = activeSellingStore(sessionStores, preferred);
 
   return {
     userId: user.id,
@@ -159,6 +154,11 @@ export async function getSession(
     if (!session) redirect("/login");
     if (!session.activeStore)
       redirect(session.hasMembership ? "/access-pending" : "/onboarding");
+    if (
+      session.activeStore.locationType === "warehouse" &&
+      requiredModule !== "warehouse"
+    )
+      redirect("/warehouse");
     if (!session.activeStore.modules[requiredModule]) {
       redirect(
         requiredModule === "dashboard"

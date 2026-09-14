@@ -19,7 +19,11 @@ type StoreContextValue = {
 
 const StoreContext = React.createContext<StoreContextValue | null>(null);
 
-const RANK: Record<MembershipRole, number> = { employee: 1, manager: 2, owner: 3 };
+const RANK: Record<MembershipRole, number> = {
+  employee: 1,
+  manager: 2,
+  owner: 3,
+};
 
 export function StoreProvider({
   session,
@@ -30,16 +34,28 @@ export function StoreProvider({
 }) {
   const router = useRouter();
   React.useEffect(() => {
-    const refresh = () => { if (navigator.onLine && document.visibilityState === "visible") router.refresh(); };
+    const refresh = () => {
+      if (navigator.onLine && document.visibilityState === "visible")
+        router.refresh();
+    };
     window.addEventListener("online", refresh);
     document.addEventListener("visibilitychange", refresh);
     const interval = window.setInterval(refresh, 60000);
-    return () => { window.removeEventListener("online", refresh); document.removeEventListener("visibilitychange", refresh); window.clearInterval(interval); };
+    return () => {
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      window.clearInterval(interval);
+    };
   }, [router]);
 
   const setStore = React.useCallback(
     (id: string) => {
-      if (!session.stores.some((store) => store.id === id)) return;
+      const next = session.stores.find((store) => store.id === id);
+      if (!next) return;
+      if (next.locationType === "warehouse") {
+        router.push(`/warehouse/${id}/stock`);
+        return;
+      }
       if (!navigator.onLine) return;
       document.cookie = `${ACTIVE_STORE_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
       router.refresh();
@@ -49,19 +65,33 @@ export function StoreProvider({
 
   const value = React.useMemo<StoreContextValue>(
     () => ({
-      user: { id: session.userId, email: session.email, fullName: session.fullName },
+      user: {
+        id: session.userId,
+        email: session.email,
+        fullName: session.fullName,
+      },
       stores: session.stores,
       store: session.activeStore,
       role: session.activeStore.role,
       currency: session.activeStore.currency,
       setStore,
       can: (min) => RANK[session.activeStore.role] >= RANK[min],
-      canModule: (module) => session.activeStore.modules[module] === true,
+      canModule: (module) =>
+        session.activeStore.modules[module] === true ||
+        (module === "warehouse" &&
+          session.stores.some(
+            (s) =>
+              s.businessId === session.activeStore.businessId &&
+              s.locationType === "warehouse" &&
+              s.modules.warehouse,
+          )),
     }),
     [session, setStore],
   );
 
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+  return (
+    <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+  );
 }
 
 export function useStore() {

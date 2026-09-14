@@ -39,6 +39,21 @@ export function UnpackConsole() {
         .eq("store_id", store.id)
         .order("pack_name");
       if (error) throw error;
+      if (store.locationType === "warehouse" && data?.length) {
+        const { data: stock, error: stockError } = await createClient()
+          .from("stock")
+          .select("product_id,quantity")
+          .eq("store_id", store.id)
+          .in(
+            "product_id",
+            data.map((c) => c.pack_product_id),
+          )
+          .gt("quantity", 0);
+        if (stockError) throw stockError;
+        return data.filter((c) =>
+          stock?.some((s) => s.product_id === c.pack_product_id),
+        );
+      }
       return data;
     },
   });

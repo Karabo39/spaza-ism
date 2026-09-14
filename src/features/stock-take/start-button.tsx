@@ -38,7 +38,9 @@ export function StartStockTakeButton() {
     }
     if (location !== store.id) setStore(location);
     setOpen(false);
-    router.push(`/stock-take/${data as string}`);
+    router.push(
+      `${store.locationType === "warehouse" ? `/warehouse/${store.id}` : ""}/stock-take/${data as string}`,
+    );
   }
 
   return (
@@ -63,12 +65,18 @@ export function StartStockTakeButton() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             >
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ·{" "}
-                  {s.locationType === "warehouse" ? "Warehouse" : "Store"}
-                </option>
-              ))}
+              {stores
+                .filter(
+                  (s) =>
+                    s.locationType === store.locationType &&
+                    (store.locationType !== "warehouse" || s.id === store.id),
+                )
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ·{" "}
+                    {s.locationType === "warehouse" ? "Warehouse" : "Store"}
+                  </option>
+                ))}
             </select>
           </label>
           <Button disabled={!online} loading={busy} onClick={start}>

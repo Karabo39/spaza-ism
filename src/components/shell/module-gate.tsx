@@ -38,7 +38,18 @@ export function AccessDenied() {
   );
 }
 export function ModuleGate({ children }: { children: React.ReactNode }) {
-  const key = moduleForPath(usePathname());
-  const { canModule } = useStore();
+  const path = usePathname();
+  const key = moduleForPath(path);
+  const { canModule, stores } = useStore();
+  if (
+    (key === "warehouse" || path === "/reports/warehouse-movements") &&
+    stores.some(
+      (s) =>
+        s.locationType === "warehouse" &&
+        s.modules.warehouse &&
+        (path !== "/reports/warehouse-movements" || s.modules.reports),
+    )
+  )
+    return children;
   return key && !canModule(key) ? <AccessDenied /> : children;
 }
