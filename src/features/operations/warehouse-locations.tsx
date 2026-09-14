@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store-context";
 import { Button } from "@/components/ui/button";
 import { money, qty } from "@/lib/format";
-import { LocationsManager } from "@/features/settings/locations-manager";
+
 import type { ModuleKey } from "@/lib/modules";
 export function WarehouseLocations({
   rows,
@@ -20,7 +20,7 @@ export function WarehouseLocations({
     stock_value: number;
   }[];
 }) {
-  const { stores, setStore } = useStore();
+  const { stores } = useStore();
   const router = useRouter();
   const { online } = useOffline();
   const totals = rows.reduce<Record<string, number>>((all, row) => {
@@ -28,19 +28,19 @@ export function WarehouseLocations({
     return all;
   }, {});
   const actions: { label: string; path: string; module: ModuleKey }[] = [
-    { label: "View stock", path: "/check-stock", module: "check_stock" },
-    { label: "Receive stock", path: "/goods-in", module: "goods_in" },
+    { label: "View stock", path: "stock", module: "check_stock" },
+    { label: "Receive stock", path: "receive", module: "goods_in_new_stock" },
     {
       label: "Unpack Bulk Stock",
-      path: "/unpack-bulk-stock",
+      path: "unpack",
       module: "operations",
     },
-    { label: "Transfers", path: "/operations/transfers", module: "operations" },
-    { label: "Adjust stock", path: "/adjust", module: "adjust" },
-    { label: "Stock take", path: "/stock-take", module: "stock_take" },
+    { label: "Transfer to Store", path: "transfers", module: "operations" },
+    { label: "Adjust stock", path: "adjust", module: "adjust" },
+    { label: "Stock take", path: "stock-take", module: "stock_take" },
     {
       label: "Movement reports",
-      path: "/reports/movements",
+      path: "movements",
       module: "reports",
     },
   ];
@@ -48,7 +48,10 @@ export function WarehouseLocations({
     <>
       <div className="mb-5 flex flex-wrap gap-4">
         {Object.entries(totals).map(([currency, total]) => (
-          <p key={currency} className="rounded-lg border border-border p-4">
+          <p
+            key={currency}
+            className={`rounded-lg border p-4 ${total > 0 ? "border-success/40 bg-success/15 text-success" : "border-danger/40 bg-danger/15 text-danger"}`}
+          >
             Total warehouse value: <strong>{money(total, currency)}</strong>
           </p>
         ))}
@@ -91,9 +94,13 @@ export function WarehouseLocations({
                     key={a.path}
                     size="sm"
                     variant="secondary"
+                    className="bg-primary/20 border-primary/30 hover:bg-primary/30"
                     onClick={() => {
-                      setStore(row.location_id);
-                      router.push(a.path);
+                      router.push(
+                        a.path === "movements"
+                          ? `/reports/warehouse-movements?warehouse=${row.location_id}`
+                          : `/warehouse/${row.location_id}/${a.path}`,
+                      );
                     }}
                   >
                     {a.label}
@@ -103,7 +110,6 @@ export function WarehouseLocations({
           </section>
         ))}
       </div>
-      <LocationsManager locationType="warehouse" activateOnCreate />
     </>
   );
 }

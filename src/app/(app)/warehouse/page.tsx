@@ -1,3 +1,6 @@
+import { TransfersConsole } from "@/features/operations/transfers-console";
+import { WarehouseAdd } from "@/features/operations/warehouse-add";
+import { Badge } from "@/components/ui/badge";
 import { WarehouseCatalogTools } from "@/features/operations/warehouse-catalog-tools";
 import { WarehouseLocations } from "@/features/operations/warehouse-locations";
 import { redirect } from "next/navigation";
@@ -8,7 +11,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { qty, money } from "@/lib/format";
 import { ExportButton } from "@/features/reports/export-button";
 export default async function WarehouseStockPage() {
-  const session = await getSession("warehouse");
+  const session = await getSession();
   if (!session?.activeStore) redirect("/onboarding");
   const locations = session.stores.filter(
     (s) =>
@@ -59,6 +62,7 @@ export default async function WarehouseStockPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <WarehouseCatalogTools />
+            <WarehouseAdd />
             <ExportButton
               rows={rows}
               filename="warehouse-stock"
@@ -82,7 +86,10 @@ export default async function WarehouseStockPage() {
           code: metadata.data?.find((s) => s.id === row.location_id)?.code,
         }))}
       />
-      <h2 className="my-5 text-lg font-semibold">Warehouse stock</h2>
+      <section className="my-5">
+        <TransfersConsole historyOnly />
+      </section>
+      <h2 className="my-5 text-lg font-semibold">Warehouse Stock View</h2>
       {!locations.length ? (
         <p className="text-muted">
           No warehouse is assigned to your account. Owners can create warehouses
@@ -112,11 +119,21 @@ export default async function WarehouseStockPage() {
                     {p.barcodes || "No barcode"}
                   </p>
                 </TD>
-                <TD>
+                <TD
+                  className={
+                    Number(p.quantity) > 0 ? "text-success" : "text-danger"
+                  }
+                >
                   {qty(p.quantity)} {p.unit}
                 </TD>
                 <TD>{money(p.cost_price, p.currency)}</TD>
-                <TD>{p.stock_status}</TD>
+                <TD>
+                  <Badge
+                    variant={Number(p.quantity) > 0 ? "success" : "danger"}
+                  >
+                    {Number(p.quantity) > 0 ? "In Stock" : "Out of Stock"}
+                  </Badge>
+                </TD>
                 <TD>{money(p.stock_value, p.currency)}</TD>
               </TR>
             ))}

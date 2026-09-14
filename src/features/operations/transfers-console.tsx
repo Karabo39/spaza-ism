@@ -31,10 +31,17 @@ const ACTIONS: Partial<
 };
 export function TransfersConsole({
   receiving = false,
+  historyOnly = false,
 }: {
   receiving?: boolean;
+  historyOnly?: boolean;
 }) {
   const { store, stores, canModule } = useStore();
+  const warehouse = store.locationType === "warehouse";
+  const [editing, setEditing] = React.useState<{
+    id: string;
+    version: number;
+  } | null>(null);
   const { online } = useOffline();
   const qc = useQueryClient();
   const [source, setSource] = React.useState(store.id);
@@ -62,6 +69,7 @@ export function TransfersConsole({
       store.businessId,
       store.id,
       receiving,
+      historyOnly,
       status,
       filterSource,
       filterDestination,
@@ -72,6 +80,21 @@ export function TransfersConsole({
     ],
     enabled: online,
     queryFn: async () => {
+      if (receiving) {
+        const { data, error } = await createClient().rpc("warehouse_receipts", {
+          p_store: store.id,
+        });
+        if (error) throw error;
+        return data;
+      }
+      if (historyOnly) {
+        const { data, error } = await createClient().rpc(
+          "my_warehouse_transfers",
+          { p_business: store.businessId },
+        );
+        if (error) throw error;
+        return data;
+      }
       const { data, error } = await createClient().rpc("transfer_history", {
         p_business: store.businessId,
         ...(receiving
@@ -79,7 +102,11 @@ export function TransfersConsole({
           : status !== "all"
             ? { p_status: status }
             : {}),
-        ...(filterSource ? { p_source: filterSource } : {}),
+        ...(warehouse
+          ? { p_source: store.id }
+          : filterSource
+            ? { p_source: filterSource }
+            : {}),
         ...(receiving
           ? { p_destination: store.id }
           : filterDestination
@@ -97,7 +124,13 @@ export function TransfersConsole({
           : {}),
       });
       if (error) throw error;
-      return data;
+      return warehouse
+        ? data
+        : data?.filter((t) =>
+            locations.some(
+              (s) => s.id === t.source_id && s.locationType === "store",
+            ),
+          );
     },
   });
   const operators = useQuery({
@@ -112,14 +145,67 @@ export function TransfersConsole({
       return data;
     },
   });
+  const match = useQuery({
+    queryKey: ["warehouse-match", src?.id, destination],
+    enabled: online && warehouse && !!src && !!destination,
+    queryFn: async () => {
+      const { data, error } = await createClient().rpc(
+        "match_warehouse_product",
+        { p_source: src!.id, p_destination: destination },
+      );
+      if (error) throw error;
+      return data as ProductStock;
+    },
+  });
+  const destinationProduct = warehouse ? match.data : dst;
+  async function editDraft(id: string) {
+    if (busy || !online) return;
+    setBusy(true);
+    try {
+      const { data, error } = await createClient().rpc("transfer_detail", {
+        p_transfer: id,
+      });
+      if (error) throw error;
+      const d = data as {
+        version: number;
+        source_id: string;
+        destination_id: string;
+        note: string | null;
+        items: Line[];
+      };
+      setSource(d.source_id);
+      setDestination(d.destination_id);
+      setLines(d.items);
+      setNote(d.note || "");
+      setEditing({ id, version: d.version });
+      request.current = null;
+      document
+        .getElementById("transfer-editor")
+        ?.scrollIntoView({ behavior: "smooth" });
+    } catch (e) {
+      toast.error(friendlyError((e as Error).message));
+    } finally {
+      setBusy(false);
+    }
+  }
   async function refresh() {
     await qc.invalidateQueries({ queryKey: ["transfers"] });
+    await qc.invalidateQueries({ queryKey: ["transfer-lines"] });
     await qc.invalidateQueries({ queryKey: ["operation-products"] });
     await qc.invalidateQueries({ queryKey: ["location-overview"] });
   }
   function addLine() {
-    if (!src || !dst || !Number.isFinite(quantity) || quantity <= 0) return;
-    if (src.unit !== dst.unit || src.track_expiry !== dst.track_expiry) {
+    if (
+      !src ||
+      !destinationProduct ||
+      !Number.isFinite(quantity) ||
+      quantity <= 0
+    )
+      return;
+    if (
+      src.unit !== destinationProduct.unit ||
+      src.track_expiry !== destinationProduct.track_expiry
+    ) {
       toast.error(
         "Choose matching units and expiry tracking at both locations.",
       );
@@ -128,7 +214,8 @@ export function TransfersConsole({
     if (
       lines.some(
         (l) =>
-          l.source_product_id === src.id && l.destination_product_id === dst.id,
+          l.source_product_id === src.id &&
+          l.destination_product_id === destinationProduct.id,
       )
     ) {
       toast.error("That product pair is already in the transfer.");
@@ -139,9 +226,9 @@ export function TransfersConsole({
       ...lines,
       {
         source_product_id: src.id,
-        destination_product_id: dst.id,
+        destination_product_id: destinationProduct.id,
         source_name: src.name,
-        destination_name: dst.name,
+        destination_name: destinationProduct.name,
         quantity,
       },
     ]);
@@ -154,7 +241,7 @@ export function TransfersConsole({
     setBusy(true);
     request.current ??= crypto.randomUUID();
     try {
-      const { error } = await createClient().rpc("create_stock_transfer", {
+      const payload = {
         p_source: source,
         p_destination: destination,
         p_note: note,
@@ -166,9 +253,18 @@ export function TransfersConsole({
             quantity,
           }),
         ),
-      });
+      };
+      const { error } = warehouse
+        ? await createClient().rpc("save_warehouse_transfer", {
+            ...payload,
+            ...(editing
+              ? { p_transfer: editing.id, p_expected: editing.version }
+              : {}),
+          })
+        : await createClient().rpc("create_stock_transfer", payload);
       if (error) throw error;
-      toast.success("Draft transfer created. Submit when ready.");
+      setEditing(null);
+      toast.success("Draft transfer saved. Submit when ready.");
       setLines([]);
       setNote("");
       request.current = null;
@@ -183,11 +279,21 @@ export function TransfersConsole({
     if (!online || busy) return;
     setBusy(true);
     try {
-      const { error } = await createClient().rpc("process_stock_transfer", {
-        p_transfer: id,
-        p_action: action,
-        ...(action === "cancel" ? { p_reason: reason } : {}),
-      });
+      const { error } =
+        action === "send"
+          ? await createClient().rpc("submit_warehouse_transfer", {
+              p_transfer: id,
+            })
+          : receiving && action === "receive"
+            ? await createClient().rpc("receive_warehouse_transfer", {
+                p_transfer: id,
+                p_store: store.id,
+              })
+            : await createClient().rpc("process_stock_transfer", {
+                p_transfer: id,
+                p_action: action,
+                ...(action === "cancel" ? { p_reason: reason } : {}),
+              });
       if (error) throw error;
       toast.success("Transfer updated");
       setCancelId(null);
@@ -201,11 +307,13 @@ export function TransfersConsole({
   }
   const locationName = (id: string) =>
     locations.find((s) => s.id === id)?.name ?? "Location";
-  const locationOptions = locations.map((s) => (
-    <option value={s.id} key={s.id}>
-      {s.name} · {s.locationType}
-    </option>
-  ));
+  const locationOptions = locations
+    .filter((s) => warehouse || s.locationType !== "warehouse")
+    .map((s) => (
+      <option value={s.id} key={s.id}>
+        {s.name} · {s.locationType}
+      </option>
+    ));
   return (
     <div className="space-y-6">
       {!online ? (
@@ -217,12 +325,14 @@ export function TransfersConsole({
           receive stock.
         </p>
       ) : null}
-      {!receiving && canModule("operations_transfer_create") ? (
+      {!receiving && !historyOnly && canModule("operations_transfer_create") ? (
         <Card>
           <CardHeader>
-            <CardTitle>Create stock transfer</CardTitle>
+            <CardTitle>
+              {editing ? "Edit draft transfer" : "Create stock transfer"}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4" id="transfer-editor">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="transfer-source">Source location</Label>
@@ -230,7 +340,7 @@ export function TransfersConsole({
                   id="transfer-source"
                   className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
                   value={source}
-                  disabled={busy || !!lines.length}
+                  disabled={warehouse || busy || !!lines.length}
                   onChange={(e) => {
                     setSource(e.target.value);
                     setSrc(null);
@@ -248,7 +358,7 @@ export function TransfersConsole({
                   id="transfer-destination"
                   className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
                   value={destination}
-                  disabled={busy || !!lines.length}
+                  disabled={busy || !!lines.length || !!editing}
                   onChange={(e) => {
                     setDestination(e.target.value);
                     setDst(null);
@@ -256,7 +366,15 @@ export function TransfersConsole({
                   }}
                 >
                   <option value="">Choose destination</option>
-                  {locationOptions}
+                  {locations
+                    .filter(
+                      (s) => s.id !== source && s.locationType === "store",
+                    )
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
                 </select>
               </div>
               <LocationProductPicker
@@ -266,18 +384,43 @@ export function TransfersConsole({
                 value={src}
                 onChange={setSrc}
               />
-              <LocationProductPicker
-                key={`dst-${destination}`}
-                location={destination}
-                label="Matching destination product"
-                value={dst}
-                onChange={setDst}
-              />
+              {warehouse ? (
+                <div>
+                  <Label htmlFor="matched-destination">
+                    Matching destination product
+                  </Label>
+                  <Input
+                    id="matched-destination"
+                    readOnly
+                    value={
+                      match.data?.name ||
+                      (match.isFetching ? "Finding matching product…" : "")
+                    }
+                  />
+                  <p className="text-xs text-muted">
+                    Matched automatically by product link, SKU or barcode.
+                  </p>
+                  {match.error && (
+                    <p role="alert" className="text-danger">
+                      No unique matching product. Sync or correct the store
+                      SKU/barcode before transferring.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <LocationProductPicker
+                  key={`dst-${destination}`}
+                  location={destination}
+                  label="Matching destination product"
+                  value={dst}
+                  onChange={setDst}
+                />
+              )}
             </div>
             <p className="text-xs text-muted">
-              Choose the same physical item at both locations. Create its
-              destination product in Products first if needed. Products must use
-              matching units and expiry tracking.
+              Warehouse destinations match automatically. If no unique match is
+              found, correct the SKU or barcode in the store, then retry.
+              Products must use matching units, expiry tracking and currency.
             </p>
             <div className="flex items-end gap-3">
               <div>
@@ -294,7 +437,11 @@ export function TransfersConsole({
               <Button
                 variant="secondary"
                 disabled={
-                  !online || busy || !src || !dst || source === destination
+                  !online ||
+                  busy ||
+                  !src ||
+                  !destinationProduct ||
+                  source === destination
                 }
                 onClick={addLine}
               >
@@ -352,19 +499,36 @@ export function TransfersConsole({
               disabled={!online || !lines.length || source === destination}
               loading={busy}
             >
-              Save draft transfer
+              {editing ? "Save draft changes" : "Save draft transfer"}
             </Button>
+            {editing && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditing(null);
+                  setLines([]);
+                  setNote("");
+                  request.current = null;
+                }}
+              >
+                Cancel editing
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : null}
       <Card>
         <CardHeader>
           <CardTitle>
-            {receiving ? "Receive dispatched stock" : "Transfer history"}
+            {receiving
+              ? "Pending and received warehouse transfers"
+              : historyOnly
+                ? "My warehouse transfers"
+                : "Transfer history"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!receiving && (
+          {!receiving && !historyOnly && (
             <div className="grid gap-3 md:grid-cols-3">
               <div>
                 <Label htmlFor="transfer-status">Status</Label>
@@ -412,7 +576,7 @@ export function TransfersConsole({
               </div>
             </div>
           )}
-          {!receiving && (
+          {!receiving && !historyOnly && (
             <div className="grid gap-3 md:grid-cols-4">
               <div>
                 <Label htmlFor="transfer-product-filter">Product name</Label>
@@ -458,23 +622,25 @@ export function TransfersConsole({
               </div>
             </div>
           )}
-          <ExportButton
-            filename="stock-transfers"
-            rows={(data ?? []).map((t) => ({
-              ...t,
-              source: locationName(t.source_id),
-              destination: locationName(t.destination_id),
-            }))}
-            columns={[
-              { key: "reference", label: "Reference" },
-              { key: "source", label: "Source" },
-              { key: "destination", label: "Destination" },
-              { key: "status", label: "Status" },
-              { key: "created_at", label: "Created" },
-              { key: "dispatched_at", label: "Dispatched" },
-              { key: "received_at", label: "Received" },
-            ]}
-          />
+          {!receiving && !historyOnly && (
+            <ExportButton
+              filename="stock-transfers"
+              rows={(data ?? []).map((t) => ({
+                ...t,
+                source: locationName(t.source_id),
+                destination: locationName(t.destination_id),
+              }))}
+              columns={[
+                { key: "reference", label: "Reference" },
+                { key: "source", label: "Source" },
+                { key: "destination", label: "Destination" },
+                { key: "status", label: "Status" },
+                { key: "created_at", label: "Created" },
+                { key: "dispatched_at", label: "Dispatched" },
+                { key: "received_at", label: "Received" },
+              ]}
+            />
+          )}
           {error ? (
             <p role="alert" className="text-danger">
               {friendlyError(error.message)}
@@ -495,12 +661,41 @@ export function TransfersConsole({
                     <p className="break-all text-xs text-muted">
                       {t.reference} · {dateTime(t.created_at)}
                     </p>
-                    <p className="mt-1 text-xs">{t.status}</p>
+                    <p className="mt-1 text-xs">
+                      {t.status === "DISPATCHED"
+                        ? "Pending store receipt"
+                        : t.status}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {ACTIONS[t.status] &&
+                    {warehouse &&
+                      !historyOnly &&
+                      t.status === "DRAFT" &&
+                      canModule("operations_transfer_modify") &&
+                      canModule("operations_transfer_create") && (
+                        <Button
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => void editDraft(t.id)}
+                        >
+                          Edit draft
+                        </Button>
+                      )}
+                    {!historyOnly &&
+                    (warehouse
+                      ? canModule("operations_transfer_dispatch") &&
+                        ["DRAFT", "SUBMITTED"].includes(t.status)
+                      : ACTIONS[t.status]) &&
                     (t.status === "DISPATCHED"
-                      ? stores.find((s) => s.id === t.destination_id)?.modules
+                      ? (receiving ||
+                          (!warehouse &&
+                            store.id === t.destination_id &&
+                            locations.some(
+                              (s) =>
+                                s.id === t.source_id &&
+                                s.locationType === "store",
+                            ))) &&
+                        stores.find((s) => s.id === t.destination_id)?.modules
                           .goods_in_receive_transfer
                       : !receiving &&
                         stores.find((s) => s.id === t.source_id)?.modules[
@@ -511,12 +706,22 @@ export function TransfersConsole({
                       <Button
                         size="sm"
                         disabled={!online || busy}
-                        onClick={() => process(t.id, ACTIONS[t.status]!.action)}
+                        onClick={() =>
+                          process(
+                            t.id,
+                            warehouse ? "send" : ACTIONS[t.status]!.action,
+                          )
+                        }
                       >
-                        {ACTIONS[t.status]!.label}
+                        {warehouse
+                          ? "Submit to Store"
+                          : receiving
+                            ? "Receive stock"
+                            : ACTIONS[t.status]!.label}
                       </Button>
                     ) : null}
                     {!receiving &&
+                    !historyOnly &&
                     stores.find((s) => s.id === t.source_id)?.modules
                       .operations_transfer_modify &&
                     !["RECEIVED", "CANCELLED"].includes(t.status) ? (
@@ -581,8 +786,9 @@ export function TransfersConsole({
             ))
           )}
           <p className="text-xs text-muted">
-            Latest 200 matching transfers. Submitted stock is checked again at
-            dispatch. Destination stock increases only when received.
+            Latest 200 matching transfers. Warehouse submission sends stock into
+            transit. Store quantities and transfer prices update only on
+            receipt.
           </p>
         </CardContent>
       </Card>
