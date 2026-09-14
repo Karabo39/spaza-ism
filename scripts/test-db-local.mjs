@@ -98,6 +98,8 @@ try {
     "smtp_delivery.sql",
     "checkout_receipts.sql",
     "september13_changes.sql",
+    "warehouse_bulk_flow.sql",
+    "warehouse_catalog_sync.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
