@@ -1,4 +1,5 @@
 "use client";
+import { WarehouseEdit } from "./warehouse-edit";
 import { useOffline } from "@/lib/offline/offline-context";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store-context";
@@ -13,6 +14,7 @@ export function WarehouseLocations({
     location_id: string;
     name: string;
     currency: string;
+    code?: string | null;
     product_count: number;
     stock_quantity: number;
     stock_value: number;
@@ -28,6 +30,11 @@ export function WarehouseLocations({
   const actions: { label: string; path: string; module: ModuleKey }[] = [
     { label: "View stock", path: "/check-stock", module: "check_stock" },
     { label: "Receive stock", path: "/goods-in", module: "goods_in" },
+    {
+      label: "Unpack Bulk Stock",
+      path: "/unpack-bulk-stock",
+      module: "operations",
+    },
     { label: "Transfers", path: "/operations/transfers", module: "operations" },
     { label: "Adjust stock", path: "/adjust", module: "adjust" },
     { label: "Stock take", path: "/stock-take", module: "stock_take" },
@@ -53,6 +60,19 @@ export function WarehouseLocations({
             className="space-y-3 rounded-lg border border-border bg-surface p-4"
           >
             <h2 className="text-lg font-semibold">{row.name}</h2>
+            <p className="text-xs text-muted">Code: {row.code || "Not set"}</p>
+            {stores.some(
+              (s) =>
+                s.id === row.location_id &&
+                s.role !== "employee" &&
+                (s.modules.settings || s.modules.stores),
+            ) && (
+              <WarehouseEdit
+                id={row.location_id}
+                name={row.name}
+                code={row.code || ""}
+              />
+            )}
             <p>
               {row.product_count} products · {qty(row.stock_quantity)} units ·{" "}
               {money(row.stock_value, row.currency)}
