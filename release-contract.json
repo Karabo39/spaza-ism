@@ -17,6 +17,7 @@
     "checkout_receipts_v1",
     "document_staff_v1",
     "warehouse_receiving_v1",
-    "warehouse_catalog_sync_v1"
+    "warehouse_catalog_sync_v1",
+    "warehouse_transfer_workflow_v1"
   ]
 }

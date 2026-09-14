@@ -244,6 +244,13 @@ export type Database = {
       }
     }
     Functions: {
+      match_warehouse_product:{Args:{p_source:string;p_destination:string};Returns:Json}
+      save_warehouse_transfer:{Args:{p_source:string;p_destination:string;p_items:Json;p_request:string;p_note?:string;p_transfer?:string;p_expected?:number};Returns:string}
+      submit_warehouse_transfer:{Args:{p_transfer:string};Returns:string}
+      receive_warehouse_transfer:{Args:{p_transfer:string;p_store:string};Returns:string}
+      warehouse_receipts:{Args:{p_store:string};Returns:Database["public"]["Tables"]["stock_transfers"]["Row"][]}
+      my_warehouse_transfers:{Args:{p_business:string};Returns:Database["public"]["Tables"]["stock_transfers"]["Row"][]}
+
       sync_warehouse_products: {Args:{p_warehouse:string;p_preferred?:string|null;p_auto?:boolean};Returns:Json}
       import_warehouse_catalog: {Args:{p_warehouse:string;p_rows:Json};Returns:Json}
 
