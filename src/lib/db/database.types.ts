@@ -10,6 +10,8 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" }
   public: {
     Tables: {
+      warehouse_sync_settings: { Row: {warehouse_id:string;preferred_store_id:string|null;enabled:boolean;configured_by:string;last_run_at:string|null;last_result:Json|null;updated_at:string}; Insert:never;Update:never;Relationships:[] }
+
       sale_receipts: { Row: { sale_id: string; store_id: string; reference: string; snapshot: Json; request_payload: Json; created_at: string }; Insert: never; Update: never; Relationships: [] }
       receipt_preferences: { Row: { store_id: string; second_copy: boolean; paper_format: string; delay_seconds: number }; Insert: never; Update: never; Relationships: [] }
       receipt_print_events: { Row: { id: string; sale_id: string; performed_by: string; action: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
@@ -242,6 +244,9 @@ export type Database = {
       }
     }
     Functions: {
+      sync_warehouse_products: {Args:{p_warehouse:string;p_preferred?:string|null;p_auto?:boolean};Returns:Json}
+      import_warehouse_catalog: {Args:{p_warehouse:string;p_rows:Json};Returns:Json}
+
       complete_checkout: { Args: { p_store: string; p_items: Json; p_payments: Json; p_request: string; p_customer?: string | null; p_credit?: boolean; p_override?: boolean; p_override_token?: string; p_till?: string | null }; Returns: string }
       record_receipt_print: { Args: { p_sale: string; p_action: string }; Returns: undefined }
       save_receipt_preferences: { Args: { p_store: string; p_second: boolean; p_delay: number; p_paper?: string }; Returns: undefined }
