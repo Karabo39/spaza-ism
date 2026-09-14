@@ -7,10 +7,25 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { TransfersConsole } from "@/features/operations/transfers-console";
-const mock = vi.hoisted(() => ({ online: true, rpc: vi.fn() }));
+const mock = vi.hoisted(() => ({
+  online: true,
+  rpc: vi.fn(),
+  warehouse: false,
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: () => ({ data: [], isLoading: false }),
+  useQuery: (options: { queryKey: string[] }) => ({
+    data:
+      options.queryKey[0] === "warehouse-match"
+        ? {
+            id: "destination-product",
+            name: "Matched Milk",
+            unit: "each",
+            track_expiry: false,
+          }
+        : [],
+    isLoading: false,
+  }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 vi.mock("@/lib/supabase/client", () => ({
@@ -22,7 +37,11 @@ vi.mock("@/lib/offline/offline-context", () => ({
 vi.mock("@/lib/store-context", () => ({
   useStore: () => ({
     canModule: () => true,
-    store: { id: "source", businessId: "biz" },
+    store: {
+      id: "source",
+      businessId: "biz",
+      locationType: mock.warehouse ? "warehouse" : "store",
+    },
     stores: [
       {
         id: "source",
@@ -67,8 +86,43 @@ describe("transfer capture", () => {
   beforeEach(() => {
     cleanup();
     mock.online = true;
+    mock.warehouse = false;
     mock.rpc.mockReset();
     mock.rpc.mockResolvedValue({ data: "transfer", error: null });
+  });
+  it("locks the matched warehouse destination and saves through the guarded workflow", async () => {
+    mock.warehouse = true;
+    render(<TransfersConsole />);
+    fireEvent.change(screen.getByLabelText("Destination location"), {
+      target: { value: "destination" },
+    });
+    fireEvent.click(screen.getByText("Source product"));
+    expect(
+      (
+        screen.getByLabelText(
+          "Matching destination product",
+        ) as HTMLInputElement
+      ).readOnly,
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Add item" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save draft transfer" }),
+    );
+    await waitFor(() =>
+      expect(mock.rpc).toHaveBeenCalledWith(
+        "save_warehouse_transfer",
+        expect.objectContaining({ p_destination: "destination" }),
+      ),
+    );
+  });
+  it("hides exports and transfer creation from Goods In", () => {
+    render(<TransfersConsole receiving />);
+    expect(screen.queryByText("Create stock transfer")).toBeNull();
+    expect(screen.queryByText("Export")).toBeNull();
+    expect(screen.queryByText("Email")).toBeNull();
+    expect(
+      screen.getByText("Pending and received warehouse transfers"),
+    ).toBeTruthy();
   });
   function addItem() {
     fireEvent.change(screen.getByLabelText("Destination location"), {

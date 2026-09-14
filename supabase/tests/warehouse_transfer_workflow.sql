@@ -1,0 +1,32 @@
+do $$
+declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); biz uuid; shop uuid; wh uuid; m uuid; p uuid; w uuid; p2 uuid; w2 uuid; t uuid; r jsonb; req uuid:=gen_random_uuid(); edit_req uuid:=gen_random_uuid(); blocked boolean; n int;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'warehouse-flow-owner@test.invalid','{}'),(staff,'warehouse-flow-receiver@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ r:=public.create_business('Warehouse workflow','Store');biz:=(r->>'business_id')::uuid;shop:=(r->>'store_id')::uuid;wh:=public.create_location(biz,'Warehouse','warehouse');
+ p:=public.create_product(shop,'Milk','111',null,null,1,2);p2:=public.create_product(shop,'Bread','222',null,null,2,3);
+ perform public.sync_warehouse_products(wh,shop,false);select id into w from public.products where store_id=wh and name='Milk';select id into w2 from public.products where store_id=wh and name='Bread';
+ perform public.receive_stock(wh,null,null,null,jsonb_build_array(jsonb_build_object('product_id',w,'quantity',20),jsonb_build_object('product_id',w2,'quantity',10)));
+ if (public.match_warehouse_product(w,shop)->>'id')::uuid<>p then raise exception 'ASSERT automatic match';end if;
+ t:=public.save_warehouse_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',w,'destination_product_id',p2,'quantity',2)),req);
+ if (select destination_product_id from public.stock_transfer_items where transfer_id=t)<>p then raise exception 'ASSERT malicious destination ignored';end if;
+ perform public.save_warehouse_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',w,'quantity',3),jsonb_build_object('source_product_id',w2,'quantity',2)),edit_req,'Edited',t,0);
+ perform public.save_warehouse_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',w,'quantity',3),jsonb_build_object('source_product_id',w2,'quantity',2)),edit_req,'Edited',t,0);
+ if (select draft_version from public.stock_transfers where id=t)<>1 or (select count(*) from public.stock_transfer_items where transfer_id=t)<>2 then raise exception 'ASSERT draft retry';end if;
+ blocked:=false;begin perform public.save_warehouse_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',w,'quantity',4)),gen_random_uuid(),null,t,0);exception when others then if sqlerrm<>'DRAFT_CHANGED_RELOAD' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT stale draft';end if;
+ reset role;update public.products set cost_price=5,selling_price=8 where id=w;set local role authenticated;
+ if public.submit_warehouse_transfer(t)<>'DISPATCHED' then raise exception 'ASSERT submission dispatches';end if;perform public.submit_warehouse_transfer(t);
+ if (select quantity from public.stock where product_id=w)<>17 or (select quantity from public.stock where product_id=p)<>0 then raise exception 'ASSERT stock in transit once';end if;
+ if not exists(select 1 from public.warehouse_receipts(shop) where id=t and status='DISPATCHED') then raise exception 'ASSERT pending Goods In';end if;
+ blocked:=false;begin perform public.receive_warehouse_transfer(t,wh);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT wrong receipt context';end if;
+ reset role;update public.products set cost_price=99,selling_price=100 where id=w;m:=public.add_member_by_email(biz,'warehouse-flow-receiver@test.invalid','employee');set local role authenticated;perform public.set_member_locations(m,array[shop]);perform public.set_store_module_access(m,shop,'{"goods_in":true,"goods_in_receive_transfer":true}',0);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+ perform public.receive_warehouse_transfer(t,shop);perform public.receive_warehouse_transfer(t,shop);
+ if (select quantity from public.stock where product_id=p)<>3 or (select cost_price from public.products where id=p)<>5 or (select selling_price from public.products where id=p)<>8 then raise exception 'ASSERT store receipt stock and prices once';end if;
+ if not exists(select 1 from public.warehouse_receipts(shop) where id=t and status='RECEIVED') then raise exception 'ASSERT completed receipt retained';end if;
+ reset role;
+ if (select count(*) from public.stock_movements where reference_id=t and movement_type='TRANSFER_IN')<>2 then raise exception 'ASSERT exactly one receipt movement per item';end if;
+ if not exists(select 1 from public.audit_logs where entity_id=t and action='transfer.edit') then raise exception 'ASSERT edit audit';end if;
+ if has_function_privilege('anon','public.submit_warehouse_transfer(uuid)','execute') then raise exception 'ASSERT anonymous blocked';end if;
+ raise exception 'TESTS_PASSED';
+end $$;

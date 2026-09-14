@@ -100,6 +100,7 @@ try {
     "september13_changes.sql",
     "warehouse_bulk_flow.sql",
     "warehouse_catalog_sync.sql",
+    "warehouse_transfer_workflow.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
