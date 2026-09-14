@@ -109,3 +109,20 @@ it("requires employee receiving grants independently for each store", () => {
   ).toBe(false);
   expect(modulePermissions("manager").goods_in_new_stock).toBe(true);
 });
+
+it("keeps unpacking under Stock Control and honours existing Operations grants", () => {
+  const catalog = NAV.find((g) => g.label === "Catalog")!;
+  expect(catalog.items.map((i) => i.href)).toEqual([
+    "/products",
+    "/suppliers",
+    "/imports",
+  ]);
+  const stock = NAV.find((g) => g.label === "Stock Control")!;
+  const expiry = stock.items.findIndex((i) => i.href === "/expiry");
+  expect(stock.items[expiry + 1].href).toBe("/unpack-bulk-stock");
+  expect(moduleForPath("/unpack-bulk-stock")).toBe("operations");
+  const grants = modulePermissions("employee", { operations: false });
+  expect(
+    itemVisible(stock.items[expiry + 1], "employee", (key) => grants[key]),
+  ).toBe(false);
+});

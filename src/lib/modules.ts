@@ -235,6 +235,7 @@ export function modulePermissions(
 }
 export function moduleForPath(path: string): ModuleKey | undefined {
   const pathname = path.split("?")[0];
+  if (pathname === "/unpack-bulk-stock") return "operations";
   return MODULES.find(
     (m) =>
       pathname === m.href ||

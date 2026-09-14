@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   PackagePlus,
+  PackageOpen,
   PackageMinus,
   Search,
   Tag,
@@ -65,17 +66,21 @@ export const NAV: NavGroup[] = [
       },
       { href: "/stock-take", label: "Stock Take", icon: ClipboardList },
       { href: "/expiry", label: "Expiry", icon: CalendarClock },
+      {
+        href: "/unpack-bulk-stock",
+        label: "Unpack Bulk Stock",
+        icon: PackageOpen,
+      },
     ],
   },
   {
     label: "Catalog",
     items: [
       { href: "/products", label: "Products", icon: Boxes },
-      { href: "/operations", label: "Operations", icon: ArrowRightLeft },
       { href: "/suppliers", label: "Suppliers", icon: Truck },
       {
         href: "/imports",
-        label: "Data Imports and Exports",
+        label: "Data Imports & Exports",
         icon: FileSpreadsheet,
         minRole: "manager",
       },
