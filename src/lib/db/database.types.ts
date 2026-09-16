@@ -332,6 +332,7 @@ export type Database = {
       process_stock_transfer: { Args: { p_transfer: string; p_action: string; p_reason?: string }; Returns: TransferStatus }
       business_location_summary: { Args: { p_business: string }; Returns: { location_id: string; name: string; location_type: LocationType; product_count: number; stock_quantity: number; stock_value: number }[] }
       create_location: { Args: { p_business: string; p_name: string; p_type: LocationType; p_code?: string }; Returns: string }
+      disable_warehouse: { Args: { p_store: string }; Returns: undefined };
       update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
       set_member_locations: { Args: { p_membership: string; p_stores: string[] }; Returns: undefined }
       adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string; p_expiry?: string; p_request?: string; p_expected?: number }; Returns: string }

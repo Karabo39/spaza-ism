@@ -99,6 +99,9 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("INVALID_QUANTITY")) return "Enter a valid quantity greater than zero.";
   if (m.includes("INVALID_AMOUNT")) return "Enter a valid amount greater than zero.";
   if (m.includes("NO_CHANGE")) return "The new quantity is the same as the current quantity.";
+  if (m.includes("WAREHOUSE_HAS_STOCK")) return "Every product quantity must be zero before disabling this warehouse.";
+  if (m.includes("WAREHOUSE_HAS_OPEN_TRANSFERS")) return "Complete or cancel all open warehouse transfers before disabling it.";
+  if (m.includes("WAREHOUSE_DISABLED")) return "This warehouse is disabled. Reload to select an active location.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
   if (m.includes("PAYMENT_UNDERPAID")) return "Collect the remaining balance before completing this sale.";
   if (m.includes("NONCASH_OVERPAYMENT")) return "Card and EFT amounts cannot exceed the balance due.";

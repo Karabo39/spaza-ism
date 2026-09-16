@@ -68,12 +68,23 @@ export function WarehouseLocations({
               (s) =>
                 s.id === row.location_id &&
                 s.role !== "employee" &&
-                (s.modules.settings || s.modules.stores),
+                (s.modules.settings ||
+                  s.modules.stores ||
+                  s.modules.warehouse_disable),
             ) && (
               <WarehouseEdit
                 id={row.location_id}
                 name={row.name}
                 code={row.code || ""}
+                canEdit={stores.some(
+                  (s) =>
+                    s.id === row.location_id &&
+                    (s.modules.settings || s.modules.stores),
+                )}
+                canDisable={
+                  !!stores.find((s) => s.id === row.location_id)?.modules
+                    .warehouse_disable
+                }
               />
             )}
             <p>
@@ -93,8 +104,7 @@ export function WarehouseLocations({
                     disabled={!online}
                     key={a.path}
                     size="sm"
-                    variant="secondary"
-                    className="bg-primary/20 border-primary/30 hover:bg-primary/30"
+                    variant="primary"
                     onClick={() => {
                       router.push(
                         a.path === "movements"

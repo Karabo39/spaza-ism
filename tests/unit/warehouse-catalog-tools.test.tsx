@@ -150,3 +150,27 @@ describe("warehouse catalogue controls", () => {
     );
   });
 });
+
+it("only exposes disabling with its warehouse permission", () => {
+  render(<WarehouseEdit id="wh" name="Warehouse" code="WH" />);
+  fireEvent.click(screen.getByText("Edit warehouse details"));
+  expect(
+    screen.queryByRole("button", { name: "Disable warehouse" }),
+  ).toBeNull();
+});
+it("displays the stock guard and refreshes after a successful disable", async () => {
+  m.rpc.mockResolvedValueOnce({ error: { message: "WAREHOUSE_HAS_STOCK" } });
+  render(<WarehouseEdit id="wh" name="Warehouse" code="WH" canDisable />);
+  fireEvent.click(screen.getByText("Edit warehouse details"));
+  fireEvent.click(screen.getByRole("button", { name: "Disable warehouse" }));
+  await screen.findByRole("alert");
+  expect(m.refresh).not.toHaveBeenCalled();
+  expect(screen.getByRole("alert").textContent).toContain(
+    "Every product quantity must be zero",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Disable warehouse" }));
+  await waitFor(() => expect(m.refresh).toHaveBeenCalledOnce());
+  expect(m.rpc).toHaveBeenLastCalledWith("disable_warehouse", {
+    p_store: "wh",
+  });
+});

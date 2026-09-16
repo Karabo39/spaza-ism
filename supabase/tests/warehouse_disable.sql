@@ -1,0 +1,37 @@
+do $$
+declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); biz uuid; shop uuid; wh uuid; m uuid; p uuid; w uuid; t uuid; r jsonb; blocked boolean;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'disable-owner@test.invalid','{}'),(staff,'disable-manager@test.invalid','{}'),(outsider,'disable-other@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ r:=public.create_business('Disable warehouse','Store');biz:=(r->>'business_id')::uuid;shop:=(r->>'store_id')::uuid;wh:=public.create_location(biz,'Warehouse','warehouse');
+ p:=public.create_product(shop,'Milk','disable111',null,null,1,2);
+ perform public.sync_warehouse_products(wh,shop,true);select id into w from public.products where store_id=wh and name='Milk';
+ perform public.receive_stock(wh,null,null,null,jsonb_build_array(jsonb_build_object('product_id',w,'quantity',1)));
+ blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm<>'WAREHOUSE_HAS_STOCK' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT stock must be zero';end if;
+ t:=public.save_warehouse_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',w,'quantity',1)),gen_random_uuid());
+ perform public.submit_warehouse_transfer(t);
+ blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm<>'WAREHOUSE_HAS_OPEN_TRANSFERS' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT in transit blocked';end if;
+ perform public.receive_warehouse_transfer(t,shop);
+ blocked:=false;begin perform public.disable_warehouse(shop);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT selling store cannot disable';end if;
+ reset role;m:=public.add_member_by_email(biz,'disable-manager@test.invalid','manager');set local role authenticated;
+ perform public.set_member_locations(m,array[wh]);perform public.set_store_module_access(m,wh,'{"warehouse_disable":false}',0);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+ blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm not like '%FORBIDDEN%' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT manager denied by scoped override';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',outsider,'role','authenticated')::text,true);
+ blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm not like '%FORBIDDEN%' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT other business denied';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
+ perform public.set_store_module_access(m,wh,'{"warehouse_disable":true}',1);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+ perform public.disable_warehouse(wh);
+ reset role;
+ if (select is_active from public.stores where id=wh) then raise exception 'ASSERT disabled';end if;
+ if (select enabled from public.warehouse_sync_settings where warehouse_id=wh) then raise exception 'ASSERT sync paused';end if;
+ if not exists(select 1 from public.audit_logs where entity_id=wh and action='warehouse.disable') then raise exception 'ASSERT audit';end if;
+ if not exists(select 1 from public.stock_transfers where id=t and status='RECEIVED') then raise exception 'ASSERT history retained';end if;
+ blocked:=false;begin update public.stock set quantity=1 where product_id=w;exception when others then if sqlerrm<>'WAREHOUSE_DISABLED' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT late stock writer blocked';end if;
+ blocked:=false;begin update public.stock_transfers set note='late edit' where id=t;exception when others then if sqlerrm<>'WAREHOUSE_DISABLED' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT late transfer writer blocked';end if;
+ if has_function_privilege('anon','public.disable_warehouse(uuid)','execute') then raise exception 'ASSERT anonymous blocked';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ if exists(select 1 from public.warehouse_summary(biz) where location_id=wh) then raise exception 'ASSERT disabled warehouse hidden';end if;
+ raise exception 'TESTS_PASSED';
+end $$;

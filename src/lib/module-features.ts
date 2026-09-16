@@ -1,6 +1,13 @@
 // Per-store child permissions. Parents and dependencies must also be enabled.
 export const MODULE_FEATURES = [
   {
+    key: "warehouse_disable",
+    label: "Disable Warehouse",
+    parent: "warehouse",
+    role: "manager",
+    requires: [],
+  },
+  {
     key: "goods_in_new_stock",
     label: "Receive New Stock / Supplier",
     parent: "goods_in",

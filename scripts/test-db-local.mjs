@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import pg from "pg";
+import { testWarehouseDisableRace } from "../supabase/tests/warehouse-disable-race.mjs";
 
 // Explicit local connection only: never consume the app's production credentials.
 const url = process.env.BRD_TEST_DATABASE_URL;
@@ -101,6 +102,7 @@ try {
     "warehouse_bulk_flow.sql",
     "warehouse_catalog_sync.sql",
     "warehouse_transfer_workflow.sql",
+    "warehouse_disable.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
@@ -110,6 +112,7 @@ try {
       console.log(`Passed ${file} (rolled back)`);
     }
   }
+  await testWarehouseDisableRace(url);
 } finally {
   await client.end();
 }
