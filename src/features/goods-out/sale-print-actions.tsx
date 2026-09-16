@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -8,10 +8,12 @@ export function SalePrintActions({
   id,
   secondCopy,
   delay,
+  autoPrint = false,
 }: {
   id: string;
   secondCopy: boolean;
   delay: number;
+  autoPrint?: boolean;
 }) {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,39 +25,49 @@ export function SalePrintActions({
     },
     [],
   );
-  async function print(copy = false) {
-    if (printing.current) return;
-    printing.current = true;
-    setBusy(true);
-    try {
-      const { error } = await createClient().rpc("record_receipt_print", {
-        p_sale: id,
-        p_action: copy ? "COPY_REQUESTED" : "REQUESTED",
-      });
-      if (error) {
+  const print = useCallback(
+    async function print(copy = false) {
+      if (printing.current) return;
+      printing.current = true;
+      setBusy(true);
+      try {
+        const { error } = await createClient().rpc("record_receipt_print", {
+          p_sale: id,
+          p_action: copy ? "COPY_REQUESTED" : "REQUESTED",
+        });
+        if (error) {
+          toast.error(
+            "Could not record the print request. Try again; your sale is saved.",
+          );
+          return;
+        }
+        window.print();
+        if (!copy && secondCopy) {
+          setReady(false);
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = setTimeout(() => {
+            setReady(true);
+            void print(true);
+          }, delay * 1000);
+        }
+      } catch {
         toast.error(
-          "Could not record the print request. Try again; your sale is saved.",
+          "Printing could not start. Your sale remains saved; try printing again.",
         );
-        return;
+      } finally {
+        printing.current = false;
+        setBusy(false);
       }
-      window.print();
-      if (!copy && secondCopy) {
-        setReady(false);
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => {
-          setReady(true);
-          void print(true);
-        }, delay * 1000);
-      }
-    } catch {
-      toast.error(
-        "Printing could not start. Your sale remains saved; try printing again.",
-      );
-    } finally {
-      printing.current = false;
-      setBusy(false);
+    },
+    [id, secondCopy, delay],
+  );
+  const started = useRef(false);
+  useEffect(() => {
+    if (autoPrint && !started.current) {
+      started.current = true;
+      void print();
     }
-  }
+  }, [autoPrint, print]);
   return (
     <div className="space-y-2 print:hidden">
       <PrintReceipt type="sale" id={id} onPrint={() => print()} />

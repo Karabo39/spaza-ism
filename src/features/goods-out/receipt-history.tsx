@@ -74,8 +74,10 @@ export function ReceiptHistory({ refreshKey }: { refreshKey: string | null }) {
     }
   }
   return (
-    <section className="space-y-3 rounded-lg border border-border p-4">
-      <h2 className="font-semibold">Saved receipts</h2>
+    <details className="space-y-3 rounded-lg border border-border p-4">
+      <summary className="cursor-pointer font-semibold focus-ring">
+        Saved receipts
+      </summary>
       <p className="text-xs text-muted">
         Search a receipt number to view, print, save PDF or email the original.
         Offline sales appear after successful sync.
@@ -201,6 +203,6 @@ export function ReceiptHistory({ refreshKey }: { refreshKey: string | null }) {
           </div>
         </details>
       )}
-    </section>
+    </details>
   );
 }

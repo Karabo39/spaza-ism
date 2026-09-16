@@ -27,7 +27,7 @@ import { enqueueSaleAndAdjust } from "@/lib/offline/db";
 import { money, qty, friendlyError } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ProductStock, CreditCustomer } from "@/lib/db/database.types";
-import Link from "next/link";
+import { SaleReceiptPrompt } from "./sale-receipt-prompt";
 import { PaymentFields } from "./payment-fields";
 import {
   emptyPayments,
@@ -404,11 +404,6 @@ export function GoodsOutConsole() {
         toast.error(friendlyError(error?.message));
         return;
       }
-      toast.success(
-        saleType === "CREDIT"
-          ? `Credit sale to ${customer?.name} — ${money(total, currency)}`
-          : `${saleType.startsWith("SPLIT") ? "Split payment" : saleType === "CARD_EFT" ? "Card / EFT" : saleType} sale complete — ${money(total, currency)}`,
-      );
       clearJournal();
       setSavedTotal(total);
       setSavedSale(data);
@@ -438,43 +433,12 @@ export function GoodsOutConsole() {
   return (
     <div className="space-y-5">
       {savedSale && (
-        <section
-          role="status"
-          className="rounded-lg border border-success p-4 space-y-3"
-        >
-          <h2 className="font-semibold">
-            Sale saved. Would you like a receipt?
-          </h2>
-          <p className="break-all text-sm">
-            {money(savedTotal, currency)} · POS-
-            {savedSale.replaceAll("-", "").toUpperCase()}
-          </p>
-          <div className="flex gap-2">
-            <Button asChild>
-              <Link href={`/goods-out/${savedSale}/receipt`}>
-                Print Receipt
-              </Link>
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                const { error } = await createClient().rpc(
-                  "record_receipt_print",
-                  { p_sale: savedSale, p_action: "DECLINED" },
-                );
-                if (error) {
-                  toast.error(
-                    "Could not record your choice. The sale remains saved.",
-                  );
-                  return;
-                }
-                setSavedSale(null);
-              }}
-            >
-              Don’t Print
-            </Button>
-          </div>
-        </section>
+        <SaleReceiptPrompt
+          id={savedSale}
+          total={savedTotal}
+          currency={currency}
+          onDone={() => setSavedSale(null)}
+        />
       )}
       {uncertain && (
         <section role="alert" className="rounded border border-warning p-4">

@@ -8,8 +8,10 @@ import { SalePrintActions } from "@/features/goods-out/sale-print-actions";
 import type { SaleReceipt } from "@/features/goods-out/payments";
 export default async function ReceiptPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ autoprint?: string }>;
 }) {
   const session = await getSession("goods_out");
   if (!session?.activeStore) notFound();
@@ -53,6 +55,7 @@ export default async function ReceiptPage({
           Back to Goods Out
         </Link>
         <SalePrintActions
+          autoPrint={(await searchParams).autoprint === "1"}
           id={id}
           secondCopy={prefs.data?.second_copy ?? false}
           delay={prefs.data?.delay_seconds ?? 3}
