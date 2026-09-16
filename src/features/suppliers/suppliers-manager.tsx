@@ -80,14 +80,17 @@ export function SuppliersManager() {
             description="Add suppliers to track where your stock comes from."
           />
         ) : (
-          <Table>
+          <Table className="table-fixed min-w-[720px]">
             <THead>
               <TR>
-                <TH>Supplier</TH>
-                <TH>Contact</TH>
-                <TH>Phone</TH>
-                <TH>Status</TH>
-                <TH className="w-10" />
+                <TH className="w-[26%]">Supplier</TH>
+                <TH className="w-[20%]">Contact</TH>
+                <TH className="w-[22%]">Phone</TH>
+                <TH className="w-[12%]">Status</TH>
+                <TH className="w-[16%] whitespace-nowrap">Purchase History</TH>
+                <TH className="w-12">
+                  <span className="sr-only">Edit</span>
+                </TH>
               </TR>
             </THead>
             <TBody>
@@ -106,10 +109,12 @@ export function SuppliersManager() {
                   <TD>
                     <Link
                       href={`/reports/goods-in?supplier=${s.id}`}
-                      className="mr-3 text-xs text-accent"
+                      className="text-xs text-accent whitespace-nowrap"
                     >
                       Purchase history
                     </Link>
+                  </TD>
+                  <TD>
                     <Button
                       aria-label={`Edit ${s.name}`}
                       variant="ghost"
