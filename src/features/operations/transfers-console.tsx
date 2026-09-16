@@ -466,7 +466,11 @@ export function TransfersConsole({
                       <TD>{qty(l.quantity)}</TD>
                       <TD>
                         <Button
-                          variant="ghost"
+                          variant={
+                            store.locationType === "warehouse"
+                              ? "primary"
+                              : "ghost"
+                          }
                           size="sm"
                           disabled={busy}
                           onClick={() => {
@@ -503,7 +507,9 @@ export function TransfersConsole({
             </Button>
             {editing && (
               <Button
-                variant="ghost"
+                variant={
+                  store.locationType === "warehouse" ? "primary" : "ghost"
+                }
                 onClick={() => {
                   setEditing(null);
                   setLines([]);
@@ -518,279 +524,287 @@ export function TransfersConsole({
         </Card>
       ) : null}
       <Card>
-        <CardHeader>
-          <CardTitle>
+        <details open={!receiving && !historyOnly ? true : undefined}>
+          <summary className="cursor-pointer p-5 font-semibold focus-ring">
             {receiving
               ? "Pending and received warehouse transfers"
               : historyOnly
                 ? "My warehouse transfers"
                 : "Transfer history"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!receiving && !historyOnly && (
-            <div className="grid gap-3 md:grid-cols-3">
-              <div>
-                <Label htmlFor="transfer-status">Status</Label>
-                <select
-                  id="transfer-status"
-                  className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="all">All statuses</option>
-                  {[
-                    "DRAFT",
-                    "SUBMITTED",
-                    "DISPATCHED",
-                    "RECEIVED",
-                    "CANCELLED",
-                  ].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
+          </summary>
+          <CardContent className="space-y-4">
+            {!receiving && !historyOnly && (
+              <div className="grid gap-3 md:grid-cols-3">
+                <div>
+                  <Label htmlFor="transfer-status">Status</Label>
+                  <select
+                    id="transfer-status"
+                    className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option value="all">All statuses</option>
+                    {[
+                      "DRAFT",
+                      "SUBMITTED",
+                      "DISPATCHED",
+                      "RECEIVED",
+                      "CANCELLED",
+                    ].map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="filter-source">From location</Label>
+                  <select
+                    id="filter-source"
+                    className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
+                    value={filterSource}
+                    onChange={(e) => setFilterSource(e.target.value)}
+                  >
+                    <option value="">All sources</option>
+                    {locationOptions}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="filter-destination">To location</Label>
+                  <select
+                    id="filter-destination"
+                    className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
+                    value={filterDestination}
+                    onChange={(e) => setFilterDestination(e.target.value)}
+                  >
+                    <option value="">All destinations</option>
+                    {locationOptions}
+                  </select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="filter-source">From location</Label>
-                <select
-                  id="filter-source"
-                  className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
-                  value={filterSource}
-                  onChange={(e) => setFilterSource(e.target.value)}
-                >
-                  <option value="">All sources</option>
-                  {locationOptions}
-                </select>
+            )}
+            {!receiving && !historyOnly && (
+              <div className="grid gap-3 md:grid-cols-4">
+                <div>
+                  <Label htmlFor="transfer-product-filter">Product name</Label>
+                  <Input
+                    id="transfer-product-filter"
+                    value={filterProduct}
+                    onChange={(e) => setFilterProduct(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="transfer-operator">Operator</Label>
+                  <select
+                    id="transfer-operator"
+                    className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
+                    value={filterUser}
+                    onChange={(e) => setFilterUser(e.target.value)}
+                  >
+                    <option value="">All operators</option>
+                    {operators.data?.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.full_name || "Team member"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="transfer-from-date">From date</Label>
+                  <Input
+                    id="transfer-from-date"
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="transfer-to-date">Through date</Label>
+                  <Input
+                    id="transfer-to-date"
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="filter-destination">To location</Label>
-                <select
-                  id="filter-destination"
-                  className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
-                  value={filterDestination}
-                  onChange={(e) => setFilterDestination(e.target.value)}
-                >
-                  <option value="">All destinations</option>
-                  {locationOptions}
-                </select>
-              </div>
-            </div>
-          )}
-          {!receiving && !historyOnly && (
-            <div className="grid gap-3 md:grid-cols-4">
-              <div>
-                <Label htmlFor="transfer-product-filter">Product name</Label>
-                <Input
-                  id="transfer-product-filter"
-                  value={filterProduct}
-                  onChange={(e) => setFilterProduct(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="transfer-operator">Operator</Label>
-                <select
-                  id="transfer-operator"
-                  className="h-10 w-full rounded-md border border-border bg-input px-2 text-sm"
-                  value={filterUser}
-                  onChange={(e) => setFilterUser(e.target.value)}
-                >
-                  <option value="">All operators</option>
-                  {operators.data?.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.full_name || "Team member"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="transfer-from-date">From date</Label>
-                <Input
-                  id="transfer-from-date"
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="transfer-to-date">Through date</Label>
-                <Input
-                  id="transfer-to-date"
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-          {!receiving && !historyOnly && (
-            <ExportButton
-              filename="stock-transfers"
-              rows={(data ?? []).map((t) => ({
-                ...t,
-                source: locationName(t.source_id),
-                destination: locationName(t.destination_id),
-              }))}
-              columns={[
-                { key: "reference", label: "Reference" },
-                { key: "source", label: "Source" },
-                { key: "destination", label: "Destination" },
-                { key: "status", label: "Status" },
-                { key: "created_at", label: "Created" },
-                { key: "dispatched_at", label: "Dispatched" },
-                { key: "received_at", label: "Received" },
-              ]}
-            />
-          )}
-          {error ? (
-            <p role="alert" className="text-danger">
-              {friendlyError(error.message)}
-            </p>
-          ) : isLoading ? (
-            <p>Loading…</p>
-          ) : (data ?? []).length === 0 ? (
-            <p className="text-sm text-muted">No matching transfers.</p>
-          ) : (
-            (data ?? []).map((t) => (
-              <div key={t.id} className="rounded-md border border-border p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium">
-                      {locationName(t.source_id)} →{" "}
-                      {locationName(t.destination_id)}
-                    </p>
-                    <p className="break-all text-xs text-muted">
-                      {t.reference} · {dateTime(t.created_at)}
-                    </p>
-                    <p className="mt-1 text-xs">
-                      {t.status === "DISPATCHED"
-                        ? "Pending store receipt"
-                        : t.status}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {warehouse &&
-                      !historyOnly &&
-                      t.status === "DRAFT" &&
-                      canModule("operations_transfer_modify") &&
-                      canModule("operations_transfer_create") && (
+            )}
+            {!receiving && !historyOnly && (
+              <ExportButton
+                filename="stock-transfers"
+                rows={(data ?? []).map((t) => ({
+                  ...t,
+                  source: locationName(t.source_id),
+                  destination: locationName(t.destination_id),
+                }))}
+                columns={[
+                  { key: "reference", label: "Reference" },
+                  { key: "source", label: "Source" },
+                  { key: "destination", label: "Destination" },
+                  { key: "status", label: "Status" },
+                  { key: "created_at", label: "Created" },
+                  { key: "dispatched_at", label: "Dispatched" },
+                  { key: "received_at", label: "Received" },
+                ]}
+              />
+            )}
+            {error ? (
+              <p role="alert" className="text-danger">
+                {friendlyError(error.message)}
+              </p>
+            ) : isLoading ? (
+              <p>Loading…</p>
+            ) : (data ?? []).length === 0 ? (
+              <p className="text-sm text-muted">No matching transfers.</p>
+            ) : (
+              (data ?? []).map((t) => (
+                <div key={t.id} className="rounded-md border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium">
+                        {locationName(t.source_id)} →{" "}
+                        {locationName(t.destination_id)}
+                      </p>
+                      <p className="break-all text-xs text-muted">
+                        {t.reference} · {dateTime(t.created_at)}
+                      </p>
+                      <p className="mt-1 text-xs">
+                        {t.status === "DISPATCHED"
+                          ? "Pending store receipt"
+                          : t.status}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {warehouse &&
+                        !historyOnly &&
+                        t.status === "DRAFT" &&
+                        canModule("operations_transfer_modify") &&
+                        canModule("operations_transfer_create") && (
+                          <Button
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void editDraft(t.id)}
+                          >
+                            Edit draft
+                          </Button>
+                        )}
+                      {!historyOnly &&
+                      (warehouse
+                        ? canModule("operations_transfer_dispatch") &&
+                          ["DRAFT", "SUBMITTED"].includes(t.status)
+                        : ACTIONS[t.status]) &&
+                      (t.status === "DISPATCHED"
+                        ? (receiving ||
+                            (!warehouse &&
+                              store.id === t.destination_id &&
+                              locations.some(
+                                (s) =>
+                                  s.id === t.source_id &&
+                                  s.locationType === "store",
+                              ))) &&
+                          stores.find((s) => s.id === t.destination_id)?.modules
+                            .goods_in_receive_transfer
+                        : !receiving &&
+                          stores.find((s) => s.id === t.source_id)?.modules[
+                            t.status === "SUBMITTED"
+                              ? "operations_transfer_dispatch"
+                              : "operations_transfer_modify"
+                          ]) ? (
                         <Button
                           size="sm"
-                          disabled={busy}
-                          onClick={() => void editDraft(t.id)}
+                          disabled={!online || busy}
+                          onClick={() =>
+                            process(
+                              t.id,
+                              warehouse ? "send" : ACTIONS[t.status]!.action,
+                            )
+                          }
                         >
-                          Edit draft
+                          {warehouse
+                            ? "Submit to Store"
+                            : receiving
+                              ? "Receive stock"
+                              : ACTIONS[t.status]!.label}
                         </Button>
-                      )}
-                    {!historyOnly &&
-                    (warehouse
-                      ? canModule("operations_transfer_dispatch") &&
-                        ["DRAFT", "SUBMITTED"].includes(t.status)
-                      : ACTIONS[t.status]) &&
-                    (t.status === "DISPATCHED"
-                      ? (receiving ||
-                          (!warehouse &&
-                            store.id === t.destination_id &&
-                            locations.some(
-                              (s) =>
-                                s.id === t.source_id &&
-                                s.locationType === "store",
-                            ))) &&
-                        stores.find((s) => s.id === t.destination_id)?.modules
-                          .goods_in_receive_transfer
-                      : !receiving &&
-                        stores.find((s) => s.id === t.source_id)?.modules[
-                          t.status === "SUBMITTED"
-                            ? "operations_transfer_dispatch"
-                            : "operations_transfer_modify"
-                        ]) ? (
-                      <Button
-                        size="sm"
-                        disabled={!online || busy}
-                        onClick={() =>
-                          process(
-                            t.id,
-                            warehouse ? "send" : ACTIONS[t.status]!.action,
-                          )
-                        }
-                      >
-                        {warehouse
-                          ? "Submit to Store"
-                          : receiving
-                            ? "Receive stock"
-                            : ACTIONS[t.status]!.label}
-                      </Button>
-                    ) : null}
-                    {!receiving &&
-                    !historyOnly &&
-                    stores.find((s) => s.id === t.source_id)?.modules
-                      .operations_transfer_modify &&
-                    !["RECEIVED", "CANCELLED"].includes(t.status) ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={!online || busy}
-                        onClick={() => {
-                          setCancelId(t.id);
-                          setReason("");
-                        }}
-                      >
-                        Cancel transfer
-                      </Button>
-                    ) : null}
+                      ) : null}
+                      {!receiving &&
+                      !historyOnly &&
+                      stores.find((s) => s.id === t.source_id)?.modules
+                        .operations_transfer_modify &&
+                      !["RECEIVED", "CANCELLED"].includes(t.status) ? (
+                        <Button
+                          size="sm"
+                          variant={
+                            store.locationType === "warehouse"
+                              ? "primary"
+                              : "ghost"
+                          }
+                          disabled={!online || busy}
+                          onClick={() => {
+                            setCancelId(t.id);
+                            setReason("");
+                          }}
+                        >
+                          Cancel transfer
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-                <TransferLines id={t.id} receiving={receiving} />
-                <p className="mt-2 text-xs text-muted">
-                  Dispatched:{" "}
-                  {t.dispatched_at ? dateTime(t.dispatched_at) : "Pending"} ·
-                  Received:{" "}
-                  {t.received_at ? dateTime(t.received_at) : "Pending"}
-                </p>
-                {t.cancellation_reason ? (
-                  <p className="text-sm text-muted">
-                    Cancelled: {t.cancellation_reason}
+                  <TransferLines id={t.id} receiving={receiving} />
+                  <p className="mt-2 text-xs text-muted">
+                    Dispatched:{" "}
+                    {t.dispatched_at ? dateTime(t.dispatched_at) : "Pending"} ·
+                    Received:{" "}
+                    {t.received_at ? dateTime(t.received_at) : "Pending"}
                   </p>
-                ) : null}
-                {cancelId === t.id ? (
-                  <form
-                    className="mt-3 flex flex-wrap gap-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void process(t.id, "cancel");
-                    }}
-                  >
-                    <Input
-                      aria-label="Cancellation reason"
-                      placeholder="Reason for cancellation"
-                      required
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                    />
-                    <Button
-                      type="submit"
-                      variant="danger"
-                      disabled={!reason.trim() || busy}
+                  {t.cancellation_reason ? (
+                    <p className="text-sm text-muted">
+                      Cancelled: {t.cancellation_reason}
+                    </p>
+                  ) : null}
+                  {cancelId === t.id ? (
+                    <form
+                      className="mt-3 flex flex-wrap gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void process(t.id, "cancel");
+                      }}
                     >
-                      Confirm cancellation
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setCancelId(null)}
-                    >
-                      Keep transfer
-                    </Button>
-                  </form>
-                ) : null}
-              </div>
-            ))
-          )}
-          <p className="text-xs text-muted">
-            Latest 200 matching transfers. Warehouse submission sends stock into
-            transit. Store quantities and transfer prices update only on
-            receipt.
-          </p>
-        </CardContent>
+                      <Input
+                        aria-label="Cancellation reason"
+                        placeholder="Reason for cancellation"
+                        required
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                      />
+                      <Button
+                        type="submit"
+                        variant="danger"
+                        disabled={!reason.trim() || busy}
+                      >
+                        Confirm cancellation
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          store.locationType === "warehouse"
+                            ? "primary"
+                            : "ghost"
+                        }
+                        onClick={() => setCancelId(null)}
+                      >
+                        Keep transfer
+                      </Button>
+                    </form>
+                  ) : null}
+                </div>
+              ))
+            )}
+            <p className="text-xs text-muted">
+              Latest 200 matching transfers. Warehouse submission sends stock
+              into transit. Store quantities and transfer prices update only on
+              receipt.
+            </p>
+          </CardContent>
+        </details>
       </Card>
     </div>
   );

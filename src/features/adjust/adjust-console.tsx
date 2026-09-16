@@ -252,7 +252,9 @@ export function AdjustConsole() {
             <SlidersHorizontal className="size-4" /> Apply adjustment
           </Button>
           <Button
-            variant="secondary"
+            variant={
+              store.locationType === "warehouse" ? "primary" : "secondary"
+            }
             className="w-full"
             disabled={busy}
             onClick={() => {

@@ -56,7 +56,7 @@ export function WarehouseCatalogTools() {
   if (!can("owner") || !warehouses.length) return null;
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button variant="primary" onClick={() => setOpen(true)}>
         Sync Products
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -241,7 +241,7 @@ function CatalogPanel() {
           disabled={busy}
         />
         <Button
-          variant="secondary"
+          variant="primary"
           disabled={!online || !source || source === "latest" || busy}
           onClick={() =>
             void act(async () => {
@@ -314,7 +314,7 @@ function CatalogPanel() {
           }}
         />
         <Button
-          variant="ghost"
+          variant="primary"
           disabled={busy}
           onClick={() => {
             try {

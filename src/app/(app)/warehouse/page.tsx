@@ -64,6 +64,7 @@ export default async function WarehouseStockPage() {
             <WarehouseCatalogTools />
             <WarehouseAdd />
             <ExportButton
+              prominent
               rows={rows}
               filename="warehouse-stock"
               columns={[

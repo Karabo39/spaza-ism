@@ -182,3 +182,13 @@ describe("transfer capture", () => {
     ).toBe(true);
   });
 });
+
+it.each([
+  { receiving: true, label: "Pending and received warehouse transfers" },
+  { historyOnly: true, label: "My warehouse transfers" },
+])("starts $label collapsed", ({ label, ...props }) => {
+  render(<TransfersConsole {...props} />);
+  const summary = screen.getByText(label);
+  expect(summary.tagName).toBe("SUMMARY");
+  expect((summary.parentElement as HTMLDetailsElement).open).toBe(false);
+});

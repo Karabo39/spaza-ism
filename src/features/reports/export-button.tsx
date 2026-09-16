@@ -20,7 +20,9 @@ export function ExportButton({
   columns,
   filename,
   module = "reports",
+  prominent = false,
 }: {
+  prominent?: boolean;
   module?: "reports" | "check_stock" | "invoices";
   rows: Record<string, unknown>[];
   columns: ExportColumn[];
@@ -41,7 +43,7 @@ export function ExportButton({
     rows: filtered,
     columns,
     title,
-    subtitle: `${store.businessName ?? BRAND_NAME} · ${store.name} · ${rows.some(r=>typeof r.currency==="string"&&r.currency!==store.currency)?"Currency shown per row":store.currency ?? "ZAR"}`,
+    subtitle: `${store.businessName ?? BRAND_NAME} · ${store.name} · ${rows.some((r) => typeof r.currency === "string" && r.currency !== store.currency) ? "Currency shown per row" : (store.currency ?? "ZAR")}`,
   };
   async function download() {
     setBusy(true);
@@ -99,7 +101,7 @@ export function ExportButton({
       <div className="flex items-center gap-1.5">
         <select
           aria-label="Export format"
-          className="h-9 rounded-md border border-border bg-input px-2 text-sm"
+          className={`h-10 rounded-md border border-border px-2 text-sm ${prominent ? "bg-primary text-primary-foreground" : "bg-input"}`}
           value={format}
           onChange={(e) => setFormat(e.target.value as typeof format)}
         >
@@ -108,8 +110,8 @@ export function ExportButton({
           <option value="csv">CSV</option>
         </select>
         <Button
-          size="sm"
-          variant="secondary"
+          size={prominent ? "md" : "sm"}
+          variant={prominent ? "primary" : "secondary"}
           loading={busy}
           disabled={!rows.length}
           onClick={download}
@@ -118,8 +120,8 @@ export function ExportButton({
           Export
         </Button>
         <Button
-          size="sm"
-          variant="secondary"
+          size={prominent ? "md" : "sm"}
+          variant={prominent ? "primary" : "secondary"}
           disabled={!rows.length || busy}
           onClick={() => setEmailOpen(true)}
         >

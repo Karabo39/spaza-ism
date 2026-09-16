@@ -35,7 +35,7 @@ export function StockTakeCounter({
 }) {
   const router = useRouter(),
     cache = useQueryClient(),
-    { can } = useStore(),
+    { can, store } = useStore(),
     { online } = useOffline();
   const closed = status !== "IN_PROGRESS";
   const [busy, setBusy] = useState(false),
@@ -307,7 +307,9 @@ export function StockTakeCounter({
             onChange={(e) => setReason(e.target.value)}
           />
           <Button
-            variant="secondary"
+            variant={
+              store.locationType === "warehouse" ? "primary" : "secondary"
+            }
             disabled={!online || busy || saving > 0 || !reason.trim()}
             onClick={() => finish(true)}
           >
