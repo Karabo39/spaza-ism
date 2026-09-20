@@ -8,6 +8,7 @@ begin
  sp:=public.create_product(shop,'Pack',null,null,null,12,18,0,0,'pack');su:=public.create_product(shop,'Individual',null,null,null,2,3,0,0,'each');
  perform public.receive_stock(wh,null,null,null,jsonb_build_array(jsonb_build_object('product_id',wp,'quantity',10)));
  conversion:=public.set_bulk_conversion(wp,wu,6);perform public.unpack_stock(conversion,2,'Prepare loose stock',gen_random_uuid());
+ perform public.set_bulk_conversion(sp,su,6);
  t:=public.create_stock_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',wp,'destination_product_id',sp,'quantity',3)),gen_random_uuid());
  perform public.process_stock_transfer(t,'submit');perform public.process_stock_transfer(t,'dispatch');perform public.process_stock_transfer(t,'receive');
  conversion:=public.set_bulk_conversion(sp,su,6);

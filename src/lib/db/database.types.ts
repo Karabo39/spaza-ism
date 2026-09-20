@@ -326,6 +326,7 @@ export type Database = {
       resolve_return_quarantine: { Args: { p_item: string; p_action: string; p_reason: string; p_expiry?: string }; Returns: string }
       record_customer_refund: { Args: { p_return: string; p_amount: number; p_method: string; p_reason: string; p_request: string; p_reference?: string }; Returns: string }
       transfer_history: { Args: { p_business: string; p_source?: string; p_destination?: string; p_status?: string; p_product?: string; p_user?: string; p_from?: string; p_to?: string }; Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][] }
+      create_bulk_product: { Args: { p_store: string; p_unit: string; p_name: string; p_ratio: number; p_sku: string; p_barcode: string; p_cost: number; p_selling: number; p_request: string }; Returns: string };
       set_bulk_conversion: { Args: { p_pack: string; p_unit: string; p_ratio: number }; Returns: string }
       unpack_stock: { Args: { p_conversion: string; p_packs: number; p_reason: string; p_request: string }; Returns: string }
       create_stock_transfer: { Args: { p_source: string; p_destination: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
@@ -375,6 +376,7 @@ export type StockTakeStatus = "IN_PROGRESS" | "PENDING_APPROVAL" | "COMPLETED" |
 
 type PublicSchema = Database["public"]
 export type ProductStock = {
+  item_type?: "Individual" | "Bulk Stock";
   description?: string | null;
   id: string; business_id: string; store_id: string; name: string; sku: string | null; unit: string;
   cost_price: number; selling_price: number; min_stock_level: number; reorder_level: number;

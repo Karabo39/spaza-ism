@@ -103,6 +103,7 @@ try {
     "warehouse_catalog_sync.sql",
     "warehouse_transfer_workflow.sql",
     "warehouse_disable.sql",
+    "location_bulk_receiving.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

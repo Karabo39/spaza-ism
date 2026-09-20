@@ -102,6 +102,12 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("WAREHOUSE_HAS_STOCK")) return "Every product quantity must be zero before disabling this warehouse.";
   if (m.includes("WAREHOUSE_HAS_OPEN_TRANSFERS")) return "Complete or cancel all open warehouse transfers before disabling it.";
   if (m.includes("WAREHOUSE_DISABLED")) return "This warehouse is disabled. Reload to select an active location.";
+  if (m.includes("BULK_TRANSFER_MISMATCH")) return "Bulk transfers need a bulk product at both locations with the same units per pack. Configure the destination pack first.";
+  if (m.includes("BULK_TRANSFER_PENDING")) return "Complete or cancel this product’s pending transfers before changing its pack conversion.";
+  if (m.includes("BULK_PRODUCT_EXISTS")) return "This bulk SKU already exists here. Choose the existing product instead.";
+  if (m.includes("INDIVIDUAL_PRODUCT_REQUIRED")) return "Choose an existing individual item at this location. Bulk products cannot be unpacked into other bulk products.";
+  if (m.includes("WHOLE_PACKS_REQUIRED")) return "Enter a whole number of bulk packs.";
+  if (m.includes("UNPACK_COUNT_OVERRIDE_DISABLED")) return "Receive the packs first, or correct a verified count through Adjust Stock before unpacking.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
   if (m.includes("PAYMENT_UNDERPAID")) return "Collect the remaining balance before completing this sale.";
   if (m.includes("NONCASH_OVERPAYMENT")) return "Card and EFT amounts cannot exceed the balance due.";
