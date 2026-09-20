@@ -1,5 +1,7 @@
 "use client";
 import * as React from "react";
+import { BulkProductDialog } from "./bulk-product-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, PackageSearch, PackagePlus } from "lucide-react";
@@ -26,6 +28,7 @@ import type { ProductStock } from "@/lib/db/database.types";
 import { useOffline } from "@/lib/offline/offline-context";
 
 type Line = {
+  itemType: "Individual" | "Bulk Stock";
   sku?: string | null;
   productId: string;
   name: string;
@@ -38,7 +41,12 @@ type Line = {
 
 export function GoodsInConsole() {
   const router = useRouter();
-  const { store, stores, currency, setStore } = useStore();
+  const cache = useQueryClient();
+  const [itemType, setItemType] = React.useState<"Individual" | "Bulk Stock">(
+    "Individual",
+  );
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+  const { store, stores, currency, setStore, can, canModule } = useStore();
   const { online } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [suppliers, setSuppliers] = React.useState<
@@ -74,6 +82,16 @@ export function GoodsInConsole() {
   );
 
   function addProduct(p: ProductStock) {
+    if (p.store_id !== store.id) {
+      toast.error("Choose a product at this receiving location.");
+      return;
+    }
+    if ((p.item_type ?? "Individual") !== itemType) {
+      toast.error(
+        `Choose ${itemType === "Bulk Stock" ? "Bulk Stock" : "Individual"} receiving for this product.`,
+      );
+      return;
+    }
     setLines((prev) => {
       const ex = prev.find((l) => l.productId === p.id);
       if (ex)
@@ -83,6 +101,7 @@ export function GoodsInConsole() {
       return [
         ...prev,
         {
+          itemType: p.item_type ?? "Individual",
           productId: p.id,
           name: p.name,
           sku: p.sku,
@@ -97,15 +116,39 @@ export function GoodsInConsole() {
   }
 
   async function onScan(code: string) {
+    if (!online) {
+      toast.error("Receiving stock requires a connection.");
+      return;
+    }
     setBusy(true);
-    const hit = await lookupByCode(store.id, code);
-    setBusy(false);
-    if ("product" in hit) addProduct(hit.product);
-    else {
-      setUnknownCode(code);
-      toast.error(`No product for "${code}"`, {
-        action: { label: "Register", onClick: () => setRegisterOpen(true) },
-      });
+    try {
+      const hit = await lookupByCode(store.id, code);
+      if ("product" in hit) {
+        const { data, error } = await createClient()
+          .from("v_product_catalog")
+          .select("*")
+          .eq("id", hit.product.id)
+          .eq("store_id", store.id)
+          .eq("is_active", true)
+          .single();
+        if (error) throw error;
+        addProduct(data as ProductStock);
+      } else {
+        setUnknownCode(code);
+        toast.error(`No product for "${code}"`, {
+          action: {
+            label: itemType === "Bulk Stock" ? "Set up bulk" : "Register",
+            onClick: () =>
+              itemType === "Bulk Stock"
+                ? setBulkOpen(true)
+                : setRegisterOpen(true),
+          },
+        });
+      }
+    } catch {
+      toast.error("Could not verify this product. Reconnect and try again.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -123,7 +166,11 @@ export function GoodsInConsole() {
     }
     if (lines.length === 0) return;
     for (const l of lines)
-      if (l.quantity <= 0) {
+      if (
+        !Number.isFinite(l.quantity) ||
+        l.quantity <= 0 ||
+        (l.itemType === "Bulk Stock" && !Number.isInteger(l.quantity))
+      ) {
         toast.error(`Enter a quantity for ${l.name}`);
         return;
       }
@@ -154,6 +201,8 @@ export function GoodsInConsole() {
     toast.success(
       `Received ${lines.length} item${lines.length === 1 ? "" : "s"} — ${money(total, currency)}`,
     );
+    await cache.invalidateQueries({ queryKey: ["bulk-conversions"] });
+    await cache.invalidateQueries({ queryKey: ["operation-products"] });
     setLines([]);
     setReference("");
     setSupplierId("none");
@@ -163,6 +212,38 @@ export function GoodsInConsole() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
       <div className="space-y-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <Label htmlFor="receiving-type">Receive stock type</Label>
+            <select
+              id="receiving-type"
+              className="h-10 rounded-md border border-border bg-input px-3 text-sm"
+              value={itemType}
+              disabled={busy}
+              onChange={(e) =>
+                setItemType(e.target.value as "Individual" | "Bulk Stock")
+              }
+            >
+              <option value="Individual">Individual items</option>
+              <option value="Bulk Stock">Bulk Stock</option>
+            </select>
+          </div>
+          {itemType === "Bulk Stock" &&
+            can("manager") &&
+            canModule("products") &&
+            canModule("operations") && (
+              <Button
+                disabled={!online || busy}
+                onClick={() => setBulkOpen(true)}
+              >
+                Create / link bulk product
+              </Button>
+            )}
+        </div>
+        <p className="text-xs text-muted">
+          Receiving into {store.name}. Bulk stock stays in packs until unpacked
+          here.
+        </p>
         <ScanInput
           onScan={onScan}
           busy={busy}
@@ -203,6 +284,7 @@ export function GoodsInConsole() {
                   <TR key={l.productId}>
                     <TD>
                       <p className="font-medium">{l.name}</p>
+                      <p className="text-xs text-muted">{l.itemType}</p>
                       {l.sku && (
                         <p className="text-xs text-muted">SKU: {l.sku}</p>
                       )}
@@ -347,8 +429,19 @@ export function GoodsInConsole() {
         open={searchOpen}
         onOpenChange={setSearchOpen}
         onPick={addProduct}
+        itemType={itemType}
         showPrice={false}
       />
+      {bulkOpen &&
+        can("manager") &&
+        canModule("products") &&
+        canModule("operations") && (
+          <BulkProductDialog
+            key={store.id}
+            onClose={() => setBulkOpen(false)}
+            onPick={addProduct}
+          />
+        )}
       <ProductRegisterDialog
         open={registerOpen}
         onOpenChange={setRegisterOpen}

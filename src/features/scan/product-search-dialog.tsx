@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store-context";
+import { createClient } from "@/lib/supabase/client";
 import { searchProducts } from "./lookup";
 import { money, qty } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -21,18 +22,33 @@ function ProductSearchDialogContent({
   onOpenChange,
   onPick,
   showPrice = true,
+  itemType,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onPick: (p: ProductStock) => void;
   showPrice?: boolean;
+  itemType?: "Individual" | "Bulk Stock";
 }) {
   const { store, currency } = useStore();
   const [q, setQ] = React.useState("");
   const term = useDebouncedValue(q.trim(), 180);
   const search = useQuery({
-    queryKey: ["product-picker", store.id, term],
-    queryFn: () => searchProducts(store.id, term),
+    queryKey: ["product-picker", store.id, term, itemType],
+    queryFn: async () => {
+      if (!itemType) return searchProducts(store.id, term);
+      const { data, error } = await createClient()
+        .from("v_product_catalog")
+        .select("*")
+        .eq("store_id", store.id)
+        .eq("is_active", true)
+        .eq("item_type", itemType)
+        .ilike("search_text", `%${term}%`)
+        .order("name")
+        .limit(100);
+      if (error) throw error;
+      return data as ProductStock[];
+    },
     networkMode: "always",
     staleTime: 0,
   });

@@ -12,6 +12,7 @@ import { useStore } from "@/lib/store-context";
 import type { ProductStock } from "@/lib/db/database.types";
 
 type PickerProps = {
+  itemType?: "Individual" | "Bulk Stock";
   location: string;
   label: string;
   value: ProductStock | null;
@@ -31,15 +32,16 @@ function LegacyProductPicker({
   label,
   value,
   onChange,
+  itemType,
 }: PickerProps) {
   const [search, setSearch] = React.useState("");
   const term = useDebouncedValue(search.trim());
   const id = React.useId();
   const { data, error, isLoading } = useQuery({
-    queryKey: ["operation-products", location, term],
+    queryKey: ["operation-products", location, term, itemType],
     enabled: !!location,
     queryFn: async () => {
-      const { data, error } = await createClient()
+      const query = createClient()
         .from("v_product_catalog")
         .select("*")
         .eq("store_id", location)
@@ -47,6 +49,9 @@ function LegacyProductPicker({
         .ilike("search_text", `%${term}%`)
         .order("name")
         .limit(100);
+      const { data, error } = await (itemType
+        ? query.eq("item_type", itemType)
+        : query);
       if (error) throw error;
       return data as ProductStock[];
     },
@@ -96,6 +101,7 @@ function SearchProductPicker({
   label,
   value,
   onChange,
+  itemType,
 }: PickerProps) {
   const { currency } = useStore();
   const [search, setSearch] = React.useState("");
@@ -109,10 +115,10 @@ function SearchProductPicker({
     error,
     isFetching: fetching,
   } = useQuery({
-    queryKey: ["order-product-search", location, term],
+    queryKey: ["order-product-search", location, term, itemType],
     enabled: !!location && open,
     queryFn: async () => {
-      const { data, error } = await createClient()
+      const query = createClient()
         .from("v_product_catalog")
         .select("*")
         .eq("store_id", location)
@@ -120,6 +126,9 @@ function SearchProductPicker({
         .ilike("search_text", `%${term.replace(/[\\%_]/g, "\\$&")}%`)
         .order("name")
         .limit(100);
+      const { data, error } = await (itemType
+        ? query.eq("item_type", itemType)
+        : query);
       if (error) throw error;
       return data as ProductStock[];
     },
