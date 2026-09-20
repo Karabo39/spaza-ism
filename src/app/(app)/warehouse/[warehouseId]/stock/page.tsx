@@ -34,6 +34,7 @@ export default async function Page({
         <THead>
           <TR>
             <TH>Product</TH>
+            <TH>Item Type</TH>
             <TH>SKU / Barcode</TH>
             <TH>Quantity</TH>
             <TH>Unit cost</TH>
@@ -44,6 +45,7 @@ export default async function Page({
           {data?.map((p) => (
             <TR key={p.id}>
               <TD>{p.name}</TD>
+              <TD>{p.item_type ?? "Individual"}</TD>
               <TD>{p.sku || p.barcodes}</TD>
               <TD
                 className={

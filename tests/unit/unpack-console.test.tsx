@@ -19,6 +19,7 @@ vi.mock("@tanstack/react-query", () => ({
               pack_name: "Six pack",
               unit_name: "Bottle",
               units_per_pack: 6,
+              available: 3,
             },
           ]
         : [],
@@ -86,33 +87,27 @@ describe("bulk unpack capture", () => {
       ).disabled,
     ).toBe(true);
   });
-  it("requires a manager count and records the shortage correction through its RPC", async () => {
+  it("blocks unpacking more packs than available, including for managers", () => {
     mock.manager = true;
     render(<UnpackConsole />);
     fireEvent.change(screen.getByLabelText("Configured pack"), {
       target: { value: "conversion" },
     });
     fireEvent.change(screen.getByLabelText("Reason / reference"), {
-      target: { value: "Verified physical count" },
+      target: { value: "Refill shelf" },
     });
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.change(screen.getByLabelText("Total physical packs counted"), {
-      target: { value: "2" },
+    fireEvent.change(screen.getByLabelText("Number of packs"), {
+      target: { value: "4" },
     });
-    fireEvent.change(
-      screen.getByLabelText("Expiry of newly counted packs (if tracked)"),
-      { target: { value: "2028-01-01" } },
-    );
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Confirm unpacking",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(screen.queryByRole("checkbox")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Confirm unpacking" }));
-    await waitFor(() =>
-      expect(mock.rpc).toHaveBeenCalledWith(
-        "unpack_stock_with_count",
-        expect.objectContaining({
-          p_counted: 2,
-          p_expiry: "2028-01-01",
-          p_reason: "Verified physical count",
-        }),
-      ),
-    );
+    expect(mock.rpc).not.toHaveBeenCalled();
   });
 });

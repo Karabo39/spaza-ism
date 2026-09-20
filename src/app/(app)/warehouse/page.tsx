@@ -70,6 +70,7 @@ export default async function WarehouseStockPage() {
               columns={[
                 { key: "location", label: "Warehouse" },
                 { key: "name", label: "Product" },
+                { key: "item_type", label: "Item Type" },
                 { key: "sku", label: "SKU" },
                 { key: "cost_price", label: "Unit cost" },
                 { key: "quantity", label: "Quantity" },
@@ -102,6 +103,7 @@ export default async function WarehouseStockPage() {
             <TR>
               <TH>Warehouse</TH>
               <TH>Product</TH>
+              <TH>Item Type</TH>
               <TH>SKU / Barcode</TH>
               <TH>Quantity</TH>
               <TH>Unit cost</TH>
@@ -114,6 +116,7 @@ export default async function WarehouseStockPage() {
               <TR key={p.id}>
                 <TD>{p.location}</TD>
                 <TD>{p.name}</TD>
+                <TD>{p.item_type ?? "Individual"}</TD>
                 <TD>
                   {p.sku || "—"}
                   <p className="text-xs text-muted">

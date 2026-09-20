@@ -7,7 +7,7 @@ export default async function UnpackPage() {
     <>
       <PageHeader
         title="Unpack Bulk Stock"
-        description="Convert packs into individual units at this store or warehouse. Stock changes and the conversion ratio are recorded in the audit history."
+        description="Convert packs into individual units at this store. Stock changes and the conversion ratio are recorded in the audit history."
         crumbs={[{ label: "Stock Control" }, { label: "Unpack Bulk Stock" }]}
       />
       <UnpackConsole key={session!.activeStore!.id} />

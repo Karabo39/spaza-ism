@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store-context";
@@ -26,9 +27,6 @@ export function UnpackConsole() {
   const [ratio, setRatio] = React.useState(6);
   const [busy, setBusy] = React.useState(false);
   const request = React.useRef<string | null>(null);
-  const [countOverride, setCountOverride] = React.useState(false),
-    [counted, setCounted] = React.useState(1),
-    [countExpiry, setCountExpiry] = React.useState("");
   const conversions = useQuery({
     queryKey: ["bulk-conversions", store.id],
     enabled: online,
@@ -39,7 +37,7 @@ export function UnpackConsole() {
         .eq("store_id", store.id)
         .order("pack_name");
       if (error) throw error;
-      if (store.locationType === "warehouse" && data?.length) {
+      if (data?.length) {
         const { data: stock, error: stockError } = await createClient()
           .from("stock")
           .select("product_id,quantity")
@@ -50,11 +48,15 @@ export function UnpackConsole() {
           )
           .gt("quantity", 0);
         if (stockError) throw stockError;
-        return data.filter((c) =>
-          stock?.some((s) => s.product_id === c.pack_product_id),
-        );
+        return data.map((c) => ({
+          ...c,
+          available: Number(
+            stock?.find((s) => s.product_id === c.pack_product_id)?.quantity ??
+              0,
+          ),
+        }));
       }
-      return data;
+      return (data ?? []).map((c) => ({ ...c, available: 0 }));
     },
   });
   const history = useQuery({
@@ -94,7 +96,14 @@ export function UnpackConsole() {
   }
   async function unpack(e: React.FormEvent) {
     e.preventDefault();
-    if (!selected || !online || busy || !Number.isInteger(packs) || packs <= 0)
+    if (
+      !selected ||
+      !online ||
+      busy ||
+      !Number.isInteger(packs) ||
+      packs <= 0 ||
+      packs > selected.available
+    )
       return;
     setBusy(true);
     request.current ??= crypto.randomUUID();
@@ -105,13 +114,7 @@ export function UnpackConsole() {
         p_reason: reason,
         p_request: request.current,
       };
-      const { error } = countOverride
-        ? await createClient().rpc("unpack_stock_with_count", {
-            ...args,
-            p_counted: counted,
-            ...(countExpiry ? { p_expiry: countExpiry } : {}),
-          })
-        : await createClient().rpc("unpack_stock", args);
+      const { error } = await createClient().rpc("unpack_stock", args);
       if (error) throw error;
       toast.success(
         `${packs} pack(s) unpacked into ${packs * selected.units_per_pack} units`,
@@ -119,9 +122,8 @@ export function UnpackConsole() {
       request.current = null;
       setPacks(1);
       setReason("");
-      setCountOverride(false);
-      setCountExpiry("");
       await qc.invalidateQueries({ queryKey: ["unpacking"] });
+      await qc.invalidateQueries({ queryKey: ["bulk-conversions"] });
       await qc.invalidateQueries({ queryKey: ["operation-products"] });
       await qc.invalidateQueries({ queryKey: ["location-overview"] });
     } catch (e) {
@@ -136,6 +138,41 @@ export function UnpackConsole() {
         Location: {store.name}. Unpacked units stay at this location. This
         operation requires a connection.
       </p>
+      <CollapsibleSection title="View available Bulk Stock" defaultOpen={false}>
+        {conversions.error ? (
+          <p role="alert">Could not load bulk stock.</p>
+        ) : (
+          <Table>
+            <THead>
+              <TR>
+                <TH>Bulk Stock</TH>
+                <TH>Available packs</TH>
+                <TH>Individual item</TH>
+                <TH>Units per pack</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {conversions.data
+                ?.filter((c) => c.available > 0)
+                .map((c) => (
+                  <TR key={c.id}>
+                    <TD>{c.pack_name}</TD>
+                    <TD>{qty(c.available)}</TD>
+                    <TD>{c.unit_name}</TD>
+                    <TD>{c.units_per_pack}</TD>
+                  </TR>
+                ))}
+            </TBody>
+          </Table>
+        )}
+        {!conversions.isPending &&
+          !conversions.error &&
+          !conversions.data?.some((c) => c.available > 0) && (
+            <p>
+              No bulk stock available at {store.name}. Receive packs here first.
+            </p>
+          )}
+      </CollapsibleSection>
       <Card>
         <CardHeader>
           <CardTitle>Unpack bulk stock</CardTitle>
@@ -156,8 +193,9 @@ export function UnpackConsole() {
               >
                 <option value="">Choose a pack</option>
                 {conversions.data?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.pack_name} → {c.units_per_pack} × {c.unit_name}
+                  <option key={c.id} value={c.id} disabled={c.available <= 0}>
+                    {c.pack_name} → {c.units_per_pack} × {c.unit_name} ·{" "}
+                    {qty(c.available)} packs available
                   </option>
                 ))}
               </select>
@@ -169,6 +207,7 @@ export function UnpackConsole() {
                 required
                 type="number"
                 min="1"
+                max={selected?.available ?? 0}
                 step="1"
                 disabled={busy}
                 value={packs}
@@ -199,73 +238,6 @@ export function UnpackConsole() {
                 Insufficient bulk stock is blocked.
               </p>
             ) : null}
-            {can("manager") && selected ? (
-              <div className="space-y-3 rounded-md border border-border p-3 md:col-span-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    disabled={busy}
-                    checked={countOverride}
-                    onChange={(e) => {
-                      setCountOverride(e.target.checked);
-                      request.current = null;
-                    }}
-                  />
-                  Manager override: correct a verified stock count before
-                  unpacking
-                </label>
-                {countOverride ? (
-                  <>
-                    <p className="text-xs text-muted">
-                      Use only when recorded bulk stock is insufficient but the
-                      physical packs are available. Count all packs first. The
-                      correction and unpacking are recorded together under your
-                      name.
-                    </p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label htmlFor="counted-packs">
-                          Total physical packs counted
-                        </Label>
-                        <Input
-                          id="counted-packs"
-                          type="number"
-                          min={packs}
-                          step="1"
-                          required
-                          disabled={busy}
-                          value={counted}
-                          onChange={(e) => {
-                            setCounted(Number(e.target.value));
-                            request.current = null;
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="counted-expiry">
-                          Expiry of newly counted packs (if tracked)
-                        </Label>
-                        <Input
-                          id="counted-expiry"
-                          type="date"
-                          disabled={busy}
-                          value={countExpiry}
-                          onChange={(e) => {
-                            setCountExpiry(e.target.value);
-                            request.current = null;
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted">
-                      Explain the count discrepancy in Reason / reference. For
-                      different expiry dates, receive the batches separately
-                      before normal unpacking.
-                    </p>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
             {conversions.error ? (
               <p role="alert" className="text-danger">
                 Could not load conversions.
@@ -274,7 +246,14 @@ export function UnpackConsole() {
             <Button
               type="submit"
               loading={busy}
-              disabled={!online || !selected || !reason.trim()}
+              disabled={
+                !online ||
+                !selected ||
+                !reason.trim() ||
+                packs > (selected?.available ?? 0) ||
+                packs < 1 ||
+                !Number.isInteger(packs)
+              }
             >
               Confirm unpacking
             </Button>

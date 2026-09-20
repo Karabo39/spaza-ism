@@ -80,6 +80,7 @@ export default async function ProductsPage({
           columns={[
             { key: "id", label: "Product ID" },
             { key: "name", label: "Product" },
+            { key: "item_type", label: "Item Type" },
             { key: "sku", label: "SKU" },
             { key: "barcodes", label: "Barcodes" },
             { key: "nearest_expiry", label: "Nearest expiry" },
@@ -122,6 +123,7 @@ export default async function ProductsPage({
               <THead>
                 <TR>
                   <TH>Product</TH>
+                  <TH>Item Type</TH>
                   <TH>SKU</TH>
                   <TH>Barcode</TH>
                   <TH>Nearest expiry</TH>
@@ -148,6 +150,7 @@ export default async function ProductsPage({
                         </Badge>
                       ) : null}
                     </TD>
+                    <TD>{r.item_type ?? "Individual"}</TD>
                     <TD>{r.sku || "—"}</TD>
                     <TD className="max-w-48 break-all text-xs">
                       {r.barcodes || "None"}
