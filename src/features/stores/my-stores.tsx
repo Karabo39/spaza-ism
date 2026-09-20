@@ -11,7 +11,6 @@ import {
 import { useStore } from "@/lib/store-context";
 import { useOffline } from "@/lib/offline/offline-context";
 import { createClient } from "@/lib/supabase/client";
-import { LocationsManager } from "@/features/settings/locations-manager";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
 
@@ -196,7 +195,6 @@ export function MyStores() {
           Import products and opening stock from Excel
         </Link>
       </section>
-      <LocationsManager activateOnCreate />
     </div>
   );
 }

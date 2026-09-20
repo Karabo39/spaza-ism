@@ -1,4 +1,5 @@
 "use client";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { amountCents } from "@/features/cash-up/cash-utils";
 import { statusLabel } from "./status-label";
 import { useReturnSources } from "./use-return-sources";
@@ -481,62 +482,63 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           Submit return for processing
         </Button>
       </section>
-      <h2 className="font-semibold">Recent returns</h2>
-      {returns.error && <p role="alert">Could not load returns.</p>}
-      <Table>
-        <THead>
-          <TR>
-            <TH>Reference</TH>
-            <TH>Status</TH>
-            <TH>Reason</TH>
-            <TH>Returned by</TH>
-            <TH>Value</TH>
-          </TR>
-        </THead>
-        <TBody>
-          {returns.data?.map((r) => (
-            <Fragment key={r.id}>
-              <TR>
-                <TD>
-                  <button
-                    className="focus-ring inline-flex items-center rounded-md border border-accent/40 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10"
-                    aria-expanded={expanded === r.id}
-                    onClick={() => {
-                      selectReturn(r.id);
-                      setExpanded(expanded === r.id ? null : r.id);
-                    }}
-                  >
-                    <span aria-hidden="true">
-                      {expanded === r.id ? "▾" : "▸"}
-                    </span>{" "}
-                    {r.reference}
-                  </button>
-                </TD>
-                <TD>{statusLabel(r.status)}</TD>
-                <TD>{r.reason}</TD>
-                <TD>
-                  {people.data?.find((p) => p.id === r.created_by)?.full_name ??
-                    "User unavailable"}
-                </TD>
-                <TD>{money(r.amount, currency)}</TD>
-              </TR>
-              {expanded === r.id && (
+      <CollapsibleSection title="Recent Returns">
+        {returns.error && <p role="alert">Could not load returns.</p>}
+        <Table>
+          <THead>
+            <TR>
+              <TH>Reference</TH>
+              <TH>Status</TH>
+              <TH>Reason</TH>
+              <TH>Returned by</TH>
+              <TH>Value</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {returns.data?.map((r) => (
+              <Fragment key={r.id}>
                 <TR>
-                  <TD colSpan={5}>
-                    <ul className="space-y-1 py-2">
-                      {(r.goods_return_items ?? []).map((l) => (
-                        <li key={l.id}>
-                          {l.quantity} × {l.product_name}
-                        </li>
-                      ))}
-                    </ul>
+                  <TD>
+                    <button
+                      className="focus-ring inline-flex items-center rounded-md border border-accent/40 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/10"
+                      aria-expanded={expanded === r.id}
+                      onClick={() => {
+                        selectReturn(r.id);
+                        setExpanded(expanded === r.id ? null : r.id);
+                      }}
+                    >
+                      <span aria-hidden="true">
+                        {expanded === r.id ? "▾" : "▸"}
+                      </span>{" "}
+                      {r.reference}
+                    </button>
                   </TD>
+                  <TD>{statusLabel(r.status)}</TD>
+                  <TD>{r.reason}</TD>
+                  <TD>
+                    {people.data?.find((p) => p.id === r.created_by)
+                      ?.full_name ?? "User unavailable"}
+                  </TD>
+                  <TD>{money(r.amount, currency)}</TD>
                 </TR>
-              )}
-            </Fragment>
-          ))}
-        </TBody>
-      </Table>
+                {expanded === r.id && (
+                  <TR>
+                    <TD colSpan={5}>
+                      <ul className="space-y-1 py-2">
+                        {(r.goods_return_items ?? []).map((l) => (
+                          <li key={l.id}>
+                            {l.quantity} × {l.product_name}
+                          </li>
+                        ))}
+                      </ul>
+                    </TD>
+                  </TR>
+                )}
+              </Fragment>
+            ))}
+          </TBody>
+        </Table>
+      </CollapsibleSection>
       {current && (
         <section className="rounded-lg border border-border bg-surface p-5 space-y-4">
           <h2 className="font-semibold">

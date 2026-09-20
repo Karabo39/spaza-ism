@@ -116,6 +116,7 @@ it("keeps unpacking under Stock Control and honours existing Operations grants",
     "/products",
     "/suppliers",
     "/imports",
+    "/reports",
   ]);
   const stock = NAV.find((g) => g.label === "Stock Control")!;
   const expiry = stock.items.findIndex((i) => i.href === "/expiry");

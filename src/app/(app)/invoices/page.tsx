@@ -1,3 +1,4 @@
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { invoiceStatusLabel } from "@/features/billing/status-label";
 import { Button } from "@/components/ui/button";
 import { businessDayStart, businessDayAfter } from "@/lib/business-date";
@@ -247,37 +248,38 @@ export default async function InvoicesPage({
               filename="invoices"
             />
           </div>
-          <h2 className="mb-3 font-semibold">Recent Invoices</h2>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Invoice</TH>
-                <TH>Customer</TH>
-                <TH>Invoiced By</TH>
-                <TH>Status</TH>
-                <TH>Due</TH>
-                <TH>Total</TH>
-                <TH>Outstanding</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {rows.map((i) => (
-                <TR key={i.id}>
-                  <TD>
-                    <Link className="text-accent" href={`/invoices/${i.id}`}>
-                      {i.reference}
-                    </Link>
-                  </TD>
-                  <TD>{i.customer_name}</TD>
-                  <TD>{i.invoiced_by_name || "Not recorded"}</TD>
-                  <TD>{invoiceStatusLabel(i)}</TD>
-                  <TD>{dateOnly(i.due_date)}</TD>
-                  <TD>{money(i.total, store.currency)}</TD>
-                  <TD>{money(i.outstanding, store.currency)}</TD>
+          <CollapsibleSection title="Recent Invoices">
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Invoice</TH>
+                  <TH>Customer</TH>
+                  <TH>Invoiced By</TH>
+                  <TH>Status</TH>
+                  <TH>Due</TH>
+                  <TH>Total</TH>
+                  <TH>Outstanding</TH>
                 </TR>
-              ))}
-            </TBody>
-          </Table>
+              </THead>
+              <TBody>
+                {rows.map((i) => (
+                  <TR key={i.id}>
+                    <TD>
+                      <Link className="text-accent" href={`/invoices/${i.id}`}>
+                        {i.reference}
+                      </Link>
+                    </TD>
+                    <TD>{i.customer_name}</TD>
+                    <TD>{i.invoiced_by_name || "Not recorded"}</TD>
+                    <TD>{invoiceStatusLabel(i)}</TD>
+                    <TD>{dateOnly(i.due_date)}</TD>
+                    <TD>{money(i.total, store.currency)}</TD>
+                    <TD>{money(i.outstanding, store.currency)}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </CollapsibleSection>
         </>
       )}
     </>

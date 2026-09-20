@@ -88,9 +88,7 @@ export function SuppliersManager() {
                 <TH className="w-[22%]">Phone</TH>
                 <TH className="w-[12%]">Status</TH>
                 <TH className="w-[16%] whitespace-nowrap">Purchase History</TH>
-                <TH className="w-12">
-                  <span className="sr-only">Edit</span>
-                </TH>
+                <TH className="w-12">EDIT</TH>
               </TR>
             </THead>
             <TBody>

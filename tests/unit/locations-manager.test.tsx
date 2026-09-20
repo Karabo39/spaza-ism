@@ -6,6 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { AddStoreButton } from "@/features/stores/add-store-button";
 import { LocationsManager } from "@/features/settings/locations-manager";
 
 const mocks = vi.hoisted(() => ({
@@ -89,4 +90,14 @@ describe("location creation", () => {
     await waitFor(() => expect(document.cookie).toContain(`sism_store=${id}`));
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
+});
+
+it("opens the existing store form only after choosing the header button", () => {
+  cleanup();
+  mocks.owner = true;
+  render(<AddStoreButton />);
+  expect(screen.queryByLabelText("New location name")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Add Store" }));
+  expect(screen.getByLabelText("New location name")).toBeTruthy();
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });

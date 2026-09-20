@@ -666,11 +666,21 @@ export function TransfersConsole({
                       <p className="break-all text-xs text-muted">
                         {t.reference} · {dateTime(t.created_at)}
                       </p>
-                      <p className="mt-1 text-xs">
-                        {t.status === "DISPATCHED"
-                          ? "Pending store receipt"
-                          : t.status}
-                      </p>
+                      {t.status === "RECEIVED" ? (
+                        <Button
+                          size="sm"
+                          disabled
+                          className="mt-2 bg-success text-black disabled:opacity-100"
+                        >
+                          Received
+                        </Button>
+                      ) : (
+                        <p className="mt-1 text-xs">
+                          {t.status === "DISPATCHED"
+                            ? "Pending store receipt"
+                            : t.status}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {warehouse &&

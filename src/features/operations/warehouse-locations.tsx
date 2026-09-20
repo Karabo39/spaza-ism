@@ -104,7 +104,8 @@ export function WarehouseLocations({
                     disabled={!online}
                     key={a.path}
                     size="sm"
-                    variant="primary"
+                    variant="secondary"
+                    className="bg-[#2c142b] hover:bg-[#402244] border-[#402244] text-white"
                     onClick={() => {
                       router.push(
                         a.path === "movements"

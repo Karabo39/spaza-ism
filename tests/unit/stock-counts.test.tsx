@@ -4,7 +4,7 @@ import { StockTakeCounter } from "@/features/stock-take/counter";
 const mock=vi.hoisted(()=>({rpc:vi.fn(),refetch:vi.fn(),online:true}));
 vi.mock("next/navigation",()=>({useRouter:()=>({refresh:vi.fn()})}));
 vi.mock("@/lib/supabase/client",()=>({createClient:()=>({rpc:mock.rpc})}));
-vi.mock("@/lib/store-context",()=>({useStore:()=>({can:()=>true})}));
+vi.mock("@/lib/store-context",()=>({useStore:()=>({store:{id:"store",locationType:"store"},can:()=>true})}));
 vi.mock("@/lib/offline/offline-context",()=>({useOffline:()=>({online:mock.online})}));
 vi.mock("@/components/shell/toolbar-search",()=>({ToolbarSearch:()=>null}));
 vi.mock("@/features/reports/export-button",()=>({ExportButton:()=>null}));

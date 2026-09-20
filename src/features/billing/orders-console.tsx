@@ -1,4 +1,5 @@
 "use client";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { statusLabel } from "./status-label";
 import { PurchaseOrder } from "./purchase-order";
 import { useState } from "react";
@@ -335,55 +336,58 @@ export function OrdersConsole({
       )}
       {canModule("orders_recent") && (
         <>
-          <div className="flex justify-between">
-            <h2 className="font-semibold">Recent orders</h2>
-            {canModule("invoices_view_invoices") && (
-              <Button asChild>
-                <Link href="/invoices">View invoices</Link>
-              </Button>
+          <CollapsibleSection
+            title="Recent Orders"
+            actions={
+              canModule("invoices_view_invoices") ? (
+                <Button asChild>
+                  <Link href="/invoices">View invoices</Link>
+                </Button>
+              ) : undefined
+            }
+          >
+            {error && (
+              <p role="alert" className="text-danger">
+                Could not load orders.
+              </p>
             )}
-          </div>
-          {error && (
-            <p role="alert" className="text-danger">
-              Could not load orders.
-            </p>
-          )}
-          {orders?.length === 200 && (
-            <p className="text-sm text-muted">Latest 200 orders.</p>
-          )}
-          <Table>
-            <THead>
-              <TR>
-                <TH>Reference</TH>
-                <TH>Customer</TH>
-                <TH>Ordered By</TH>
-                <TH>Status</TH>
-                <TH>Created</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {orders?.map((o) => (
-                <TR key={o.id}>
-                  <TD>
-                    <button
-                      className="text-accent text-left"
-                      onClick={() => {
-                        setSelected(o);
-                        setDiscount(Number(o.quoted_discount ?? 0));
-                        setReason("");
-                      }}
-                    >
-                      {o.reference}
-                    </button>
-                  </TD>
-                  <TD>{o.customer_name}</TD>
-                  <TD>{o.ordered_by_name || "Not recorded"}</TD>
-                  <TD>{statusLabel(o.status)}</TD>
-                  <TD>{dateTime(o.created_at)}</TD>
+            {orders?.length === 200 && (
+              <p className="text-sm text-muted">Latest 200 orders.</p>
+            )}
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Reference</TH>
+                  <TH>Customer</TH>
+                  <TH>Ordered By</TH>
+                  <TH>Status</TH>
+                  <TH>Created</TH>
                 </TR>
-              ))}
-            </TBody>
-          </Table>
+              </THead>
+              <TBody>
+                {orders?.map((o) => (
+                  <TR key={o.id}>
+                    <TD>
+                      <button
+                        className="text-accent text-left"
+                        onClick={() => {
+                          setSelected(o);
+                          setDiscount(Number(o.quoted_discount ?? 0));
+                          setReason("");
+                        }}
+                      >
+                        {o.reference}
+                      </button>
+                    </TD>
+                    <TD>{o.customer_name}</TD>
+                    <TD>{o.ordered_by_name || "Not recorded"}</TD>
+                    <TD>{statusLabel(o.status)}</TD>
+                    <TD>{dateTime(o.created_at)}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </CollapsibleSection>
           {current && (
             <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
               <h2 className="font-semibold">

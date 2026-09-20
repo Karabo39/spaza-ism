@@ -84,11 +84,8 @@ export const NAV: NavGroup[] = [
         icon: FileSpreadsheet,
         minRole: "manager",
       },
+      { href: "/reports", label: "Reports", icon: BarChart3 },
     ],
-  },
-  {
-    label: "Insights",
-    items: [{ href: "/reports", label: "Reports", icon: BarChart3 }],
   },
   {
     label: "Administration",
