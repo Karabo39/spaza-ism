@@ -10,6 +10,7 @@ export type CashSession = {
   latest_submission: string | null;
 };
 export type CashSummary = {
+  handover?: { id: string; counted: number };
   sealed?: boolean;
   started_by_name?: string;
   day_activity?: NonNullable<CashSummary["sources"]["activity"]>;
@@ -27,6 +28,7 @@ export type CashSummary = {
   changed_since_count: boolean;
   sources: {
     activity?: {
+      total_sales?: number;
       cash_sales: number;
       card_sales: number;
       credit_issued: number;

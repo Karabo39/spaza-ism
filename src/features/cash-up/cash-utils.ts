@@ -48,6 +48,8 @@ export function cashError(message: string): string {
     INVALID_DENOMINATIONS:
       "Enter whole numbers for the number of notes and coins.",
     REASON_REQUIRED: "Enter a reason before continuing.",
+    SHIFT_BELONGS_TO_OTHER_USER:
+      "This shift belongs to another user. Ask a manager to complete the handover before starting your shift.",
     FORBIDDEN: "You do not have permission to do this at this store.",
     PAYMENT_ALREADY_CLASSIFIED:
       "This payment already has a recorded method. Refresh its details.",

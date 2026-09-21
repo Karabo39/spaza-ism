@@ -25,9 +25,13 @@ export function CashUpConsole() {
   const { store, can, currency } = useStore();
   const { online, pending, failed, syncing, syncNow } = useOffline();
   const [day, setDay] = React.useState(businessDate());
-  const [selection, setSelection] = React.useState<{ store: string; id: string } | null>(null);
+  const [selection, setSelection] = React.useState<{
+    store: string;
+    id: string;
+  } | null>(null);
   const selectedShift = selection?.store === store.id ? selection.id : null;
-  const setSelectedShift = (id: string | null) => setSelection(id ? { store: store.id, id } : null);
+  const setSelectedShift = (id: string | null) =>
+    setSelection(id ? { store: store.id, id } : null);
   const [endingStore, setEndingStore] = React.useState<string | null>(null);
   const ending = endingStore === store.id;
   const setEnding = (value: boolean) => setEndingStore(value ? store.id : null);
@@ -192,13 +196,33 @@ export function CashUpConsole() {
           role="alert"
           className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger"
         >
-          {error || "Could not load cash-up. Reconnect and refresh."}
+          {error || cashError(cash.error?.message ?? "")}
         </p>
       )}
       {cash.isLoading ? (
         <p role="status">Loading cash activity…</p>
       ) : (
-        data && (
+        data &&
+        (data.handover ? (
+          <NextShift
+            previous={data.handover.id}
+            counted={data.handover.counted}
+            disabled={disabled || pending + failed > 0}
+            onStart={(amount, note, request) =>
+              run(
+                () =>
+                  createClient().rpc("start_next_cash_shift", {
+                    p_previous: data.handover!.id,
+                    p_float: amount,
+                    p_note: note,
+                    p_request: request,
+                  }),
+                "New shift started",
+                true,
+              )
+            }
+          />
+        ) : (
           <>
             {data.changed_since_count && session?.status !== "OPEN" && (
               <p
@@ -261,96 +285,139 @@ export function CashUpConsole() {
                 )}
               </section>
             )}
-            {data.sources.activity && (
-              <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                <h2 className="text-lg font-semibold">Shift summary</h2>
-                <p className="mt-1 text-sm text-muted">
-                  Shared drawer at {store.name}. These totals belong to the
-                  selected shift.
-                </p>
-                <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
-                  {[
-                    ["Cash sales", data.sources.activity.cash_sales],
-                    ["Card / EFT sales", data.sources.activity.card_sales],
-                    [
-                      "Credit payments received",
-                      data.sources.activity.credit_payments,
-                    ],
-                    [
-                      "Invoice payments received",
-                      data.sources.activity.invoice_payments,
-                    ],
-                    ["Refunds paid", -data.sources.activity.refunds],
-                    [
-                      "Credit issued (not collected)",
-                      data.sources.activity.credit_issued,
-                    ],
-                  ].map(([label, value]) => (
-                    <div
-                      key={String(label)}
-                      className="flex justify-between gap-3 border-b border-border py-3 text-sm"
-                    >
-                      <dt>{label}</dt>
-                      <dd className="font-medium tabular-nums">
-                        {money(Number(value), currency)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                <div className="mt-4 flex flex-wrap justify-between gap-2">
-                  <span className="font-semibold">Net collected</span>
-                  <strong className="text-2xl tabular-nums">
-                    {money(data.sources.activity.net_collected, currency)}
-                  </strong>
+            <section
+              aria-label="Shift totals"
+              className="grid grid-cols-2 gap-3 xl:grid-cols-4"
+            >
+              {[
+                [
+                  "Cash Sales",
+                  data.sources.activity?.cash_sales ?? data.sources.sales,
+                ],
+                ["Card / EFT Sales", data.sources.activity?.card_sales ?? 0],
+                [
+                  "Total Sales",
+                  data.sources.activity?.total_sales ??
+                    (data.sources.activity?.cash_sales ?? 0) +
+                      (data.sources.activity?.card_sales ?? 0) +
+                      (data.sources.activity?.credit_issued ?? 0),
+                ],
+                ["Cash Expected", data.expected],
+              ].map(([label, value]) => (
+                <div
+                  key={String(label)}
+                  className="rounded-xl border border-border bg-surface p-4 sm:p-5"
+                >
+                  <p className="text-sm text-muted">{label}</p>
+                  <p className="mt-3 break-words text-2xl font-semibold tabular-nums text-foreground xl:text-3xl">
+                    {money(Number(value), currency)}
+                  </p>
                 </div>
-                <p className="mt-2 text-xs text-muted">
-                  Opening cash and unpaid credit are separate. Invoice payments
-                  count only the amount received. Refunds reduce this total.
-                </p>
-              </section>
-            )}
+              ))}
+            </section>
             <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-              <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                <div className="flex items-center gap-2">
-                  <Wallet className="size-5 text-primary-hover" />
-                  <h2 className="font-semibold">Cash expected</h2>
-                </div>
-                <dl className="mt-5 divide-y divide-border text-sm">
-                  {[
-                    ["Opening cash", session?.opening_float ?? 0],
-                    ["Cash checkout sales", data.sources.sales],
-                    ["Cash invoice payments", data.sources.invoices],
-                    ["Cash credit payments", data.sources.credit],
-                    ["Other cash added", data.sources.added],
-                    ["Cash refunds", -data.sources.refunds],
-                    ["Cash removed / banked", -data.sources.removed],
-                  ].map(([label, amount]) => (
-                    <div
-                      className="flex items-center justify-between gap-3 py-3"
-                      key={String(label)}
-                    >
-                      <dt className="text-muted-foreground">{label}</dt>
-                      <dd className="font-medium tabular-nums">
-                        {money(Number(amount), currency)}
-                      </dd>
+              <div className="space-y-4">
+                {data.sources.activity && (
+                  <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                    <h2 className="text-lg font-semibold">Cash Summary</h2>
+                    <p className="mt-1 text-sm text-muted">
+                      Shared drawer at {store.name}. These totals belong to the
+                      selected shift.
+                    </p>
+                    <dl className="mt-4 grid gap-x-8">
+                      {[
+                        ["Cash sales", data.sources.activity.cash_sales],
+                        ["Card / EFT sales", data.sources.activity.card_sales],
+                        [
+                          "Total sales",
+                          data.sources.activity.total_sales ??
+                            data.sources.activity.cash_sales +
+                              data.sources.activity.card_sales +
+                              data.sources.activity.credit_issued,
+                        ],
+                        [
+                          "Credit payments received",
+                          data.sources.activity.credit_payments,
+                        ],
+                        [
+                          "Invoice payments received",
+                          data.sources.activity.invoice_payments,
+                        ],
+                        ["Refunds paid", -data.sources.activity.refunds],
+                        [
+                          "Credit issued (not collected)",
+                          data.sources.activity.credit_issued,
+                        ],
+                      ].map(([label, value]) => (
+                        <div
+                          key={String(label)}
+                          className="flex justify-between gap-3 border-b border-border py-3 text-sm"
+                        >
+                          <dt>{label}</dt>
+                          <dd className="font-medium tabular-nums">
+                            {money(Number(value), currency)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="mt-4 flex flex-wrap justify-between gap-2">
+                      <span className="font-semibold">Net collected</span>
+                      <strong className="text-2xl tabular-nums">
+                        {money(data.sources.activity.net_collected, currency)}
+                      </strong>
                     </div>
-                  ))}
-                </dl>
-                <div className="mt-3 rounded-lg bg-primary/10 p-4">
-                  <p className="text-xs text-muted">
-                    {session
-                      ? "Expected in drawer"
-                      : "Net cash before opening cash"}
+                    <p className="mt-2 text-xs text-muted">
+                      Total sales includes checkout sales and issued invoice
+                      goods. Opening cash and unpaid credit are separate from
+                      net collected. Invoice payments count only the amount
+                      received. Refunds reduce this total.
+                    </p>
+                  </section>
+                )}
+                <details className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                  <summary className="flex cursor-pointer items-center gap-2">
+                    <Wallet className="size-5 text-primary-hover" />
+                    <span className="font-semibold">
+                      Cash expected breakdown
+                    </span>
+                  </summary>
+                  <dl className="mt-5 divide-y divide-border text-sm">
+                    {[
+                      ["Opening cash", session?.opening_float ?? 0],
+                      ["Cash checkout sales", data.sources.sales],
+                      ["Cash invoice payments", data.sources.invoices],
+                      ["Cash credit payments", data.sources.credit],
+                      ["Other cash added", data.sources.added],
+                      ["Cash refunds", -data.sources.refunds],
+                      ["Cash removed / banked", -data.sources.removed],
+                    ].map(([label, amount]) => (
+                      <div
+                        className="flex items-center justify-between gap-3 py-3"
+                        key={String(label)}
+                      >
+                        <dt className="text-muted-foreground">{label}</dt>
+                        <dd className="font-medium tabular-nums">
+                          {money(Number(amount), currency)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <div className="mt-3 rounded-lg bg-primary/10 p-4">
+                    <p className="text-xs text-muted">
+                      {session
+                        ? "Expected in drawer"
+                        : "Net cash before opening cash"}
+                    </p>
+                    <p className="mt-1 text-3xl font-semibold tabular-nums">
+                      {money(data.expected, currency)}
+                    </p>
+                  </div>
+                  <p className="mt-3 text-xs text-muted">
+                    Card/EFT payments and unpaid credit sales are excluded.
+                    Invoice payments are counted once.
                   </p>
-                  <p className="mt-1 text-3xl font-semibold tabular-nums">
-                    {money(data.expected, currency)}
-                  </p>
-                </div>
-                <p className="mt-3 text-xs text-muted">
-                  Card/EFT payments and unpaid credit sales are excluded.
-                  Invoice payments are counted once.
-                </p>
-              </section>
+                </details>
+              </div>
               {!session ? (
                 <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
                   <h2 className="text-lg font-semibold">Start first shift</h2>
@@ -553,18 +620,13 @@ export function CashUpConsole() {
               </section>
             )}
             {can("manager") && !data.sealed && (
-              <details>
-                <summary className="cursor-pointer py-3 font-medium">
-                  Manage opening cash and drawer movements
-                </summary>
-                <CashManagement
-                  key={`${session?.id}:${session?.version}:${day}`}
-                  data={data}
-                  day={day}
-                  disabled={disabled}
-                  run={run}
-                />
-              </details>
+              <CashManagement
+                key={`${session?.id}:${session?.version}:${day}`}
+                data={data}
+                day={day}
+                disabled={disabled}
+                run={run}
+              />
             )}
             {data.movements.length > 0 && (
               <section className="rounded-xl border border-border bg-surface p-5">
@@ -594,9 +656,7 @@ export function CashUpConsole() {
             )}
             {data.history.length > 0 && (
               <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                <h2 className="text-lg font-semibold">
-                  Count and approval history
-                </h2>
+                <h2 className="text-lg font-semibold">Cash Up History</h2>
                 <p className="mt-1 text-sm text-muted">
                   Earlier counts remain recorded when a manager reopens a day.
                 </p>
@@ -650,7 +710,7 @@ export function CashUpConsole() {
               </section>
             )}
           </>
-        )
+        ))
       )}
     </div>
   );
@@ -916,7 +976,9 @@ function ReviewCount({
         </div>
       ) : (
         <p className="mt-5 text-sm text-muted">
-          {data.sealed ? "This approved shift is preserved as read-only history." : "Ask a manager to review this count or reopen it for corrections."}
+          {data.sealed
+            ? "This approved shift is preserved as read-only history."
+            : "Ask a manager to review this count or reopen it for corrections."}
         </p>
       )}
     </section>
@@ -951,7 +1013,7 @@ function CashManagement({
   return (
     <details className="rounded-xl border border-border bg-surface p-5">
       <summary className="cursor-pointer text-sm font-semibold">
-        Manager tools · cash added, banked or opening cash corrections
+        Cash Drawer Management
       </summary>
       <div className="mt-5 grid gap-6 lg:grid-cols-2">
         <form
