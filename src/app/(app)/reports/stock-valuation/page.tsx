@@ -1,3 +1,4 @@
+import { stockQuantity } from "@/lib/format";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -6,7 +7,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/misc";
 import { ExportButton } from "@/features/reports/export-button";
-import { money, qty } from "@/lib/format";
+import { money } from "@/lib/format";
 import { Boxes } from "lucide-react";
 
 export default async function StockValuationReport() {
@@ -37,7 +38,10 @@ export default async function StockValuationReport() {
     name: r.name,
     sku: r.sku,
     category: r.category_name ?? "",
-    quantity: Number(r.quantity),
+    quantity:
+      r.tracking_type === "SALES_ONLY"
+        ? "N/A – Sales Tracked Only"
+        : Number(r.quantity),
     cost: Number(r.cost_price),
     selling: Number(r.selling_price),
     stock_value: Number(r.stock_value),
@@ -129,7 +133,9 @@ export default async function StockValuationReport() {
                     )}
                   </TD>
                   <TD className="text-muted">{r.category_name ?? "—"}</TD>
-                  <TD className="text-right tabular-nums">{qty(r.quantity)}</TD>
+                  <TD className="text-right tabular-nums">
+                    {stockQuantity(r)}
+                  </TD>
                   <TD className="text-right tabular-nums text-muted-foreground">
                     {money(r.cost_price, store.currency)}
                   </TD>

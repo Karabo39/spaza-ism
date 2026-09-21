@@ -26,7 +26,7 @@ export default async function MovementsReport({
   let query = supabase
     .from("stock_movements")
     .select(
-      "id, movement_type, quantity_delta, quantity_before, quantity_after, reason, created_at, products(name,sku)",
+      "id, movement_type, stock_type, quantity_delta, quantity_before, quantity_after, reason, created_at, products(name,sku,bulk_parent_id)",
     )
     .eq("store_id", store.id);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
@@ -37,19 +37,27 @@ export default async function MovementsReport({
   if (error) throw error;
   const rows = (data ?? []) as unknown as {
     id: string;
+    stock_type: string;
     movement_type: keyof typeof MOVEMENT_META;
     quantity_delta: number;
     quantity_before: number;
     quantity_after: number;
     reason: string | null;
     created_at: string;
-    products: { name: string; sku: string | null } | null;
+    products: {
+      name: string;
+      sku: string | null;
+      bulk_parent_id: string | null;
+    } | null;
   }[];
 
   const exportRows = rows.map((m) => ({
     date: dateTime(m.created_at),
     product: m.products?.name ?? "",
     sku: m.products?.sku ?? "",
+    stock_type:
+      m.stock_type ??
+      (m.products?.bulk_parent_id ? "Bulk Stock" : "Individual"),
     type: MOVEMENT_META[m.movement_type]?.label ?? m.movement_type,
     change: m.quantity_delta,
     before: m.quantity_before,
@@ -60,6 +68,7 @@ export default async function MovementsReport({
     { key: "date", label: "Date" },
     { key: "product", label: "Product" },
     { key: "sku", label: "SKU" },
+    { key: "stock_type", label: "Stock Type" },
     { key: "type", label: "Type" },
     { key: "change", label: "Change" },
     { key: "before", label: "Before" },

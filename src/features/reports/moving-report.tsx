@@ -37,16 +37,19 @@ export async function MovingReport({
     name: string;
     sold_qty: number;
     sold_value: number;
-    current_qty: number;
+    current_qty: number | null;
   }[];
 
   const title =
-    direction === "fast" ? "Fast Moving Products" : "Slow Moving Products";
+    direction === "fast" ? "Stock Analysis" : "Slow Moving Products";
   const exportRows = rows.map((r) => ({
     product: r.name,
     sold_qty: Number(r.sold_qty),
     sold_value: r.sold_value,
-    current_qty: Number(r.current_qty),
+    current_qty:
+      r.current_qty === null
+        ? "N/A – Sales Tracked Only"
+        : Number(r.current_qty),
   }));
   const columns = [
     { key: "product", label: "Product" },
@@ -100,7 +103,9 @@ export async function MovingReport({
                     {money(r.sold_value, store.currency)}
                   </TD>
                   <TD className="text-right tabular-nums text-muted-foreground">
-                    {qty(r.current_qty)}
+                    {r.current_qty === null
+                      ? "N/A – Sales Tracked Only"
+                      : qty(r.current_qty)}
                   </TD>
                 </TR>
               ))}

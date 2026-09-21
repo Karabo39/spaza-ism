@@ -31,7 +31,7 @@ export default async function GoodsInReport({
   let query = supabase
     .from("goods_in")
     .select(
-      "id, reference, total_cost, created_at, suppliers(name), goods_in_items(id)",
+      "id, reference, total_cost, created_at, suppliers(name), goods_in_items(id,stock_type,products(bulk_parent_id))",
     )
     .eq("store_id", store.id);
   if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
@@ -46,7 +46,11 @@ export default async function GoodsInReport({
     total_cost: number;
     created_at: string;
     suppliers: { name: string } | null;
-    goods_in_items: { id: string }[];
+    goods_in_items: {
+      id: string;
+      stock_type: string | null;
+      products: { bulk_parent_id: string | null } | null;
+    }[];
   }[];
   const total = rows.reduce((s, r) => s + Number(r.total_cost), 0);
 
@@ -56,12 +60,22 @@ export default async function GoodsInReport({
     supplier: r.suppliers?.name ?? "",
     items: r.goods_in_items?.length ?? 0,
     total_cost: r.total_cost,
+    stock_types: [
+      ...new Set(
+        r.goods_in_items.map(
+          (i) =>
+            i.stock_type ??
+            (i.products?.bulk_parent_id ? "Bulk Stock" : "Individual"),
+        ),
+      ),
+    ].join(", "),
   }));
   const columns = [
     { key: "date", label: "Date" },
     { key: "reference", label: "Reference" },
     { key: "supplier", label: "Supplier" },
     { key: "items", label: "Items" },
+    { key: "stock_types", label: "Stock Type" },
     { key: "total_cost", label: "Total cost" },
   ];
 
@@ -126,6 +140,19 @@ export default async function GoodsInReport({
                   <TD className="text-muted">{r.suppliers?.name ?? "—"}</TD>
                   <TD className="text-right tabular-nums">
                     {r.goods_in_items?.length ?? 0}
+                    <p className="text-xs text-muted">
+                      {[
+                        ...new Set(
+                          r.goods_in_items.map(
+                            (i) =>
+                              i.stock_type ??
+                              (i.products?.bulk_parent_id
+                                ? "Bulk Stock"
+                                : "Individual"),
+                          ),
+                        ),
+                      ].join(", ")}
+                    </p>
                   </TD>
                   <TD className="text-right tabular-nums font-medium">
                     {money(r.total_cost, store.currency)}

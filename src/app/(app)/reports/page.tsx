@@ -8,12 +8,17 @@ import {
   SlidersHorizontal,
   Wallet,
   TrendingUp,
-  TrendingDown,
   CalendarClock,
   ClipboardList,
 } from "lucide-react";
 
 const REPORTS = [
+  {
+    href: "/reports/quantity-vs-sales",
+    label: "Quantity vs Sales Report",
+    desc: "Units sold, returns and revenue by tracking type",
+    icon: TrendingUp,
+  },
   {
     href: "/reports/warehouse-movements",
     label: "Warehouse Stock Movements",
@@ -136,15 +141,9 @@ const REPORTS = [
   },
   {
     href: "/reports/fast-moving",
-    label: "Fast Moving",
+    label: "Stock Analysis",
     desc: "Top sellers by quantity",
     icon: TrendingUp,
-  },
-  {
-    href: "/reports/slow-moving",
-    label: "Slow Moving",
-    desc: "Products barely moving",
-    icon: TrendingDown,
   },
   {
     href: "/expiry",
@@ -165,28 +164,30 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        crumbs={[{ label: "Insights" }, { label: "Reports" }]}
+        crumbs={[{ label: "Catalog" }, { label: "Reports" }]}
         description="Understand your stock, sales and credit without spreadsheets."
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {REPORTS.map((r) => {
-          const Icon = r.icon;
-          return (
-            <Link
-              key={r.href}
-              href={r.href}
-              className="group flex items-start gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-[#2a3a5c] hover:bg-surface-2"
-            >
-              <div className="flex size-9 items-center justify-center rounded-md bg-surface-2 text-accent group-hover:bg-surface">
-                <Icon className="size-4.5 size-5" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">{r.label}</p>
-                <p className="text-xs text-muted">{r.desc}</p>
-              </div>
-            </Link>
-          );
-        })}
+        {[...REPORTS]
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .map((r) => {
+            const Icon = r.icon;
+            return (
+              <Link
+                key={r.href}
+                href={r.href}
+                className="group flex items-start gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-[#2a3a5c] hover:bg-surface-2"
+              >
+                <div className="flex size-9 items-center justify-center rounded-md bg-surface-2 text-accent group-hover:bg-surface">
+                  <Icon className="size-4.5 size-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{r.label}</p>
+                  <p className="text-xs text-muted">{r.desc}</p>
+                </div>
+              </Link>
+            );
+          })}
       </div>
     </>
   );
