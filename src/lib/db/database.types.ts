@@ -4,399 +4,2029 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[]
+  | Json[];
 
 export type Database = {
-  __InternalSupabase: { PostgrestVersion: "14.5" }
+  __InternalSupabase: { PostgrestVersion: "14.5" };
   public: {
     Tables: {
-      warehouse_sync_settings: { Row: {warehouse_id:string;preferred_store_id:string|null;enabled:boolean;configured_by:string;last_run_at:string|null;last_result:Json|null;updated_at:string}; Insert:never;Update:never;Relationships:[] }
-
-      sale_receipts: { Row: { sale_id: string; store_id: string; reference: string; snapshot: Json; request_payload: Json; created_at: string }; Insert: never; Update: never; Relationships: [] }
-      receipt_preferences: { Row: { store_id: string; second_copy: boolean; paper_format: string; delay_seconds: number }; Insert: never; Update: never; Relationships: [] }
-      receipt_print_events: { Row: { id: string; sale_id: string; performed_by: string; action: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
-      employee_invitations: { Row: EmployeeInvitation; Insert: never; Update: never; Relationships: [] }
-      sales_quotes: { Row: SalesQuote; Insert: never; Update: never; Relationships: [] }
-      sales_purchase_orders: { Row: PurchaseOrder; Insert: never; Update: never; Relationships: [] }
-
-      store_return_access: { Row: { membership_id: string; store_id: string; approve: boolean; refund: boolean; version: number; updated_by: string | null }; Insert: never; Update: never; Relationships: [] }
-      cash_ups: { Row: { shift_number: number; previous_shift: string | null; baseline: Json; handover_note: string | null; start_request: string | null; id: string; business_id: string; store_id: string; business_date: string; opening_float: number; status: string; version: number; latest_submission: string | null; created_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
-      module_catalog: { Row: { key: string; label: string; minimum_role: MembershipRole; parent_key: string | null; requires: string[] }; Insert: never; Update: never; Relationships: [] }
-      store_module_access: { Row: { membership_id: string; store_id: string; permissions: Json; version: number; updated_by: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
-      import_batches: { Row: { id: string; business_id: string; store_id: string; kind: string; request_id: string; request_payload: Json; result: Json; performed_by: string; created_at: string }; Insert: never; Update: never; Relationships: [] }
-      product_price_history: { Row: { id: string; business_id: string; store_id: string; product_id: string; product_name: string; old_cost: number | null; new_cost: number | null; old_selling: number | null; new_selling: number | null; reason: string; performed_by: string | null; created_at: string }; Insert: never; Update: never; Relationships: [] }
-      notification_preferences: { Row: { id: string; business_id: string; store_id: string; user_id: string; kind: string; enabled: boolean; delivery_hour: number; last_sent_at: string | null; updated_at: string }; Insert: never; Update: never; Relationships: [] }
-      notification_deliveries: { Row: { id: string; preference_id: string; period: string; state: string; recipient: string; payload: Json; attempts: number; created_at: string; claimed_at: string; completed_at: string | null; provider_id: string | null; error: string | null }; Insert: never; Update: never; Relationships: [] }
-      store_credit_allocations: { Row: { id: string; return_id: string; invoice_id: string; business_id: string; store_id: string; amount: number; payment_entry_id: string; performed_by: string; created_at: string; request_id: string; request_payload: Json }; Insert: never; Update: never; Relationships: [] }
-      billing_settings: { Row: BillingSettings; Insert: never; Update: never; Relationships: [] }
-      sales_orders: { Row: SalesOrder; Insert: never; Update: never; Relationships: [] }
-      sales_order_items: { Row: SalesOrderItem; Insert: never; Update: never; Relationships: [] }
-      sales_invoices: { Row: SalesInvoice; Insert: never; Update: never; Relationships: [] }
-      sales_invoice_items: { Row: SalesInvoiceItem; Insert: never; Update: never; Relationships: [] }
-      invoice_entries: { Row: InvoiceEntry; Insert: never; Update: never; Relationships: [] }
-      goods_returns: { Row: GoodsReturn; Insert: never; Update: never; Relationships: [] }
-      goods_return_items: { Row: GoodsReturnItem; Insert: never; Update: never; Relationships: [{ foreignKeyName: "goods_return_items_return_id_fkey"; columns: ["return_id"]; isOneToOne: false; referencedRelation: "goods_returns"; referencedColumns: ["id"] }] }
-      return_dispositions: { Row: ReturnDisposition; Insert: never; Update: never; Relationships: [] }
-      customer_refunds: { Row: CustomerRefund; Insert: never; Update: never; Relationships: [] }
-      bulk_conversions: {
-        Row: { id: string; business_id: string; store_id: string; pack_product_id: string; unit_product_id: string; pack_name: string; unit_name: string; units_per_pack: number; updated_by: string; updated_at: string }
-        Insert: never
-        Update: never
-        Relationships: []
-      }
-      bulk_unpackings: {
-        Row: { id: string; reference: string; business_id: string; store_id: string; conversion_id: string; pack_product_id: string; unit_product_id: string; pack_name: string; unit_name: string; units_per_pack: number; packs: number; units: number; reason: string; performed_by: string; created_at: string; request_id: string }
-        Insert: never
-        Update: never
-        Relationships: []
-      }
-      stock_transfers: {
-        Row: { id: string; business_id: string; source_id: string; destination_id: string; reference: string; status: TransferStatus; note: string | null; cancellation_reason: string | null; created_by: string; dispatched_by: string | null; received_by: string | null; created_at: string; submitted_at: string | null; dispatched_at: string | null; received_at: string | null; cancelled_at: string | null; request_id: string; request_payload: Json }
-        Insert: never
-        Update: never
-        Relationships: []
-      }
-      stock_transfer_items: {
-        Row: { id: string; transfer_id: string; source_product_id: string; destination_product_id: string; source_name: string; destination_name: string; quantity: number; unit_cost: number; batches: Json }
-        Insert: never
-        Update: never
-        Relationships: []
-      }
-      audit_logs: {
-        Row: { action: string; actor_id: string | null; after_data: Json | null; before_data: Json | null; business_id: string | null; created_at: string; entity_id: string | null; entity_type: string | null; id: string; store_id: string | null }
-        Insert: { action: string; actor_id?: string | null; after_data?: Json | null; before_data?: Json | null; business_id?: string | null; created_at?: string; entity_id?: string | null; entity_type?: string | null; id?: string; store_id?: string | null }
-        Update: Partial<Database["public"]["Tables"]["audit_logs"]["Insert"]>
-        Relationships: []
-      }
-      businesses: {
-        Row: { created_at: string; created_by: string | null; currency: string; id: string; name: string; slug: string | null; updated_at: string; logo_path: string | null }
-        Insert: { created_at?: string; created_by?: string | null; currency?: string; id?: string; name: string; slug?: string | null; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["businesses"]["Insert"]>
-        Relationships: []
-      }
-      categories: {
-        Row: { business_id: string; created_at: string; id: string; name: string; updated_at: string }
-        Insert: { business_id: string; created_at?: string; id?: string; name: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>
-        Relationships: []
-      }
-      credit_accounts: {
-        Row: { balance: number; business_id: string; created_at: string; credit_limit: number; customer_id: string; id: string; store_id: string; updated_at: string }
-        Insert: { balance?: number; business_id: string; created_at?: string; credit_limit?: number; customer_id: string; id?: string; store_id: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["credit_accounts"]["Insert"]>
-        Relationships: []
-      }
-      credit_transactions: {
-        Row: { amount: number; balance_after: number; business_id: string; created_at: string; credit_account_id: string; id: string; note: string | null; performed_by: string | null; reference_id: string | null; reference_table: string | null; store_id: string; txn_type: CreditTxnType }
-        Insert: { amount: number; balance_after: number; business_id: string; created_at?: string; credit_account_id: string; id?: string; note?: string | null; performed_by?: string | null; reference_id?: string | null; reference_table?: string | null; store_id: string; txn_type: CreditTxnType }
-        Update: Partial<Database["public"]["Tables"]["credit_transactions"]["Insert"]>
-        Relationships: []
-      }
-      customers: {
-        Row: { is_once_off: boolean; address: string | null; business_id: string; created_at: string; email: string | null; id: string; is_active: boolean; name: string; notes: string | null; phone: string | null; store_id: string; updated_at: string }
-        Insert: { business_id: string; created_at?: string; email?: string | null; id?: string; is_active?: boolean; name: string; notes?: string | null; phone?: string | null; store_id: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>
-        Relationships: []
-      }
-      goods_in: {
-        Row: { business_id: string; created_at: string; id: string; note: string | null; performed_by: string | null; reference: string | null; store_id: string; supplier_id: string | null; total_cost: number }
-        Insert: { business_id: string; created_at?: string; id?: string; note?: string | null; performed_by?: string | null; reference?: string | null; store_id: string; supplier_id?: string | null; total_cost?: number }
-        Update: Partial<Database["public"]["Tables"]["goods_in"]["Insert"]>
-        Relationships: []
-      }
-      goods_in_items: {
-        Row: { batch_ref: string | null; expiry_date: string | null; goods_in_id: string; id: string; line_total: number; product_id: string; quantity: number; unit_cost: number }
-        Insert: { batch_ref?: string | null; expiry_date?: string | null; goods_in_id: string; id?: string; line_total?: number; product_id: string; quantity: number; unit_cost?: number }
-        Update: Partial<Database["public"]["Tables"]["goods_in_items"]["Insert"]>
-        Relationships: []
-      }
-      goods_out: {
-        Row: { authorized_by: string | null; business_id: string; created_at: string; credit_override: boolean; customer_id: string | null; id: string; note: string | null; performed_by: string | null; sale_type: SaleType; store_id: string; total_amount: number; payment_reference: string | null; request_id: string | null; request_payload: Json | null }
-        Insert: { authorized_by?: string | null; business_id: string; created_at?: string; credit_override?: boolean; customer_id?: string | null; id?: string; note?: string | null; performed_by?: string | null; sale_type: SaleType; store_id: string; total_amount?: number }
-        Update: Partial<Database["public"]["Tables"]["goods_out"]["Insert"]>
-        Relationships: []
-      }
-      goods_out_items: {
-        Row: { goods_out_id: string; id: string; line_total: number; product_id: string; quantity: number; unit_price: number }
-        Insert: { goods_out_id: string; id?: string; line_total?: number; product_id: string; quantity: number; unit_price: number }
-        Update: Partial<Database["public"]["Tables"]["goods_out_items"]["Insert"]>
-        Relationships: []
-      }
-      memberships: {
-        Row: { business_id: string; created_at: string; id: string; is_active: boolean; role: MembershipRole; updated_at: string; user_id: string }
-        Insert: { business_id: string; created_at?: string; id?: string; is_active?: boolean; role?: MembershipRole; updated_at?: string; user_id: string }
-        Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>
-        Relationships: []
-      }
-      price_history: {
-        Row: { changed_at: string; changed_by: string | null; id: string; new_cost: number | null; new_selling: number | null; old_cost: number | null; old_selling: number | null; product_id: string; source: string | null; store_id: string }
-        Insert: { changed_at?: string; changed_by?: string | null; id?: string; new_cost?: number | null; new_selling?: number | null; old_cost?: number | null; old_selling?: number | null; product_id: string; source?: string | null; store_id: string }
-        Update: Partial<Database["public"]["Tables"]["price_history"]["Insert"]>
-        Relationships: []
-      }
-      product_barcodes: {
-        Row: { barcode: string; created_at: string; id: string; is_active: boolean; product_id: string; store_id: string }
-        Insert: { barcode: string; created_at?: string; id?: string; is_active?: boolean; product_id: string; store_id: string }
-        Update: Partial<Database["public"]["Tables"]["product_barcodes"]["Insert"]>
-        Relationships: []
-      }
-      products: {
-        Row: { description: string | null; business_id: string; category_id: string | null; cost_price: number; created_at: string; created_by: string | null; default_supplier_id: string | null; id: string; is_active: boolean; min_stock_level: number; name: string; reorder_level: number; selling_price: number; sku: string | null; store_id: string; track_expiry: boolean; unit: string; updated_at: string }
-        Insert: { description?: string | null; business_id: string; category_id?: string | null; cost_price?: number; created_at?: string; created_by?: string | null; default_supplier_id?: string | null; id?: string; is_active?: boolean; min_stock_level?: number; name: string; reorder_level?: number; selling_price?: number; sku?: string | null; store_id: string; track_expiry?: boolean; unit?: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>
-        Relationships: []
-      }
-      profiles: {
-        Row: { first_name: string | null; surname: string | null; created_at: string; full_name: string | null; id: string; phone: string | null; updated_at: string }
-        Insert: { created_at?: string; full_name?: string | null; id: string; phone?: string | null; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>
-        Relationships: []
-      }
-      stock: {
-        Row: { id: string; product_id: string; quantity: number; store_id: string; updated_at: string }
-        Insert: { id?: string; product_id: string; quantity?: number; store_id: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["stock"]["Insert"]>
-        Relationships: []
-      }
-      stock_adjustments: {
-        Row: { business_id: string; created_at: string; delta: number; id: string; note: string | null; performed_by: string | null; product_id: string; quantity_after: number; quantity_before: number; reason: AdjustmentReason; store_id: string }
-        Insert: { business_id: string; created_at?: string; delta: number; id?: string; note?: string | null; performed_by?: string | null; product_id: string; quantity_after: number; quantity_before: number; reason: AdjustmentReason; store_id: string }
-        Update: Partial<Database["public"]["Tables"]["stock_adjustments"]["Insert"]>
-        Relationships: []
-      }
-      stock_batches: {
-        Row: { batch_ref: string | null; created_at: string; expiry_date: string | null; id: string; product_id: string; quantity: number; store_id: string; updated_at: string }
-        Insert: { batch_ref?: string | null; created_at?: string; expiry_date?: string | null; id?: string; product_id: string; quantity?: number; store_id: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["stock_batches"]["Insert"]>
-        Relationships: []
-      }
-      stock_movements: {
-        Row: { business_id: string; created_at: string; id: string; movement_type: MovementType; performed_by: string | null; product_id: string; quantity_after: number; quantity_before: number; quantity_delta: number; reason: string | null; reference_id: string | null; reference_table: string | null; store_id: string; unit_cost: number | null }
-        Insert: { business_id: string; created_at?: string; id?: string; movement_type: MovementType; performed_by?: string | null; product_id: string; quantity_after: number; quantity_before: number; quantity_delta: number; reason?: string | null; reference_id?: string | null; reference_table?: string | null; store_id: string; unit_cost?: number | null }
-        Update: Partial<Database["public"]["Tables"]["stock_movements"]["Insert"]>
-        Relationships: []
-      }
-      stock_take_items: {
-        Row: { counted: boolean; counted_qty: number | null; id: string; product_id: string; stock_take_id: string; system_qty: number; variance: number | null; counted_expiry: string | null; counted_at: string | null; counted_by: string | null }
-        Insert: { counted?: boolean; counted_qty?: number | null; id?: string; product_id: string; stock_take_id: string; system_qty?: number; variance?: number | null }
-        Update: Partial<Database["public"]["Tables"]["stock_take_items"]["Insert"]>
-        Relationships: []
-      }
-      stock_takes: {
-        Row: { approved_by: string | null; business_id: string; completed_at: string | null; created_at: string; id: string; note: string | null; started_by: string | null; status: StockTakeStatus; store_id: string; updated_at: string }
-        Insert: { approved_by?: string | null; business_id: string; completed_at?: string | null; created_at?: string; id?: string; note?: string | null; started_by?: string | null; status?: StockTakeStatus; store_id: string; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["stock_takes"]["Insert"]>
-        Relationships: []
-      }
-      store_memberships: {
-        Row: { membership_id: string; store_id: string; business_id: string; assigned_by: string | null; created_at: string }
-        Insert: { membership_id: string; store_id: string; business_id: string; assigned_by?: string | null; created_at?: string }
-        Update: Partial<Database["public"]["Tables"]["store_memberships"]["Insert"]>
-        Relationships: []
-      }
-      stores: {
-        Row: { currency: string; address: string | null; business_id: string; code: string | null; created_at: string; id: string; is_active: boolean; name: string; timezone: string; updated_at: string; location_type: LocationType }
-        Insert: { currency?: string; address?: string | null; business_id: string; code?: string | null; created_at?: string; id?: string; is_active?: boolean; name: string; timezone?: string; updated_at?: string; location_type?: LocationType }
-        Update: Partial<Database["public"]["Tables"]["stores"]["Insert"]>
-        Relationships: []
-      }
-      supplier_invoices: {
-        Row: { amount: number; business_id: string; created_at: string; goods_in_id: string | null; id: string; invoice_date: string | null; reference: string | null; store_id: string; supplier_id: string | null }
-        Insert: { amount?: number; business_id: string; created_at?: string; goods_in_id?: string | null; id?: string; invoice_date?: string | null; reference?: string | null; store_id: string; supplier_id?: string | null }
-        Update: Partial<Database["public"]["Tables"]["supplier_invoices"]["Insert"]>
-        Relationships: []
-      }
-      suppliers: {
-        Row: { address: string | null; business_id: string; contact_name: string | null; created_at: string; email: string | null; id: string; is_active: boolean; name: string; notes: string | null; phone: string | null; updated_at: string }
-        Insert: { address?: string | null; business_id: string; contact_name?: string | null; created_at?: string; email?: string | null; id?: string; is_active?: boolean; name: string; notes?: string | null; phone?: string | null; updated_at?: string }
-        Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>
-        Relationships: []
-      }
-    }
-    Views: {
-      v_product_catalog: { Row: ProductStock & {barcodes: string; search_text: string; nearest_expiry: string | null; expired_quantity: number; undated_quantity: number; sellable_quantity: number}; Relationships: [] }
-      v_return_report: { Row: { id: string; business_id: string; store_id: string; reference: string; invoice_id: string | null; sale_id: string | null; customer_id: string | null; status: string; reason: string; inspection: string; created_at: string; amount: number; items: string; quantity: number; inventory_actions: string; refunded: number; allocated_credit: number }; Relationships: [] }
-      v_stock_take_variance: { Row: { id: string; stock_take_id: string; business_id: string; store_id: string; created_at: string; status: string; product_name: string; product_id: string; system_qty: number; counted_qty: number | null; variance: number | null; counted: boolean; counted_at: string | null; counted_expiry: string | null; counted_by: string | null }; Relationships: [] }
-      v_payment_activity: { Row: { id: string; store_id: string; business_id: string; created_at: string; method: string; amount: number; reference: string; payment_reference: string | null; source: string; document_id: string }; Relationships: [] }
-      v_returnable_items: { Row: { source_type: string; store_id: string; source_id: string; item_id: string; product_name: string; quantity: number; charged: number; returned_quantity: number; remaining_quantity: number }; Relationships: [] }
-      v_invoice_balances: { Row: InvoiceBalance; Relationships: [] }
-      v_audit_activity: { Row: Database["public"]["Tables"]["audit_logs"]["Row"] & { actor_name: string | null; location_name: string | null; stock_items: string }; Relationships: [] }
-      v_invoice_payment_report: { Row: InvoiceBalance & { payment_methods: string[] }; Relationships: [] }
-      v_product_stock: {
+      warehouse_sync_settings: {
         Row: {
-          id: string; business_id: string; store_id: string; name: string; sku: string | null; unit: string;
-          cost_price: number; selling_price: number; min_stock_level: number; reorder_level: number;
-          track_expiry: boolean; is_active: boolean; category_id: string | null; default_supplier_id: string | null;
-          quantity: number; stock_value: number; retail_value: number;
-          category_name: string | null; supplier_name: string | null;
-          stock_status: "out" | "low" | "reorder" | "ok"; suggested_reorder: number;
-        }
-        Relationships: []
-      }
+          warehouse_id: string;
+          preferred_store_id: string | null;
+          enabled: boolean;
+          configured_by: string;
+          last_run_at: string | null;
+          last_result: Json | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+
+      sale_receipts: {
+        Row: {
+          sale_id: string;
+          store_id: string;
+          reference: string;
+          snapshot: Json;
+          request_payload: Json;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      receipt_preferences: {
+        Row: {
+          store_id: string;
+          second_copy: boolean;
+          paper_format: string;
+          delay_seconds: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      receipt_print_events: {
+        Row: {
+          id: string;
+          sale_id: string;
+          performed_by: string;
+          action: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      employee_invitations: {
+        Row: EmployeeInvitation;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      sales_quotes: {
+        Row: SalesQuote;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      sales_purchase_orders: {
+        Row: PurchaseOrder;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+
+      store_return_access: {
+        Row: {
+          membership_id: string;
+          store_id: string;
+          approve: boolean;
+          refund: boolean;
+          version: number;
+          updated_by: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      cash_ups: {
+        Row: {
+          shift_number: number;
+          previous_shift: string | null;
+          baseline: Json;
+          handover_note: string | null;
+          start_request: string | null;
+          id: string;
+          business_id: string;
+          store_id: string;
+          business_date: string;
+          opening_float: number;
+          status: string;
+          version: number;
+          latest_submission: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      module_catalog: {
+        Row: {
+          key: string;
+          label: string;
+          minimum_role: MembershipRole;
+          parent_key: string | null;
+          requires: string[];
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      store_module_access: {
+        Row: {
+          membership_id: string;
+          store_id: string;
+          permissions: Json;
+          version: number;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      import_batches: {
+        Row: {
+          id: string;
+          business_id: string;
+          store_id: string;
+          kind: string;
+          request_id: string;
+          request_payload: Json;
+          result: Json;
+          performed_by: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      product_price_history: {
+        Row: {
+          id: string;
+          business_id: string;
+          store_id: string;
+          product_id: string;
+          product_name: string;
+          old_cost: number | null;
+          new_cost: number | null;
+          old_selling: number | null;
+          new_selling: number | null;
+          reason: string;
+          performed_by: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      notification_preferences: {
+        Row: {
+          id: string;
+          business_id: string;
+          store_id: string;
+          user_id: string;
+          kind: string;
+          enabled: boolean;
+          delivery_hour: number;
+          last_sent_at: string | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      notification_deliveries: {
+        Row: {
+          id: string;
+          preference_id: string;
+          period: string;
+          state: string;
+          recipient: string;
+          payload: Json;
+          attempts: number;
+          created_at: string;
+          claimed_at: string;
+          completed_at: string | null;
+          provider_id: string | null;
+          error: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      store_credit_allocations: {
+        Row: {
+          id: string;
+          return_id: string;
+          invoice_id: string;
+          business_id: string;
+          store_id: string;
+          amount: number;
+          payment_entry_id: string;
+          performed_by: string;
+          created_at: string;
+          request_id: string;
+          request_payload: Json;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      billing_settings: {
+        Row: BillingSettings;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      sales_orders: {
+        Row: SalesOrder;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      sales_order_items: {
+        Row: SalesOrderItem;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      sales_invoices: {
+        Row: SalesInvoice;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      sales_invoice_items: {
+        Row: SalesInvoiceItem;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      invoice_entries: {
+        Row: InvoiceEntry;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      goods_returns: {
+        Row: GoodsReturn;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      goods_return_items: {
+        Row: GoodsReturnItem;
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "goods_return_items_return_id_fkey";
+            columns: ["return_id"];
+            isOneToOne: false;
+            referencedRelation: "goods_returns";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      return_dispositions: {
+        Row: ReturnDisposition;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      customer_refunds: {
+        Row: CustomerRefund;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      bulk_conversions: {
+        Row: {
+          id: string;
+          business_id: string;
+          store_id: string;
+          pack_product_id: string;
+          unit_product_id: string;
+          pack_name: string;
+          unit_name: string;
+          units_per_pack: number;
+          updated_by: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      bulk_unpackings: {
+        Row: {
+          id: string;
+          reference: string;
+          business_id: string;
+          store_id: string;
+          conversion_id: string;
+          pack_product_id: string;
+          unit_product_id: string;
+          pack_name: string;
+          unit_name: string;
+          units_per_pack: number;
+          packs: number;
+          units: number;
+          reason: string;
+          performed_by: string;
+          created_at: string;
+          request_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      stock_transfers: {
+        Row: {
+          id: string;
+          business_id: string;
+          source_id: string;
+          destination_id: string;
+          reference: string;
+          status: TransferStatus;
+          note: string | null;
+          cancellation_reason: string | null;
+          created_by: string;
+          dispatched_by: string | null;
+          received_by: string | null;
+          created_at: string;
+          submitted_at: string | null;
+          dispatched_at: string | null;
+          received_at: string | null;
+          cancelled_at: string | null;
+          request_id: string;
+          request_payload: Json;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      stock_transfer_items: {
+        Row: {
+          id: string;
+          transfer_id: string;
+          source_product_id: string;
+          destination_product_id: string;
+          source_name: string;
+          destination_name: string;
+          quantity: number;
+          unit_cost: number;
+          batches: Json;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          after_data: Json | null;
+          before_data: Json | null;
+          business_id: string | null;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string | null;
+          id: string;
+          store_id: string | null;
+        };
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          after_data?: Json | null;
+          before_data?: Json | null;
+          business_id?: string | null;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          id?: string;
+          store_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["audit_logs"]["Insert"]>;
+        Relationships: [];
+      };
+      businesses: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          name: string;
+          slug: string | null;
+          updated_at: string;
+          logo_path: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          name: string;
+          slug?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["businesses"]["Insert"]>;
+        Relationships: [];
+      };
+      categories: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
+        Relationships: [];
+      };
+      credit_accounts: {
+        Row: {
+          balance: number;
+          business_id: string;
+          created_at: string;
+          credit_limit: number;
+          customer_id: string;
+          id: string;
+          store_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          balance?: number;
+          business_id: string;
+          created_at?: string;
+          credit_limit?: number;
+          customer_id: string;
+          id?: string;
+          store_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["credit_accounts"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      credit_transactions: {
+        Row: {
+          amount: number;
+          balance_after: number;
+          business_id: string;
+          created_at: string;
+          credit_account_id: string;
+          id: string;
+          note: string | null;
+          performed_by: string | null;
+          reference_id: string | null;
+          reference_table: string | null;
+          store_id: string;
+          txn_type: CreditTxnType;
+        };
+        Insert: {
+          amount: number;
+          balance_after: number;
+          business_id: string;
+          created_at?: string;
+          credit_account_id: string;
+          id?: string;
+          note?: string | null;
+          performed_by?: string | null;
+          reference_id?: string | null;
+          reference_table?: string | null;
+          store_id: string;
+          txn_type: CreditTxnType;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["credit_transactions"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      customers: {
+        Row: {
+          is_once_off: boolean;
+          address: string | null;
+          business_id: string;
+          created_at: string;
+          email: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          store_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          store_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
+        Relationships: [];
+      };
+      goods_in: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          id: string;
+          note: string | null;
+          performed_by: string | null;
+          reference: string | null;
+          store_id: string;
+          supplier_id: string | null;
+          total_cost: number;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          performed_by?: string | null;
+          reference?: string | null;
+          store_id: string;
+          supplier_id?: string | null;
+          total_cost?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["goods_in"]["Insert"]>;
+        Relationships: [];
+      };
+      goods_in_items: {
+        Row: {
+          batch_ref: string | null;
+          expiry_date: string | null;
+          goods_in_id: string;
+          id: string;
+          line_total: number;
+          product_id: string;
+          quantity: number;
+          unit_cost: number;
+        };
+        Insert: {
+          batch_ref?: string | null;
+          expiry_date?: string | null;
+          goods_in_id: string;
+          id?: string;
+          line_total?: number;
+          product_id: string;
+          quantity: number;
+          unit_cost?: number;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["goods_in_items"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      goods_out: {
+        Row: {
+          authorized_by: string | null;
+          business_id: string;
+          created_at: string;
+          credit_override: boolean;
+          customer_id: string | null;
+          id: string;
+          note: string | null;
+          performed_by: string | null;
+          sale_type: SaleType;
+          store_id: string;
+          total_amount: number;
+          payment_reference: string | null;
+          request_id: string | null;
+          request_payload: Json | null;
+        };
+        Insert: {
+          authorized_by?: string | null;
+          business_id: string;
+          created_at?: string;
+          credit_override?: boolean;
+          customer_id?: string | null;
+          id?: string;
+          note?: string | null;
+          performed_by?: string | null;
+          sale_type: SaleType;
+          store_id: string;
+          total_amount?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["goods_out"]["Insert"]>;
+        Relationships: [];
+      };
+      goods_out_items: {
+        Row: {
+          goods_out_id: string;
+          id: string;
+          line_total: number;
+          product_id: string;
+          quantity: number;
+          unit_price: number;
+        };
+        Insert: {
+          goods_out_id: string;
+          id?: string;
+          line_total?: number;
+          product_id: string;
+          quantity: number;
+          unit_price: number;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["goods_out_items"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      memberships: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          role: MembershipRole;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          role?: MembershipRole;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["memberships"]["Insert"]>;
+        Relationships: [];
+      };
+      price_history: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          id: string;
+          new_cost: number | null;
+          new_selling: number | null;
+          old_cost: number | null;
+          old_selling: number | null;
+          product_id: string;
+          source: string | null;
+          store_id: string;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          new_cost?: number | null;
+          new_selling?: number | null;
+          old_cost?: number | null;
+          old_selling?: number | null;
+          product_id: string;
+          source?: string | null;
+          store_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["price_history"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      product_barcodes: {
+        Row: {
+          barcode: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          product_id: string;
+          store_id: string;
+        };
+        Insert: {
+          barcode: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          product_id: string;
+          store_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["product_barcodes"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      products: {
+        Row: {
+          description: string | null;
+          business_id: string;
+          category_id: string | null;
+          cost_price: number;
+          created_at: string;
+          created_by: string | null;
+          default_supplier_id: string | null;
+          id: string;
+          is_active: boolean;
+          min_stock_level: number;
+          name: string;
+          reorder_level: number;
+          selling_price: number;
+          sku: string | null;
+          store_id: string;
+          track_expiry: boolean;
+          unit: string;
+          updated_at: string;
+        };
+        Insert: {
+          description?: string | null;
+          business_id: string;
+          category_id?: string | null;
+          cost_price?: number;
+          created_at?: string;
+          created_by?: string | null;
+          default_supplier_id?: string | null;
+          id?: string;
+          is_active?: boolean;
+          min_stock_level?: number;
+          name: string;
+          reorder_level?: number;
+          selling_price?: number;
+          sku?: string | null;
+          store_id: string;
+          track_expiry?: boolean;
+          unit?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          first_name: string | null;
+          surname: string | null;
+          created_at: string;
+          full_name: string | null;
+          id: string;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          full_name?: string | null;
+          id: string;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
+      };
+      stock: {
+        Row: {
+          id: string;
+          product_id: string;
+          quantity: number;
+          store_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          quantity?: number;
+          store_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["stock"]["Insert"]>;
+        Relationships: [];
+      };
+      stock_adjustments: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          delta: number;
+          id: string;
+          note: string | null;
+          performed_by: string | null;
+          product_id: string;
+          quantity_after: number;
+          quantity_before: number;
+          reason: AdjustmentReason;
+          store_id: string;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          delta: number;
+          id?: string;
+          note?: string | null;
+          performed_by?: string | null;
+          product_id: string;
+          quantity_after: number;
+          quantity_before: number;
+          reason: AdjustmentReason;
+          store_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["stock_adjustments"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      stock_batches: {
+        Row: {
+          batch_ref: string | null;
+          created_at: string;
+          expiry_date: string | null;
+          id: string;
+          product_id: string;
+          quantity: number;
+          store_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          batch_ref?: string | null;
+          created_at?: string;
+          expiry_date?: string | null;
+          id?: string;
+          product_id: string;
+          quantity?: number;
+          store_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["stock_batches"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      stock_movements: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          id: string;
+          movement_type: MovementType;
+          performed_by: string | null;
+          product_id: string;
+          quantity_after: number;
+          quantity_before: number;
+          quantity_delta: number;
+          reason: string | null;
+          reference_id: string | null;
+          reference_table: string | null;
+          store_id: string;
+          unit_cost: number | null;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          movement_type: MovementType;
+          performed_by?: string | null;
+          product_id: string;
+          quantity_after: number;
+          quantity_before: number;
+          quantity_delta: number;
+          reason?: string | null;
+          reference_id?: string | null;
+          reference_table?: string | null;
+          store_id: string;
+          unit_cost?: number | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["stock_movements"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      stock_take_items: {
+        Row: {
+          counted: boolean;
+          counted_qty: number | null;
+          id: string;
+          product_id: string;
+          stock_take_id: string;
+          system_qty: number;
+          variance: number | null;
+          counted_expiry: string | null;
+          counted_at: string | null;
+          counted_by: string | null;
+        };
+        Insert: {
+          counted?: boolean;
+          counted_qty?: number | null;
+          id?: string;
+          product_id: string;
+          stock_take_id: string;
+          system_qty?: number;
+          variance?: number | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["stock_take_items"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      stock_takes: {
+        Row: {
+          approved_by: string | null;
+          business_id: string;
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          note: string | null;
+          started_by: string | null;
+          status: StockTakeStatus;
+          store_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          approved_by?: string | null;
+          business_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          started_by?: string | null;
+          status?: StockTakeStatus;
+          store_id: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["stock_takes"]["Insert"]>;
+        Relationships: [];
+      };
+      store_memberships: {
+        Row: {
+          membership_id: string;
+          store_id: string;
+          business_id: string;
+          assigned_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          membership_id: string;
+          store_id: string;
+          business_id: string;
+          assigned_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["store_memberships"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      stores: {
+        Row: {
+          currency: string;
+          address: string | null;
+          business_id: string;
+          code: string | null;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          timezone: string;
+          updated_at: string;
+          location_type: LocationType;
+        };
+        Insert: {
+          currency?: string;
+          address?: string | null;
+          business_id: string;
+          code?: string | null;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          timezone?: string;
+          updated_at?: string;
+          location_type?: LocationType;
+        };
+        Update: Partial<Database["public"]["Tables"]["stores"]["Insert"]>;
+        Relationships: [];
+      };
+      supplier_invoices: {
+        Row: {
+          amount: number;
+          business_id: string;
+          created_at: string;
+          goods_in_id: string | null;
+          id: string;
+          invoice_date: string | null;
+          reference: string | null;
+          store_id: string;
+          supplier_id: string | null;
+        };
+        Insert: {
+          amount?: number;
+          business_id: string;
+          created_at?: string;
+          goods_in_id?: string | null;
+          id?: string;
+          invoice_date?: string | null;
+          reference?: string | null;
+          store_id: string;
+          supplier_id?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["supplier_invoices"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      suppliers: {
+        Row: {
+          address: string | null;
+          business_id: string;
+          contact_name: string | null;
+          created_at: string;
+          email: string | null;
+          id: string;
+          is_active: boolean;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          address?: string | null;
+          business_id: string;
+          contact_name?: string | null;
+          created_at?: string;
+          email?: string | null;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
+        Relationships: [];
+      };
+    };
+    Views: {
+      v_product_catalog: {
+        Row: ProductStock & {
+          barcodes: string;
+          search_text: string;
+          nearest_expiry: string | null;
+          expired_quantity: number;
+          undated_quantity: number;
+          sellable_quantity: number;
+        };
+        Relationships: [];
+      };
+      v_return_report: {
+        Row: {
+          id: string;
+          business_id: string;
+          store_id: string;
+          reference: string;
+          invoice_id: string | null;
+          sale_id: string | null;
+          customer_id: string | null;
+          status: string;
+          reason: string;
+          inspection: string;
+          created_at: string;
+          amount: number;
+          items: string;
+          quantity: number;
+          inventory_actions: string;
+          refunded: number;
+          allocated_credit: number;
+        };
+        Relationships: [];
+      };
+      v_stock_take_variance: {
+        Row: {
+          id: string;
+          stock_take_id: string;
+          business_id: string;
+          store_id: string;
+          created_at: string;
+          status: string;
+          product_name: string;
+          product_id: string;
+          system_qty: number;
+          counted_qty: number | null;
+          variance: number | null;
+          counted: boolean;
+          counted_at: string | null;
+          counted_expiry: string | null;
+          counted_by: string | null;
+        };
+        Relationships: [];
+      };
+      v_payment_activity: {
+        Row: {
+          id: string;
+          store_id: string;
+          business_id: string;
+          created_at: string;
+          method: string;
+          amount: number;
+          reference: string;
+          payment_reference: string | null;
+          source: string;
+          document_id: string;
+        };
+        Relationships: [];
+      };
+      v_returnable_items: {
+        Row: {
+          source_type: string;
+          store_id: string;
+          source_id: string;
+          item_id: string;
+          product_name: string;
+          quantity: number;
+          charged: number;
+          returned_quantity: number;
+          remaining_quantity: number;
+        };
+        Relationships: [];
+      };
+      v_invoice_balances: { Row: InvoiceBalance; Relationships: [] };
+      v_audit_activity: {
+        Row: Database["public"]["Tables"]["audit_logs"]["Row"] & {
+          actor_name: string | null;
+          location_name: string | null;
+          stock_items: string;
+        };
+        Relationships: [];
+      };
+      v_invoice_payment_report: {
+        Row: InvoiceBalance & { payment_methods: string[] };
+        Relationships: [];
+      };
+      v_product_stock: { Row: ProductStock; Relationships: [] };
       v_credit_customers: {
         Row: {
-          customer_id: string; business_id: string; store_id: string; name: string;
-          phone: string | null; email: string | null; is_active: boolean;
-          credit_account_id: string; credit_limit: number; balance: number;
-          available_credit: number; over_limit: boolean;
-        }
-        Relationships: []
-      }
-    }
+          customer_id: string;
+          business_id: string;
+          store_id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          is_active: boolean;
+          credit_account_id: string;
+          credit_limit: number;
+          balance: number;
+          available_credit: number;
+          over_limit: boolean;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
-      match_warehouse_product:{Args:{p_source:string;p_destination:string};Returns:Json}
-      save_warehouse_transfer:{Args:{p_source:string;p_destination:string;p_items:Json;p_request:string;p_note?:string;p_transfer?:string;p_expected?:number};Returns:string}
-      submit_warehouse_transfer:{Args:{p_transfer:string};Returns:string}
-      receive_warehouse_transfer:{Args:{p_transfer:string;p_store:string};Returns:string}
-      warehouse_receipts:{Args:{p_store:string};Returns:Database["public"]["Tables"]["stock_transfers"]["Row"][]}
-      my_warehouse_transfers:{Args:{p_business:string};Returns:Database["public"]["Tables"]["stock_transfers"]["Row"][]}
+      quantity_sales_report: {
+        Args: {
+          p_store: string;
+          p_from?: string | null;
+          p_to?: string | null;
+          p_product?: string | null;
+          p_cashier?: string | null;
+          p_tracking?: string | null;
+        };
+        Returns: {
+          product_id: string;
+          name: string;
+          tracking_type: string;
+          sold_qty: number;
+          returned_qty: number;
+          net_qty: number;
+          revenue: number;
+        }[];
+      };
+      match_warehouse_product: {
+        Args: { p_source: string; p_destination: string };
+        Returns: Json;
+      };
+      save_warehouse_transfer: {
+        Args: {
+          p_source: string;
+          p_destination: string;
+          p_items: Json;
+          p_request: string;
+          p_note?: string;
+          p_transfer?: string;
+          p_expected?: number;
+        };
+        Returns: string;
+      };
+      submit_warehouse_transfer: {
+        Args: { p_transfer: string };
+        Returns: string;
+      };
+      receive_warehouse_transfer: {
+        Args: { p_transfer: string; p_store: string };
+        Returns: string;
+      };
+      warehouse_receipts: {
+        Args: { p_store: string };
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][];
+      };
+      my_warehouse_transfers: {
+        Args: { p_business: string };
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][];
+      };
 
-      sync_warehouse_products: {Args:{p_warehouse:string;p_preferred?:string|null;p_auto?:boolean};Returns:Json}
-      import_warehouse_catalog: {Args:{p_warehouse:string;p_rows:Json};Returns:Json}
+      sync_warehouse_products: {
+        Args: {
+          p_warehouse: string;
+          p_preferred?: string | null;
+          p_auto?: boolean;
+        };
+        Returns: Json;
+      };
+      import_warehouse_catalog: {
+        Args: { p_warehouse: string; p_rows: Json };
+        Returns: Json;
+      };
 
-      complete_checkout: { Args: { p_store: string; p_items: Json; p_payments: Json; p_request: string; p_customer?: string | null; p_credit?: boolean; p_override?: boolean; p_override_token?: string; p_till?: string | null }; Returns: string }
-      record_receipt_print: { Args: { p_sale: string; p_action: string }; Returns: undefined }
-      save_receipt_preferences: { Args: { p_store: string; p_second: boolean; p_delay: number; p_paper?: string }; Returns: undefined }
-      smtp_delivery: { Args: { p_key: string; p_token?: string; p_provider?: string }; Returns: Json };
-      transfer_detail: { Args: {p_transfer: string}; Returns: Json }
-      correct_batch_expiry: { Args: {p_batch: string; p_expiry: string; p_expected_expiry: string | null; p_expected_quantity: number; p_reason: string}; Returns: undefined }
-      warehouse_summary: { Args: {p_business: string}; Returns: {location_id: string; name: string; currency: string; product_count: number; stock_quantity: number; stock_value: number}[] }
-      create_product_catalog: { Args: {p_store: string; p_name: string; p_values: Json}; Returns: string }
-      assign_stock_expiry: { Args: {p_product: string; p_expiry: string; p_quantity: number; p_expected: number}; Returns: undefined }
-      save_product_details: { Args: {p_product: string; p_values: Json; p_expiry?: string; p_expected?: number}; Returns: undefined }
-      registration_open: { Args: Record<string, never>; Returns: boolean }
-      my_employee_setup: { Args: Record<string, never>; Returns: Json }
-      save_employee_invitation: { Args: { p_business: string; p_email: string; p_role: MembershipRole; p_assignments: Json; p_request: string; p_first_name?: string; p_surname?: string; p_phone?: string; p_invitation?: string; p_expected?: number }; Returns: string }
-      cancel_employee_invitation: { Args: { p_invitation: string; p_expected: number }; Returns: undefined }
-      employee_invitation_details: { Args: { p_invitation: string; p_secret: string }; Returns: Json }
-      accept_employee_invitation: { Args: { p_invitation: string; p_secret: string; p_first_name: string; p_surname: string; p_phone: string }; Returns: undefined }
+      complete_checkout: {
+        Args: {
+          p_store: string;
+          p_items: Json;
+          p_payments: Json;
+          p_request: string;
+          p_customer?: string | null;
+          p_credit?: boolean;
+          p_override?: boolean;
+          p_override_token?: string;
+          p_till?: string | null;
+        };
+        Returns: string;
+      };
+      record_receipt_print: {
+        Args: { p_sale: string; p_action: string };
+        Returns: undefined;
+      };
+      save_receipt_preferences: {
+        Args: {
+          p_store: string;
+          p_second: boolean;
+          p_delay: number;
+          p_paper?: string;
+        };
+        Returns: undefined;
+      };
+      smtp_delivery: {
+        Args: { p_key: string; p_token?: string; p_provider?: string };
+        Returns: Json;
+      };
+      transfer_detail: { Args: { p_transfer: string }; Returns: Json };
+      correct_batch_expiry: {
+        Args: {
+          p_batch: string;
+          p_expiry: string;
+          p_expected_expiry: string | null;
+          p_expected_quantity: number;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
+      warehouse_summary: {
+        Args: { p_business: string };
+        Returns: {
+          location_id: string;
+          name: string;
+          currency: string;
+          product_count: number;
+          stock_quantity: number;
+          stock_value: number;
+        }[];
+      };
+      create_product_catalog: {
+        Args: { p_store: string; p_name: string; p_values: Json };
+        Returns: string;
+      };
+      assign_stock_expiry: {
+        Args: {
+          p_product: string;
+          p_expiry: string;
+          p_quantity: number;
+          p_expected: number;
+        };
+        Returns: undefined;
+      };
+      save_product_details: {
+        Args: {
+          p_product: string;
+          p_values: Json;
+          p_expiry?: string;
+          p_expected?: number;
+        };
+        Returns: undefined;
+      };
+      registration_open: { Args: Record<string, never>; Returns: boolean };
+      my_employee_setup: { Args: Record<string, never>; Returns: Json };
+      save_employee_invitation: {
+        Args: {
+          p_business: string;
+          p_email: string;
+          p_role: MembershipRole;
+          p_assignments: Json;
+          p_request: string;
+          p_first_name?: string;
+          p_surname?: string;
+          p_phone?: string;
+          p_invitation?: string;
+          p_expected?: number;
+        };
+        Returns: string;
+      };
+      cancel_employee_invitation: {
+        Args: { p_invitation: string; p_expected: number };
+        Returns: undefined;
+      };
+      employee_invitation_details: {
+        Args: { p_invitation: string; p_secret: string };
+        Returns: Json;
+      };
+      accept_employee_invitation: {
+        Args: {
+          p_invitation: string;
+          p_secret: string;
+          p_first_name: string;
+          p_surname: string;
+          p_phone: string;
+        };
+        Returns: undefined;
+      };
 
-      returnable_documents: { Args: { p_store: string; p_type: string }; Returns: Json }
-      use_invoice_customer_credit: { Args: { p_invoice: string; p_customer: string }; Returns: undefined }
-      save_quote: { Args: { p_store: string; p_customer: string | null; p_guest?: Json; p_items: Json; p_valid: string; p_discount: number; p_note: string; p_request: string; p_quote?: string; p_expected?: number }; Returns: string }
-      set_store_currency: {Args:{p_store:string;p_currency:string};Returns:undefined}
-      prepare_document_email: {Args:{p_type:string;p_document:string;p_request:string;p_hash:string;p_recipient:string};Returns:Json}
-      create_order_with_contact: {Args:{p_store:string;p_customer:string|null;p_items:Json;p_request:string;p_note?:string;p_guest?:Json};Returns:string}
-      set_quote_status: { Args: { p_quote: string; p_status: string; p_expected: number }; Returns: undefined }
-      convert_quote: { Args: { p_quote: string; p_items: Json; p_expected: number }; Returns: string }
-      save_purchase_order: { Args: { p_quote: string | null; p_order: string | null; p_received: boolean; p_approved: boolean; p_reference: string; p_filename: string | null; p_mime: string | null; p_content: string | null; p_expected: number }; Returns: undefined }
-      download_purchase_order: { Args: { p_id: string }; Returns: Json }
+      returnable_documents: {
+        Args: { p_store: string; p_type: string };
+        Returns: Json;
+      };
+      use_invoice_customer_credit: {
+        Args: { p_invoice: string; p_customer: string };
+        Returns: undefined;
+      };
+      save_quote: {
+        Args: {
+          p_store: string;
+          p_customer: string | null;
+          p_guest?: Json;
+          p_items: Json;
+          p_valid: string;
+          p_discount: number;
+          p_note: string;
+          p_request: string;
+          p_quote?: string;
+          p_expected?: number;
+        };
+        Returns: string;
+      };
+      set_store_currency: {
+        Args: { p_store: string; p_currency: string };
+        Returns: undefined;
+      };
+      prepare_document_email: {
+        Args: {
+          p_type: string;
+          p_document: string;
+          p_request: string;
+          p_hash: string;
+          p_recipient: string;
+        };
+        Returns: Json;
+      };
+      create_order_with_contact: {
+        Args: {
+          p_store: string;
+          p_customer: string | null;
+          p_items: Json;
+          p_request: string;
+          p_note?: string;
+          p_guest?: Json;
+        };
+        Returns: string;
+      };
+      set_quote_status: {
+        Args: { p_quote: string; p_status: string; p_expected: number };
+        Returns: undefined;
+      };
+      convert_quote: {
+        Args: { p_quote: string; p_items: Json; p_expected: number };
+        Returns: string;
+      };
+      save_purchase_order: {
+        Args: {
+          p_quote: string | null;
+          p_order: string | null;
+          p_received: boolean;
+          p_approved: boolean;
+          p_reference: string;
+          p_filename: string | null;
+          p_mime: string | null;
+          p_content: string | null;
+          p_expected: number;
+        };
+        Returns: undefined;
+      };
+      download_purchase_order: { Args: { p_id: string }; Returns: Json };
 
-      stock_export: { Args: { p_store: string; p_status?: string; p_search?: string }; Returns: Json }
-      my_return_access: { Args: { p_store: string }; Returns: Json }
-      return_refund_summary: { Args: { p_return: string }; Returns: Json }
-      set_store_return_access: { Args: { p_membership: string; p_store: string; p_approve: boolean; p_refund: boolean; p_expected: number }; Returns: number }
+      stock_export: {
+        Args: { p_store: string; p_status?: string; p_search?: string };
+        Returns: Json;
+      };
+      my_return_access: { Args: { p_store: string }; Returns: Json };
+      return_refund_summary: { Args: { p_return: string }; Returns: Json };
+      set_store_return_access: {
+        Args: {
+          p_membership: string;
+          p_store: string;
+          p_approve: boolean;
+          p_refund: boolean;
+          p_expected: number;
+        };
+        Returns: number;
+      };
 
       order_workflow_summary: { Args: { p_store: string }; Returns: Json };
-      cash_shift_summary: { Args: { p_store: string; p_day: string; p_shift?: string }; Returns: Json };
-    start_next_cash_shift: { Args: { p_previous: string; p_float: number; p_note: string; p_request: string }; Returns: string };
-    cash_up_summary: { Args: { p_store: string; p_day: string }; Returns: Json }
-      open_cash_up: { Args: { p_store: string; p_day: string; p_float: number }; Returns: string }
-      submit_cash_up: { Args: { p_cash_up: string; p_counted: number; p_denominations: Json; p_fingerprint: string; p_note: string; p_request: string }; Returns: string }
-      review_cash_up: { Args: { p_cash_up: string; p_submission: string; p_action: string; p_note: string }; Returns: undefined }
-      correct_cash_up_float: { Args: { p_cash_up: string; p_float: number; p_version: number; p_reason: string }; Returns: undefined }
-      record_cash_movement: { Args: { p_store: string; p_day: string; p_kind: string; p_amount: number; p_reason: string; p_request: string }; Returns: string }
-      record_credit_payment_tender: { Args: { p_customer: string; p_amount: number; p_method: string; p_request: string; p_note?: string }; Returns: string }
-      classify_credit_payment: { Args: { p_transaction: string; p_method: string }; Returns: undefined }
-      my_module_access: { Args: { p_store: string }; Returns: Json }
-      set_store_module_access: { Args: { p_membership: string; p_store: string; p_permissions: Json; p_expected: number }; Returns: number }
-      save_stock_take_count: { Args: { p_item: string; p_quantity: number | null; p_expiry?: string }; Returns: undefined }
-      cancel_stock_take: { Args: { p_stock_take: string; p_reason: string }; Returns: undefined }
-      unpack_stock_with_count: { Args: { p_conversion: string; p_packs: number; p_counted: number; p_reason: string; p_request: string; p_expiry?: string }; Returns: string }
-      set_business_logo: { Args: { p_business: string; p_path: string | null }; Returns: undefined }
-      import_excel: { Args: { p_store: string; p_kind: string; p_rows: Json; p_request: string; p_preview?: boolean }; Returns: Json }
-      profit_summary: { Args: { p_store: string; p_from: string; p_to: string }; Returns: Json }
-      set_notification_preference: { Args: { p_store: string; p_kind: string; p_enabled: boolean; p_hour?: number }; Returns: string }
-      prepare_report_email: { Args: { p_store: string; p_request: string; p_hash: string; p_recipient: string }; Returns: Json }
-      complete_report_email: { Args: { p_job: string; p_provider: string }; Returns: undefined }
-      allocate_return_credit: { Args: { p_return: string; p_invoice: string; p_amount: number; p_request: string }; Returns: string }
-      invoice_summary: { Args: { p_store: string }; Returns: Json }
-      invoice_monthly_reconciliation: { Args: { p_store: string; p_month: string }; Returns: Json }
-      set_billing_settings: { Args: { p_business: string; p_tax: number; p_return_approval: boolean }; Returns: undefined }
-      set_return_reasons: { Args: { p_business: string; p_reasons: string[] }; Returns: undefined }
-      create_sales_order: { Args: { p_store: string; p_customer: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
-      process_sales_order: { Args: { p_order: string; p_action: string; p_reason?: string }; Returns: string }
-      create_sales_invoice: { Args: { p_order: string; p_due: string; p_terms: string; p_discount?: number; p_note?: string }; Returns: string }
-      issue_sales_invoice: { Args: { p_invoice: string }; Returns: string }
-      post_invoice_entry: { Args: { p_invoice: string; p_kind: string; p_amount: number; p_request: string; p_method?: string; p_reference?: string; p_reason?: string }; Returns: string }
-      issue_invoice_goods: { Args: { p_invoice: string; p_override?: boolean; p_override_token?: string }; Returns: string }
-      cancel_sales_invoice: { Args: { p_invoice: string; p_reason: string }; Returns: string }
-      submit_goods_return: { Args: { p_source_type: string; p_source: string; p_items: Json; p_reason: string; p_inspection: string; p_request: string }; Returns: string }
-      process_goods_return: { Args: { p_return: string; p_approve: boolean; p_reason?: string }; Returns: string }
-      resolve_return_quarantine: { Args: { p_item: string; p_action: string; p_reason: string; p_expiry?: string }; Returns: string }
-      record_customer_refund: { Args: { p_return: string; p_amount: number; p_method: string; p_reason: string; p_request: string; p_reference?: string }; Returns: string }
-      transfer_history: { Args: { p_business: string; p_source?: string; p_destination?: string; p_status?: string; p_product?: string; p_user?: string; p_from?: string; p_to?: string }; Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][] }
-      create_bulk_product: { Args: { p_store: string; p_unit: string; p_name: string; p_ratio: number; p_sku: string; p_barcode: string; p_cost: number; p_selling: number; p_request: string }; Returns: string };
-      set_bulk_conversion: { Args: { p_pack: string; p_unit: string; p_ratio: number }; Returns: string }
-      unpack_stock: { Args: { p_conversion: string; p_packs: number; p_reason: string; p_request: string }; Returns: string }
-      create_stock_transfer: { Args: { p_source: string; p_destination: string; p_items: Json; p_request: string; p_note?: string }; Returns: string }
-      process_stock_transfer: { Args: { p_transfer: string; p_action: string; p_reason?: string }; Returns: TransferStatus }
-      business_location_summary: { Args: { p_business: string }; Returns: { location_id: string; name: string; location_type: LocationType; product_count: number; stock_quantity: number; stock_value: number }[] }
-      create_location: { Args: { p_business: string; p_name: string; p_type: LocationType; p_code?: string }; Returns: string }
+      cash_shift_summary: {
+        Args: { p_store: string; p_day: string; p_shift?: string };
+        Returns: Json;
+      };
+      start_next_cash_shift: {
+        Args: {
+          p_previous: string;
+          p_float: number;
+          p_note: string;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      cash_up_summary: {
+        Args: { p_store: string; p_day: string };
+        Returns: Json;
+      };
+      open_cash_up: {
+        Args: { p_store: string; p_day: string; p_float: number };
+        Returns: string;
+      };
+      submit_cash_up: {
+        Args: {
+          p_cash_up: string;
+          p_counted: number;
+          p_denominations: Json;
+          p_fingerprint: string;
+          p_note: string;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      review_cash_up: {
+        Args: {
+          p_cash_up: string;
+          p_submission: string;
+          p_action: string;
+          p_note: string;
+        };
+        Returns: undefined;
+      };
+      correct_cash_up_float: {
+        Args: {
+          p_cash_up: string;
+          p_float: number;
+          p_version: number;
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
+      record_cash_movement: {
+        Args: {
+          p_store: string;
+          p_day: string;
+          p_kind: string;
+          p_amount: number;
+          p_reason: string;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      record_credit_payment_tender: {
+        Args: {
+          p_customer: string;
+          p_amount: number;
+          p_method: string;
+          p_request: string;
+          p_note?: string;
+        };
+        Returns: string;
+      };
+      classify_credit_payment: {
+        Args: { p_transaction: string; p_method: string };
+        Returns: undefined;
+      };
+      my_module_access: { Args: { p_store: string }; Returns: Json };
+      set_store_module_access: {
+        Args: {
+          p_membership: string;
+          p_store: string;
+          p_permissions: Json;
+          p_expected: number;
+        };
+        Returns: number;
+      };
+      save_stock_take_count: {
+        Args: { p_item: string; p_quantity: number | null; p_expiry?: string };
+        Returns: undefined;
+      };
+      cancel_stock_take: {
+        Args: { p_stock_take: string; p_reason: string };
+        Returns: undefined;
+      };
+      unpack_stock_with_count: {
+        Args: {
+          p_conversion: string;
+          p_packs: number;
+          p_counted: number;
+          p_reason: string;
+          p_request: string;
+          p_expiry?: string;
+        };
+        Returns: string;
+      };
+      set_business_logo: {
+        Args: { p_business: string; p_path: string | null };
+        Returns: undefined;
+      };
+      import_excel: {
+        Args: {
+          p_store: string;
+          p_kind: string;
+          p_rows: Json;
+          p_request: string;
+          p_preview?: boolean;
+        };
+        Returns: Json;
+      };
+      profit_summary: {
+        Args: { p_store: string; p_from: string; p_to: string };
+        Returns: Json;
+      };
+      set_notification_preference: {
+        Args: {
+          p_store: string;
+          p_kind: string;
+          p_enabled: boolean;
+          p_hour?: number;
+        };
+        Returns: string;
+      };
+      prepare_report_email: {
+        Args: {
+          p_store: string;
+          p_request: string;
+          p_hash: string;
+          p_recipient: string;
+        };
+        Returns: Json;
+      };
+      complete_report_email: {
+        Args: { p_job: string; p_provider: string };
+        Returns: undefined;
+      };
+      allocate_return_credit: {
+        Args: {
+          p_return: string;
+          p_invoice: string;
+          p_amount: number;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      invoice_summary: { Args: { p_store: string }; Returns: Json };
+      invoice_monthly_reconciliation: {
+        Args: { p_store: string; p_month: string };
+        Returns: Json;
+      };
+      set_billing_settings: {
+        Args: { p_business: string; p_tax: number; p_return_approval: boolean };
+        Returns: undefined;
+      };
+      set_return_reasons: {
+        Args: { p_business: string; p_reasons: string[] };
+        Returns: undefined;
+      };
+      create_sales_order: {
+        Args: {
+          p_store: string;
+          p_customer: string;
+          p_items: Json;
+          p_request: string;
+          p_note?: string;
+        };
+        Returns: string;
+      };
+      process_sales_order: {
+        Args: { p_order: string; p_action: string; p_reason?: string };
+        Returns: string;
+      };
+      create_sales_invoice: {
+        Args: {
+          p_order: string;
+          p_due: string;
+          p_terms: string;
+          p_discount?: number;
+          p_note?: string;
+        };
+        Returns: string;
+      };
+      issue_sales_invoice: { Args: { p_invoice: string }; Returns: string };
+      post_invoice_entry: {
+        Args: {
+          p_invoice: string;
+          p_kind: string;
+          p_amount: number;
+          p_request: string;
+          p_method?: string;
+          p_reference?: string;
+          p_reason?: string;
+        };
+        Returns: string;
+      };
+      issue_invoice_goods: {
+        Args: {
+          p_invoice: string;
+          p_override?: boolean;
+          p_override_token?: string;
+        };
+        Returns: string;
+      };
+      cancel_sales_invoice: {
+        Args: { p_invoice: string; p_reason: string };
+        Returns: string;
+      };
+      submit_goods_return: {
+        Args: {
+          p_source_type: string;
+          p_source: string;
+          p_items: Json;
+          p_reason: string;
+          p_inspection: string;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      process_goods_return: {
+        Args: { p_return: string; p_approve: boolean; p_reason?: string };
+        Returns: string;
+      };
+      resolve_return_quarantine: {
+        Args: {
+          p_item: string;
+          p_action: string;
+          p_reason: string;
+          p_expiry?: string;
+        };
+        Returns: string;
+      };
+      record_customer_refund: {
+        Args: {
+          p_return: string;
+          p_amount: number;
+          p_method: string;
+          p_reason: string;
+          p_request: string;
+          p_reference?: string;
+        };
+        Returns: string;
+      };
+      transfer_history: {
+        Args: {
+          p_business: string;
+          p_source?: string;
+          p_destination?: string;
+          p_status?: string;
+          p_product?: string;
+          p_user?: string;
+          p_from?: string;
+          p_to?: string;
+        };
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"][];
+      };
+      create_bulk_product: {
+        Args: {
+          p_store: string;
+          p_unit: string;
+          p_name: string;
+          p_ratio: number;
+          p_sku: string;
+          p_barcode: string;
+          p_cost: number;
+          p_selling: number;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      set_bulk_conversion: {
+        Args: { p_pack: string; p_unit: string; p_ratio: number };
+        Returns: string;
+      };
+      unpack_stock: {
+        Args: {
+          p_conversion: string;
+          p_packs: number;
+          p_reason: string;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      create_stock_transfer: {
+        Args: {
+          p_source: string;
+          p_destination: string;
+          p_items: Json;
+          p_request: string;
+          p_note?: string;
+        };
+        Returns: string;
+      };
+      process_stock_transfer: {
+        Args: { p_transfer: string; p_action: string; p_reason?: string };
+        Returns: TransferStatus;
+      };
+      business_location_summary: {
+        Args: { p_business: string };
+        Returns: {
+          location_id: string;
+          name: string;
+          location_type: LocationType;
+          product_count: number;
+          stock_quantity: number;
+          stock_value: number;
+        }[];
+      };
+      create_location: {
+        Args: {
+          p_business: string;
+          p_name: string;
+          p_type: LocationType;
+          p_code?: string;
+        };
+        Returns: string;
+      };
       disable_warehouse: { Args: { p_store: string }; Returns: undefined };
-      update_location: { Args: { p_store: string; p_name: string; p_code?: string }; Returns: undefined }
-      set_member_locations: { Args: { p_membership: string; p_stores: string[] }; Returns: undefined }
-      adjust_stock: { Args: { p_new_qty: number; p_note?: string; p_product: string; p_reason: string; p_store: string; p_expiry?: string; p_request?: string; p_expected?: number }; Returns: string }
-      complete_sale: { Args: { p_customer: string | null; p_items: Json; p_note?: string; p_override?: boolean; p_sale_type: string; p_store: string; p_request?: string; p_payment_reference?: string; p_override_token?: string }; Returns: string }
-      set_credit_override_code: { Args: { p_business: string; p_code: string }; Returns: undefined }
-      credit_override_authorizers: { Args: { p_store: string }; Returns: { user_id: string; name: string }[] }
-      authorize_credit_override: { Args: { p_store: string; p_customer: string; p_manager: string; p_code: string; p_amount: number }; Returns: Json }
-      complete_stock_take: { Args: { p_stock_take: string }; Returns: undefined }
-      create_business: { Args: { p_name: string; p_store_name?: string }; Returns: Json }
-      add_member_by_email: { Args: { p_business: string; p_email: string; p_role: string }; Returns: string }
-      dashboard_summary: { Args: { p_store: string }; Returns: Json }
-      customer_statement: { Args: { p_customer: string }; Returns: { id: string; created_at: string; txn_type: CreditTxnType; amount: number; balance_after: number; note: string | null }[] }
-      product_sales_summary: { Args: { p_store: string; p_from?: string | null; p_to?: string | null }; Returns: { product_id: string; name: string; sold_qty: number; sold_value: number; current_qty: number }[] }
-      create_product: { Args: { p_barcode?: string; p_category?: string; p_cost?: number; p_min?: number; p_name: string; p_reorder?: number; p_selling?: number; p_store: string; p_supplier?: string; p_track_expiry?: boolean; p_unit?: string }; Returns: string }
-      create_product_with_description: { Args: { p_description?: string; p_barcode?: string; p_category?: string; p_cost?: number; p_min?: number; p_name: string; p_reorder?: number; p_selling?: number; p_store: string; p_supplier?: string; p_track_expiry?: boolean; p_unit?: string }; Returns: string }
-      receive_stock: { Args: { p_items: Json; p_note: string | null; p_reference: string | null; p_store: string; p_supplier: string | null }; Returns: string }
-      reconcile_stock: { Args: { p_store: string }; Returns: { diff: number; ledger_qty: number; product_id: string; stock_qty: number }[] }
-      record_credit_payment: { Args: { p_amount: number; p_customer: string; p_note?: string }; Returns: string }
-      set_credit_limit: { Args: { p_customer: string; p_limit: number }; Returns: undefined }
-      start_stock_take: { Args: { p_note?: string; p_store: string }; Returns: string }
-    }
-    Enums: Record<string, never>
-    CompositeTypes: Record<string, never>
-  }
-}
+      update_location: {
+        Args: { p_store: string; p_name: string; p_code?: string };
+        Returns: undefined;
+      };
+      set_member_locations: {
+        Args: { p_membership: string; p_stores: string[] };
+        Returns: undefined;
+      };
+      adjust_stock: {
+        Args: {
+          p_new_qty: number;
+          p_note?: string;
+          p_product: string;
+          p_reason: string;
+          p_store: string;
+          p_expiry?: string;
+          p_request?: string;
+          p_expected?: number;
+        };
+        Returns: string;
+      };
+      complete_sale: {
+        Args: {
+          p_customer: string | null;
+          p_items: Json;
+          p_note?: string;
+          p_override?: boolean;
+          p_sale_type: string;
+          p_store: string;
+          p_request?: string;
+          p_payment_reference?: string;
+          p_override_token?: string;
+        };
+        Returns: string;
+      };
+      set_credit_override_code: {
+        Args: { p_business: string; p_code: string };
+        Returns: undefined;
+      };
+      credit_override_authorizers: {
+        Args: { p_store: string };
+        Returns: { user_id: string; name: string }[];
+      };
+      authorize_credit_override: {
+        Args: {
+          p_store: string;
+          p_customer: string;
+          p_manager: string;
+          p_code: string;
+          p_amount: number;
+        };
+        Returns: Json;
+      };
+      complete_stock_take: {
+        Args: { p_stock_take: string };
+        Returns: undefined;
+      };
+      create_business: {
+        Args: { p_name: string; p_store_name?: string };
+        Returns: Json;
+      };
+      add_member_by_email: {
+        Args: { p_business: string; p_email: string; p_role: string };
+        Returns: string;
+      };
+      dashboard_summary: { Args: { p_store: string }; Returns: Json };
+      customer_statement: {
+        Args: { p_customer: string };
+        Returns: {
+          id: string;
+          created_at: string;
+          txn_type: CreditTxnType;
+          amount: number;
+          balance_after: number;
+          note: string | null;
+        }[];
+      };
+      product_sales_summary: {
+        Args: { p_store: string; p_from?: string | null; p_to?: string | null };
+        Returns: {
+          product_id: string;
+          name: string;
+          sold_qty: number;
+          sold_value: number;
+          current_qty: number;
+        }[];
+      };
+      create_product: {
+        Args: {
+          p_barcode?: string;
+          p_category?: string;
+          p_cost?: number;
+          p_min?: number;
+          p_name: string;
+          p_reorder?: number;
+          p_selling?: number;
+          p_store: string;
+          p_supplier?: string;
+          p_track_expiry?: boolean;
+          p_unit?: string;
+        };
+        Returns: string;
+      };
+      create_product_with_description: {
+        Args: {
+          p_description?: string;
+          p_barcode?: string;
+          p_category?: string;
+          p_cost?: number;
+          p_min?: number;
+          p_name: string;
+          p_reorder?: number;
+          p_selling?: number;
+          p_store: string;
+          p_supplier?: string;
+          p_track_expiry?: boolean;
+          p_unit?: string;
+        };
+        Returns: string;
+      };
+      receive_stock: {
+        Args: {
+          p_items: Json;
+          p_note: string | null;
+          p_reference: string | null;
+          p_store: string;
+          p_supplier: string | null;
+        };
+        Returns: string;
+      };
+      reconcile_stock: {
+        Args: { p_store: string };
+        Returns: {
+          diff: number;
+          ledger_qty: number;
+          product_id: string;
+          stock_qty: number;
+        }[];
+      };
+      record_credit_payment: {
+        Args: { p_amount: number; p_customer: string; p_note?: string };
+        Returns: string;
+      };
+      set_credit_limit: {
+        Args: { p_customer: string; p_limit: number };
+        Returns: undefined;
+      };
+      start_stock_take: {
+        Args: { p_note?: string; p_store: string };
+        Returns: string;
+      };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+};
 
-export type MembershipRole = "owner" | "manager" | "employee"
-export type LocationType = "store" | "warehouse"
-export type TransferStatus = "DRAFT" | "SUBMITTED" | "DISPATCHED" | "RECEIVED" | "CANCELLED"
+export type MembershipRole = "owner" | "manager" | "employee";
+export type LocationType = "store" | "warehouse";
+export type TransferStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "DISPATCHED"
+  | "RECEIVED"
+  | "CANCELLED";
 export type MovementType =
-  | "GOODS_IN" | "SALE_CASH" | "SALE_CREDIT" | "ADJUSTMENT_INCREASE"
-  | "ADJUSTMENT_DECREASE" | "STOCK_TAKE" | "DAMAGED" | "EXPIRED"
-  | "TRANSFER_IN" | "TRANSFER_OUT" | "RETURN_IN" | "VOID_REVERSAL"
-  | "UNPACK_IN" | "UNPACK_OUT"
-  | "SALE_CARD"
-export type SaleType = "CASH" | "CREDIT" | "CARD_EFT"
-export type AdjustmentReason = "DAMAGED" | "EXPIRED" | "MISSING" | "STOCK_COUNT_CORRECTION" | "THEFT" | "OTHER"
-export type CreditTxnType = "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT" | "OPENING_BALANCE"
-export type StockTakeStatus = "IN_PROGRESS" | "PENDING_APPROVAL" | "COMPLETED" | "CANCELLED"
+  | "GOODS_IN"
+  | "SALE_CASH"
+  | "SALE_CREDIT"
+  | "ADJUSTMENT_INCREASE"
+  | "ADJUSTMENT_DECREASE"
+  | "STOCK_TAKE"
+  | "DAMAGED"
+  | "EXPIRED"
+  | "TRANSFER_IN"
+  | "TRANSFER_OUT"
+  | "RETURN_IN"
+  | "VOID_REVERSAL"
+  | "UNPACK_IN"
+  | "UNPACK_OUT"
+  | "SALE_CARD";
+export type SaleType = "CASH" | "CREDIT" | "CARD_EFT";
+export type AdjustmentReason =
+  | "DAMAGED"
+  | "EXPIRED"
+  | "MISSING"
+  | "STOCK_COUNT_CORRECTION"
+  | "THEFT"
+  | "OTHER";
+export type CreditTxnType =
+  | "CREDIT_SALE"
+  | "PAYMENT"
+  | "ADJUSTMENT"
+  | "OPENING_BALANCE";
+export type StockTakeStatus =
+  | "IN_PROGRESS"
+  | "PENDING_APPROVAL"
+  | "COMPLETED"
+  | "CANCELLED";
 
-type PublicSchema = Database["public"]
+type PublicSchema = Database["public"];
 export type ProductStock = {
+  tracking_type?: "QUANTITY" | "SALES_ONLY";
+  bulk_parent_id?: string | null;
+  bulk_enabled?: boolean;
+  bulk_options?: {
+    id: string;
+    conversion_id: string;
+    name: string;
+    unit: string;
+    units_per_pack: number;
+    quantity: number;
+    cost_price: number;
+    selling_price: number;
+  }[];
   item_type?: "Individual" | "Bulk Stock";
   description?: string | null;
-  id: string; business_id: string; store_id: string; name: string; sku: string | null; unit: string;
-  cost_price: number; selling_price: number; min_stock_level: number; reorder_level: number;
-  track_expiry: boolean; is_active: boolean; category_id: string | null; default_supplier_id: string | null;
-  quantity: number; stock_value: number; retail_value: number;
-  category_name: string | null; supplier_name: string | null;
-  stock_status: "out" | "low" | "reorder" | "ok"; suggested_reorder: number;
-}
+  id: string;
+  business_id: string;
+  store_id: string;
+  name: string;
+  sku: string | null;
+  unit: string;
+  cost_price: number;
+  selling_price: number;
+  min_stock_level: number;
+  reorder_level: number;
+  track_expiry: boolean;
+  is_active: boolean;
+  category_id: string | null;
+  default_supplier_id: string | null;
+  quantity: number;
+  stock_value: number;
+  retail_value: number;
+  category_name: string | null;
+  supplier_name: string | null;
+  stock_status: "out" | "low" | "reorder" | "ok" | "not_tracked";
+  suggested_reorder: number;
+};
 
 export type CreditCustomer = {
-  customer_id: string; business_id: string; store_id: string; name: string;
-  phone: string | null; email: string | null; is_active: boolean;
-  credit_account_id: string; credit_limit: number; balance: number;
-  available_credit: number; over_limit: boolean;
-}
+  customer_id: string;
+  business_id: string;
+  store_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  is_active: boolean;
+  credit_account_id: string;
+  credit_limit: number;
+  balance: number;
+  available_credit: number;
+  over_limit: boolean;
+};
 
-export type Tables<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Row"]
-export type TablesInsert<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Insert"]
-export type TablesUpdate<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Update"]
-
+export type Tables<T extends keyof PublicSchema["Tables"]> =
+  PublicSchema["Tables"][T]["Row"];
+export type TablesInsert<T extends keyof PublicSchema["Tables"]> =
+  PublicSchema["Tables"][T]["Insert"];
+export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =
+  PublicSchema["Tables"][T]["Update"];
 
 export type BillingSettings = {
   business_id: string;
@@ -559,10 +2189,78 @@ export type CustomerRefund = {
   request_payload: Json;
 };
 
-export type InvoiceBalance = SalesInvoice & { debits: number; credits: number; paid: number; outstanding: number; status: string; };
+export type InvoiceBalance = SalesInvoice & {
+  debits: number;
+  credits: number;
+  paid: number;
+  outstanding: number;
+  status: string;
+};
 
-export type QuoteLine = {product_id:string;name:string;unit:string;quantity:number;unit_price:number;line_total:number};
-export type SalesQuote = {id:string;business_id:string;store_id:string;customer_id:string;customer_name:string;reference:string;status:string;valid_until:string;items:QuoteLine[];subtotal:number;discount:number;tax_percent:number;tax_amount:number;total:number;note:string|null;version:number;created_by:string;created_at:string;order_id:string|null};
-export type PurchaseOrder = {id:string;store_id:string;quote_id:string|null;order_id:string|null;received:boolean;approved:boolean;reference:string|null;filename:string|null;mime:string|null;version:number;updated_by:string;updated_at:string;approved_by:string|null;approved_at:string|null};
+export type QuoteLine = {
+  product_id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+};
+export type SalesQuote = {
+  id: string;
+  business_id: string;
+  store_id: string;
+  customer_id: string;
+  customer_name: string;
+  reference: string;
+  status: string;
+  valid_until: string;
+  items: QuoteLine[];
+  subtotal: number;
+  discount: number;
+  tax_percent: number;
+  tax_amount: number;
+  total: number;
+  note: string | null;
+  version: number;
+  created_by: string;
+  created_at: string;
+  order_id: string | null;
+};
+export type PurchaseOrder = {
+  id: string;
+  store_id: string;
+  quote_id: string | null;
+  order_id: string | null;
+  received: boolean;
+  approved: boolean;
+  reference: string | null;
+  filename: string | null;
+  mime: string | null;
+  version: number;
+  updated_by: string;
+  updated_at: string;
+  approved_by: string | null;
+  approved_at: string | null;
+};
 
-export type EmployeeInvitation = { id: string; business_id: string; email: string; role: MembershipRole; first_name: string; surname: string; phone: string; assignments: Record<string,Record<string,boolean>>; state: "PENDING" | "ACCEPTED" | "CANCELLED"; delivery: "QUEUED" | "SENT" | "FAILED"; expires_at: string; version: number; created_by: string; created_at: string; user_id: string | null; accepted_at: string | null; sent_at: string | null; request_id: string; request_payload: Json };
+export type EmployeeInvitation = {
+  id: string;
+  business_id: string;
+  email: string;
+  role: MembershipRole;
+  first_name: string;
+  surname: string;
+  phone: string;
+  assignments: Record<string, Record<string, boolean>>;
+  state: "PENDING" | "ACCEPTED" | "CANCELLED";
+  delivery: "QUEUED" | "SENT" | "FAILED";
+  expires_at: string;
+  version: number;
+  created_by: string;
+  created_at: string;
+  user_id: string | null;
+  accepted_at: string | null;
+  sent_at: string | null;
+  request_id: string;
+  request_payload: Json;
+};

@@ -1,7 +1,10 @@
 /** Formatting helpers. Currency defaults to ZAR (spaza shops are ZA-based). */
 
-export function money(value: number | string | null | undefined, currency = "ZAR"): string {
-  const n = typeof value === "string" ? Number(value) : value ?? 0;
+export function money(
+  value: number | string | null | undefined,
+  currency = "ZAR",
+): string {
+  const n = typeof value === "string" ? Number(value) : (value ?? 0);
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
     currency,
@@ -11,7 +14,7 @@ export function money(value: number | string | null | undefined, currency = "ZAR
 
 /** Quantities render without trailing zeros (10.000 -> "10", 1.500 -> "1.5"). */
 export function qty(value: number | string | null | undefined): string {
-  const n = typeof value === "string" ? Number(value) : value ?? 0;
+  const n = typeof value === "string" ? Number(value) : (value ?? 0);
   if (!Number.isFinite(n as number)) return "0";
   return String(Number((n as number).toFixed(3)));
 }
@@ -19,102 +22,217 @@ export function qty(value: number | string | null | undefined): string {
 export function dateTime(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const d = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat("en-ZA", {
+    timeZone: "Africa/Johannesburg",
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(d);
 }
 
 export function dateOnly(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const d = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(d);
+  return new Intl.DateTimeFormat("en-ZA", {
+    timeZone: "Africa/Johannesburg",
+    dateStyle: "medium",
+  }).format(d);
 }
 
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
   const m = message ?? "";
-  if (/TRANSFER_CURRENCY_MISMATCH/.test(m)) return "These locations use different currencies. A stock transfer cannot automatically convert their prices.";
-  if (/STORE_CURRENCY_HAS_HISTORY/.test(m)) return "This store already has products, customers or financial history. Its currency is locked to protect those amounts. Use a new store for another currency.";
+  if (/TRACKING_CHANGE_HAS_HISTORY_OR_STOCK/.test(m))
+    return "Stock tracking cannot change while this product has stock, sales, orders, transfers or an open stock count. Create a new product to preserve the existing history.";
+  if (/SALES_ONLY_NO_STOCK/.test(m))
+    return "Sales Tracked Only products do not receive, transfer or adjust physical stock.";
+  if (/SALES_ONLY_NO_BULK/.test(m))
+    return "Bulk Stock is available only for Quantity Tracked products.";
+  if (/BULK_STOCK_OR_TRANSFER_REMAINS/.test(m))
+    return "Use or adjust the remaining bulk stock and finish outstanding transfers before disabling Bulk Stock.";
+  if (/EDIT_MAIN_PRODUCT/.test(m))
+    return "Open the main product to change its linked bulk configuration.";
+  if (/DESTINATION_BULK_CONFIGURATION_REQUIRED/.test(m))
+    return "Enable Bulk Stock with the same pack size on the destination store’s main product first.";
+  if (/TRANSFER_CURRENCY_MISMATCH/.test(m))
+    return "These locations use different currencies. A stock transfer cannot automatically convert their prices.";
+  if (/STORE_CURRENCY_HAS_HISTORY/.test(m))
+    return "This store already has products, customers or financial history. Its currency is locked to protect those amounts. Use a new store for another currency.";
   if (/INVALID_CURRENCY/.test(m)) return "Choose a currency from the list.";
-  if (/PURCHASE_ORDER_LOCKED/.test(m)) return "Purchase-order details are locked after quote acceptance or conversion.";
-  if (/REGISTERED_(INVOICE|CREDIT)_CUSTOMER_REQUIRED/.test(m)) return "Credit requires this invoice’s existing registered customer account. One-off customers cannot use credit terms.";
-  if (/INVALID_QUOTE_CONTACT/.test(m)) return "Enter a customer name (up to 200 characters), with an optional phone number and address.";
-  if (/QUOTE_CHANGED_REFRESH|PO_CHANGED_REFRESH|ACCESS_CHANGED_REFRESH/.test(m)) return "Someone changed this record. Refresh to review the latest version before saving.";
-  if (m.includes("QUOTE_STOCK_CHANGED")) return "Stock availability changed. Refresh and review the quantities before converting.";
-  if (m.includes("QUOTE_ALREADY_CONVERTED")) return "This quotation already has an order. Open that order instead.";
-  if (/QUOTE_EXPIRED|QUOTE_VALIDITY_REQUIRED/.test(m)) return "Use a quotation with a current validity date. Expired or cancelled quotations cannot be converted.";
-  if (m.includes("QUOTE_NOT_DRAFT")) return "Only draft quotations can be edited. Sent quotations keep their original terms.";
-  if (m.includes("INVALID_PO_FILE")) return "Choose a PDF, PNG or JPEG purchase order up to 2 MB.";
-  if (m.includes("INVALID_PO_STATE")) return "Mark the purchase order as received before approving it.";
+  if (/PURCHASE_ORDER_LOCKED/.test(m))
+    return "Purchase-order details are locked after quote acceptance or conversion.";
+  if (/REGISTERED_(INVOICE|CREDIT)_CUSTOMER_REQUIRED/.test(m))
+    return "Credit requires this invoice’s existing registered customer account. One-off customers cannot use credit terms.";
+  if (/INVALID_QUOTE_CONTACT/.test(m))
+    return "Enter a customer name (up to 200 characters), with an optional phone number and address.";
+  if (/QUOTE_CHANGED_REFRESH|PO_CHANGED_REFRESH|ACCESS_CHANGED_REFRESH/.test(m))
+    return "Someone changed this record. Refresh to review the latest version before saving.";
+  if (m.includes("QUOTE_STOCK_CHANGED"))
+    return "Stock availability changed. Refresh and review the quantities before converting.";
+  if (m.includes("QUOTE_ALREADY_CONVERTED"))
+    return "This quotation already has an order. Open that order instead.";
+  if (/QUOTE_EXPIRED|QUOTE_VALIDITY_REQUIRED/.test(m))
+    return "Use a quotation with a current validity date. Expired or cancelled quotations cannot be converted.";
+  if (m.includes("QUOTE_NOT_DRAFT"))
+    return "Only draft quotations can be edited. Sent quotations keep their original terms.";
+  if (m.includes("INVALID_PO_FILE"))
+    return "Choose a PDF, PNG or JPEG purchase order up to 2 MB.";
+  if (m.includes("INVALID_PO_STATE"))
+    return "Mark the purchase order as received before approving it.";
 
-  if (m.includes("RETURN_REASON_NOT_CONFIGURED")) return "Choose a current return reason from the list. Refresh if the owner changed the choices.";
-  if (m.includes("RETURN_REASON_DETAIL_REQUIRED")) return "Add an explanation when choosing Other as the return reason.";
-  if (m.includes("INVALID_RETURN_REASONS")) return "Use 1–20 distinct return reasons without colons, each up to 80 characters.";
-  if(m.includes("STOCK_CHANGED_RECOUNT"))return "Stock changed after this count was prepared. Refresh the stock and count it again before approval.";
-  if(m.includes("SELECTED_BATCH_QUANTITY_MISSING"))return "The selected or expired batches do not contain enough stock for this adjustment.";
-  if(m.includes("LOSS_MUST_DECREASE_STOCK"))return "Damage, expiry, missing stock and theft must reduce the quantity. Use Count correction for added stock.";
-  if(m.includes("STOCK_TAKE_CLOSED"))return "This stock take is closed. Start a new count to make corrections.";
-  if(m.includes("NO_SHORTAGE_USE_NORMAL_UNPACK"))return "Recorded stock is sufficient. Turn off the count override and use normal unpacking.";
-  if(m.includes("COUNT_AND_REASON_REQUIRED"))return "Enter the physical pack count and a reason. The count must cover the packs being unpacked.";
-  if(m.includes("EXPIRY_DATE_REQUIRED"))return "Enter the expiry date for the newly counted stock.";
-  if (m.includes("CREDIT_EXCEEDS_AVAILABLE")) return "This amount exceeds unused return credit or the target invoice balance.";
-  if (m.includes("CREDIT_SOURCE_EQUALS_TARGET")) return "Choose a different invoice to use this return credit.";
-  if (m.includes("RETURN_EXCEEDS_SOLD_QUANTITY")) return "This quantity exceeds what was sold, including earlier pending or approved returns.";
-  if (m.includes("REASON_AND_INSPECTION_REQUIRED")) return "Enter both the reason for return and the inspection findings.";
-  if (m.includes("RETURN_REQUIRES_QUARANTINE")) return "Only goods in good condition with a valid expiry date may return to saleable stock.";
-  if (m.includes("REFUND_EXCEEDS_AVAILABLE_CREDIT")) return "The refund exceeds the approved, unrefunded credit available after other amounts owed.";
-  if (m.includes("RETURN_APPROVAL_REQUIRED")) return "An authorised approver must approve this return before a refund can be recorded.";
-  if (m.includes("SELECT_INVOICE_FOR_PAYMENT")) return "This customer has unpaid invoices. Open Invoices and allocate the payment to an invoice.";
-  if (m.includes("PAYMENT_EXCEEDS_OUTSTANDING")) return "The payment is more than the amount outstanding.";
-  if (m.includes("CREDIT_EXCEEDS_INVOICE")) return "This credit exceeds the invoice's remaining value. Check earlier credit notes.";
-  if (m.includes("INVOICE_PAYMENT_REQUIRED")) return "Record the full payment before releasing these goods.";
-  if (m.includes("CREDITED_INVOICE_CANNOT_ISSUE_GOODS")) return "This invoice has a credit note. Reconcile or replace it before releasing goods.";
-  if (m.includes("ORDER_NOT_CONFIRMED")) return "Confirm the order before creating an invoice.";
-  if (m.includes("INVOICE_EXISTS")) return "This order already has an invoice. Open Invoices to continue.";
-  if (m.includes("USE_CREDIT_NOTE_OR_RETURN")) return "This invoice has payments, notes or released goods. Use a credit note or return to correct it.";
-  if (m.includes("INVALID_DISCOUNT")) return "The discount must be between zero and the order subtotal.";
-  if (m.includes("INVALID_OVERRIDE_CODE_FORMAT")) return "Use a personal code of 6–12 digits.";
-  if (m.includes("INVALID_OVERRIDE_CODE")) return "The manager or approval code is incorrect.";
-  if (m.includes("OVERRIDE_RATE_LIMITED")) return "Too many incorrect codes. Try again in 15 minutes.";
-  if (m.includes("EXPIRY_REQUIRED")) return "Enter an expiry date for products with expiry tracking.";
-  if (m.includes("INVALID_TRANSFER_STATE")) return "This transfer has moved to another stage. Refresh its status before continuing.";
+  if (m.includes("RETURN_REASON_NOT_CONFIGURED"))
+    return "Choose a current return reason from the list. Refresh if the owner changed the choices.";
+  if (m.includes("RETURN_REASON_DETAIL_REQUIRED"))
+    return "Add an explanation when choosing Other as the return reason.";
+  if (m.includes("INVALID_RETURN_REASONS"))
+    return "Use 1–20 distinct return reasons without colons, each up to 80 characters.";
+  if (m.includes("STOCK_CHANGED_RECOUNT"))
+    return "Stock changed after this count was prepared. Refresh the stock and count it again before approval.";
+  if (m.includes("SELECTED_BATCH_QUANTITY_MISSING"))
+    return "The selected or expired batches do not contain enough stock for this adjustment.";
+  if (m.includes("LOSS_MUST_DECREASE_STOCK"))
+    return "Damage, expiry, missing stock and theft must reduce the quantity. Use Count correction for added stock.";
+  if (m.includes("STOCK_TAKE_CLOSED"))
+    return "This stock take is closed. Start a new count to make corrections.";
+  if (m.includes("NO_SHORTAGE_USE_NORMAL_UNPACK"))
+    return "Recorded stock is sufficient. Turn off the count override and use normal unpacking.";
+  if (m.includes("COUNT_AND_REASON_REQUIRED"))
+    return "Enter the physical pack count and a reason. The count must cover the packs being unpacked.";
+  if (m.includes("EXPIRY_DATE_REQUIRED"))
+    return "Enter the expiry date for the newly counted stock.";
+  if (m.includes("CREDIT_EXCEEDS_AVAILABLE"))
+    return "This amount exceeds unused return credit or the target invoice balance.";
+  if (m.includes("CREDIT_SOURCE_EQUALS_TARGET"))
+    return "Choose a different invoice to use this return credit.";
+  if (m.includes("RETURN_EXCEEDS_SOLD_QUANTITY"))
+    return "This quantity exceeds what was sold, including earlier pending or approved returns.";
+  if (m.includes("REASON_AND_INSPECTION_REQUIRED"))
+    return "Enter both the reason for return and the inspection findings.";
+  if (m.includes("RETURN_REQUIRES_QUARANTINE"))
+    return "Only goods in good condition with a valid expiry date may return to saleable stock.";
+  if (m.includes("REFUND_EXCEEDS_AVAILABLE_CREDIT"))
+    return "The refund exceeds the approved, unrefunded credit available after other amounts owed.";
+  if (m.includes("RETURN_APPROVAL_REQUIRED"))
+    return "An authorised approver must approve this return before a refund can be recorded.";
+  if (m.includes("SELECT_INVOICE_FOR_PAYMENT"))
+    return "This customer has unpaid invoices. Open Invoices and allocate the payment to an invoice.";
+  if (m.includes("PAYMENT_EXCEEDS_OUTSTANDING"))
+    return "The payment is more than the amount outstanding.";
+  if (m.includes("CREDIT_EXCEEDS_INVOICE"))
+    return "This credit exceeds the invoice's remaining value. Check earlier credit notes.";
+  if (m.includes("INVOICE_PAYMENT_REQUIRED"))
+    return "Record the full payment before releasing these goods.";
+  if (m.includes("CREDITED_INVOICE_CANNOT_ISSUE_GOODS"))
+    return "This invoice has a credit note. Reconcile or replace it before releasing goods.";
+  if (m.includes("ORDER_NOT_CONFIRMED"))
+    return "Confirm the order before creating an invoice.";
+  if (m.includes("INVOICE_EXISTS"))
+    return "This order already has an invoice. Open Invoices to continue.";
+  if (m.includes("USE_CREDIT_NOTE_OR_RETURN"))
+    return "This invoice has payments, notes or released goods. Use a credit note or return to correct it.";
+  if (m.includes("INVALID_DISCOUNT"))
+    return "The discount must be between zero and the order subtotal.";
+  if (m.includes("INVALID_OVERRIDE_CODE_FORMAT"))
+    return "Use a personal code of 6–12 digits.";
+  if (m.includes("INVALID_OVERRIDE_CODE"))
+    return "The manager or approval code is incorrect.";
+  if (m.includes("OVERRIDE_RATE_LIMITED"))
+    return "Too many incorrect codes. Try again in 15 minutes.";
+  if (m.includes("EXPIRY_REQUIRED"))
+    return "Enter an expiry date for products with expiry tracking.";
+  if (m.includes("INVALID_TRANSFER_STATE"))
+    return "This transfer has moved to another stage. Refresh its status before continuing.";
   if (m.includes("REASON_REQUIRED")) return "Enter a reason before continuing.";
-  if (m.includes("PRODUCT_UNITS_MISMATCH")) return "The products must use matching units and expiry tracking.";
-  if (m.includes("BATCH_QUANTITY_MISSING")) return "Expiry batches do not cover this quantity. Ask a manager to check the source stock.";
-  if (m.includes("REQUEST_CONFLICT")) return "This request was already used with different details. Refresh before trying again.";
-  if (m.includes("LOCATION_NOT_SALEABLE")) return "Warehouse stock cannot be sold. Switch to a selling store.";
-  if (m.includes("INVALID_LOCATION")) return "Choose active locations belonging to this business.";
-  if (m.includes("OWNER_HAS_ALL_LOCATIONS")) return "Owners already have access to every location.";
-  if (m.includes("INSUFFICIENT_SELLABLE_STOCK")) return "Not enough unexpired stock. Expired or undated tracked stock cannot be sold.";
-  if (m.includes("STOCK_CHANGED_REFRESH")) return "Stock changed. Refresh and check the undated quantity before assigning expiry.";
-  if (m.includes("BARCODE_CHANGED_REFRESH")) return "The barcode changed while you were editing. Refresh and try again.";
-  if (m.includes("INVALID_BARCODE")) return "Enter a barcode of 1 to 128 characters.";
-  if (m.includes("BARCODE_ALREADY_EXISTS") || m.includes("uq_active_barcode_per_store")) return "That barcode is already assigned to a product in this store.";
-  if (m.includes("EXPIRY_TRACKING_REQUIRED")) return "Dated stock still exists. Keep expiry tracking enabled.";
-  if (m.includes("BATCH_RECONCILIATION_REQUIRED")) return "Batch quantities exceed recorded stock. Reconcile batches before assigning dates.";
-  if (m.includes("INSUFFICIENT_STOCK")) return "Not enough stock to complete this sale.";
-  if (m.includes("CREDIT_LIMIT_EXCEEDED")) return "This sale exceeds the customer's credit limit.";
-  if (m.includes("OVERRIDE_NOT_AUTHORIZED")) return "This approval has expired, was used, or does not cover the sale. Ask a manager or owner to approve again.";
-  if (m.includes("PRODUCT_NOT_FOUND_OR_INACTIVE")) return "One of the products is unavailable or inactive.";
-  if (m.includes("CUSTOMER_REQUIRED")) return "Select a customer for a credit sale.";
-  if (m.includes("CREDIT_ACCOUNT_NOT_FOUND")) return "That customer has no credit account.";
-  if (m.includes("INVALID_QUANTITY")) return "Enter a valid quantity greater than zero.";
-  if (m.includes("INVALID_AMOUNT")) return "Enter a valid amount greater than zero.";
-  if (m.includes("NO_CHANGE")) return "The new quantity is the same as the current quantity.";
-  if (m.includes("WAREHOUSE_HAS_STOCK")) return "Every product quantity must be zero before disabling this warehouse.";
-  if (m.includes("WAREHOUSE_HAS_OPEN_TRANSFERS")) return "Complete or cancel all open warehouse transfers before disabling it.";
-  if (m.includes("WAREHOUSE_DISABLED")) return "This warehouse is disabled. Reload to select an active location.";
-  if (m.includes("BULK_TRANSFER_MISMATCH")) return "Bulk transfers need a bulk product at both locations with the same units per pack. Configure the destination pack first.";
-  if (m.includes("BULK_TRANSFER_PENDING")) return "Complete or cancel this product’s pending transfers before changing its pack conversion.";
-  if (m.includes("BULK_PRODUCT_EXISTS")) return "This bulk SKU already exists here. Choose the existing product instead.";
-  if (m.includes("INDIVIDUAL_PRODUCT_REQUIRED")) return "Choose an existing individual item at this location. Bulk products cannot be unpacked into other bulk products.";
-  if (m.includes("WHOLE_PACKS_REQUIRED")) return "Enter a whole number of bulk packs.";
-  if (m.includes("UNPACK_COUNT_OVERRIDE_DISABLED")) return "Receive the packs first, or correct a verified count through Adjust Stock before unpacking.";
+  if (m.includes("PRODUCT_UNITS_MISMATCH"))
+    return "The products must use matching units and expiry tracking.";
+  if (m.includes("BATCH_QUANTITY_MISSING"))
+    return "Expiry batches do not cover this quantity. Ask a manager to check the source stock.";
+  if (m.includes("REQUEST_CONFLICT"))
+    return "This request was already used with different details. Refresh before trying again.";
+  if (m.includes("LOCATION_NOT_SALEABLE"))
+    return "Warehouse stock cannot be sold. Switch to a selling store.";
+  if (m.includes("INVALID_LOCATION"))
+    return "Choose active locations belonging to this business.";
+  if (m.includes("OWNER_HAS_ALL_LOCATIONS"))
+    return "Owners already have access to every location.";
+  if (m.includes("INSUFFICIENT_SELLABLE_STOCK"))
+    return "Not enough unexpired stock. Expired or undated tracked stock cannot be sold.";
+  if (m.includes("STOCK_CHANGED_REFRESH"))
+    return "Stock changed. Refresh and check the undated quantity before assigning expiry.";
+  if (m.includes("BARCODE_CHANGED_REFRESH"))
+    return "The barcode changed while you were editing. Refresh and try again.";
+  if (m.includes("INVALID_BARCODE"))
+    return "Enter a barcode of 1 to 128 characters.";
+  if (
+    m.includes("BARCODE_ALREADY_EXISTS") ||
+    m.includes("uq_active_barcode_per_store")
+  )
+    return "That barcode is already assigned to a product in this store.";
+  if (m.includes("EXPIRY_TRACKING_REQUIRED"))
+    return "Dated stock still exists. Keep expiry tracking enabled.";
+  if (m.includes("BATCH_RECONCILIATION_REQUIRED"))
+    return "Batch quantities exceed recorded stock. Reconcile batches before assigning dates.";
+  if (m.includes("INSUFFICIENT_STOCK"))
+    return "Not enough stock to complete this sale.";
+  if (m.includes("CREDIT_LIMIT_EXCEEDED"))
+    return "This sale exceeds the customer's credit limit.";
+  if (m.includes("OVERRIDE_NOT_AUTHORIZED"))
+    return "This approval has expired, was used, or does not cover the sale. Ask a manager or owner to approve again.";
+  if (m.includes("PRODUCT_NOT_FOUND_OR_INACTIVE"))
+    return "One of the products is unavailable or inactive.";
+  if (m.includes("CUSTOMER_REQUIRED"))
+    return "Select a customer for a credit sale.";
+  if (m.includes("CREDIT_ACCOUNT_NOT_FOUND"))
+    return "That customer has no credit account.";
+  if (m.includes("INVALID_QUANTITY"))
+    return "Enter a valid quantity greater than zero.";
+  if (m.includes("INVALID_AMOUNT"))
+    return "Enter a valid amount greater than zero.";
+  if (m.includes("NO_CHANGE"))
+    return "The new quantity is the same as the current quantity.";
+  if (m.includes("WAREHOUSE_HAS_STOCK"))
+    return "Every product quantity must be zero before disabling this warehouse.";
+  if (m.includes("WAREHOUSE_HAS_OPEN_TRANSFERS"))
+    return "Complete or cancel all open warehouse transfers before disabling it.";
+  if (m.includes("WAREHOUSE_DISABLED"))
+    return "This warehouse is disabled. Reload to select an active location.";
+  if (m.includes("BULK_TRANSFER_MISMATCH"))
+    return "Bulk transfers need a bulk product at both locations with the same units per pack. Configure the destination pack first.";
+  if (m.includes("BULK_TRANSFER_PENDING"))
+    return "Complete or cancel this product’s pending transfers before changing its pack conversion.";
+  if (m.includes("BULK_PRODUCT_EXISTS"))
+    return "This bulk SKU already exists here. Choose the existing product instead.";
+  if (m.includes("INDIVIDUAL_PRODUCT_REQUIRED"))
+    return "Choose an existing individual item at this location. Bulk products cannot be unpacked into other bulk products.";
+  if (m.includes("WHOLE_PACKS_REQUIRED"))
+    return "Enter a whole number of bulk packs.";
+  if (m.includes("UNPACK_COUNT_OVERRIDE_DISABLED"))
+    return "Receive the packs first, or correct a verified count through Adjust Stock before unpacking.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
-  if (m.includes("PAYMENT_UNDERPAID")) return "Collect the remaining balance before completing this sale.";
-  if (m.includes("NONCASH_OVERPAYMENT")) return "Card and EFT amounts cannot exceed the balance due.";
-  if (m.includes("PAYMENT_CONFIRMATION_REQUIRED")) return "Confirm that the card or EFT payment succeeded.";
-  if (m.includes("DUPLICATE_PAYMENT_METHOD")) return "Use one payment amount per method.";
-  if (m.includes("INVALID_PAYMENT") || m.includes("INVALID_PRICE") || m.includes("INVALID_SALE_TOTAL")) return "Check the prices and payment amounts. Use no more than two decimal places.";
+  if (m.includes("PAYMENT_UNDERPAID"))
+    return "Collect the remaining balance before completing this sale.";
+  if (m.includes("NONCASH_OVERPAYMENT"))
+    return "Card and EFT amounts cannot exceed the balance due.";
+  if (m.includes("PAYMENT_CONFIRMATION_REQUIRED"))
+    return "Confirm that the card or EFT payment succeeded.";
+  if (m.includes("DUPLICATE_PAYMENT_METHOD"))
+    return "Use one payment amount per method.";
+  if (
+    m.includes("INVALID_PAYMENT") ||
+    m.includes("INVALID_PRICE") ||
+    m.includes("INVALID_SALE_TOTAL")
+  )
+    return "Check the prices and payment amounts. Use no more than two decimal places.";
   if (m.includes("NO_ITEMS")) return "Add at least one item first.";
-  if (m.includes("duplicate key") && m.includes("barcode")) return "That barcode is already used by another product.";
+  if (m.includes("duplicate key") && m.includes("barcode"))
+    return "That barcode is already used by another product.";
   return m || "Something went wrong. Please try again.";
+}
+
+export function stockQuantity(product: {
+  quantity: number;
+  tracking_type?: string;
+}) {
+  return product.tracking_type === "SALES_ONLY"
+    ? "N/A – Sales Tracked Only"
+    : qty(product.quantity);
 }

@@ -65,6 +65,26 @@ try {
         "Passed single-store and multi-store upgrade backfill (rolled back)",
       );
     }
+    if (name.endsWith("_product_stock_tracking.sql")) {
+      await client.query("begin");
+      await client.query(
+        await readFile(
+          "supabase/tests/product_tracking_upgrade_before.sql",
+          "utf8",
+        ),
+      );
+      await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
+      await client.query(
+        await readFile(
+          "supabase/tests/product_tracking_upgrade_after.sql",
+          "utf8",
+        ),
+      );
+      await client.query("rollback");
+      console.log(
+        "Passed existing bulk stock and cash-up upgrade (rolled back)",
+      );
+    }
     await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
     console.log(`Applied ${name}`);
   }
@@ -104,6 +124,7 @@ try {
     "warehouse_transfer_workflow.sql",
     "warehouse_disable.sql",
     "location_bulk_receiving.sql",
+    "product_stock_tracking.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

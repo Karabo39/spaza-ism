@@ -27,7 +27,9 @@ begin
  req:=gen_random_uuid(); perform public.record_cash_movement(loc,day,'ADD',5,'Extra change',req);
  perform public.record_cash_movement(loc,day,'ADD',5,'Extra change',req);
  perform public.record_cash_movement(loc,day,'REMOVE',15,'Bank deposit',gen_random_uuid());
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff_id,'role','authenticated')::text,true);
  cash_up:=public.open_cash_up(loc,day,100);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);
  if cash_up<>public.open_cash_up(loc,day,100) then raise exception 'ASSERT daily opening retry'; end if;
  r:=public.cash_up_summary(loc,day); source:=r->'sources';
  if (source->>'sales')::numeric<>20 or (source->>'invoices')::numeric<>40 or (source->>'credit')::numeric<>20 or (source->>'refunds')::numeric<>10 or (r->>'expected')::numeric<>160 then raise exception 'ASSERT sources and no double count: %',r; end if;
