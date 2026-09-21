@@ -126,7 +126,7 @@ export async function localSearch(
         )
       : all
   )
-    .filter((p) => p.is_active)
+    .filter((p) => p.is_active && !p.bulk_parent_id)
     .slice(0, 20);
 }
 
@@ -135,7 +135,7 @@ export async function localAdjustQuantity(productId: string, delta: number) {
   const db = await getDB();
   if (!db) return;
   const p = await db.get("products", productId);
-  if (!p) return;
+  if (!p || p.tracking_type === "SALES_ONLY") return;
   p.quantity = Math.max(0, Number(p.quantity) + delta);
   await db.put("products", p);
 }
@@ -188,7 +188,11 @@ export async function enqueueSaleAndAdjust(sale: QueuedSale): Promise<void> {
     await tx.objectStore("salesQueue").add(sale);
     for (const item of sale.items) {
       const product = await tx.objectStore("products").get(item.product_id);
-      if (product && product._store === sale.storeId)
+      if (
+        product &&
+        product._store === sale.storeId &&
+        product.tracking_type !== "SALES_ONLY"
+      )
         await tx.objectStore("products").put({
           ...product,
           quantity: Math.max(0, Number(product.quantity) - item.quantity),

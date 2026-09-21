@@ -11,20 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { LocationProductPicker } from "./product-picker";
 import { dateTime, friendlyError, qty } from "@/lib/format";
-import type { ProductStock } from "@/lib/db/database.types";
 
 export function UnpackConsole() {
-  const { store, can } = useStore();
+  const { store } = useStore();
   const { online } = useOffline();
   const qc = useQueryClient();
   const [conversion, setConversion] = React.useState("");
   const [packs, setPacks] = React.useState(1);
   const [reason, setReason] = React.useState("");
-  const [pack, setPack] = React.useState<ProductStock | null>(null);
-  const [unit, setUnit] = React.useState<ProductStock | null>(null);
-  const [ratio, setRatio] = React.useState(6);
   const [busy, setBusy] = React.useState(false);
   const request = React.useRef<string | null>(null);
   const conversions = useQuery({
@@ -74,26 +69,6 @@ export function UnpackConsole() {
     },
   });
   const selected = conversions.data?.find((c) => c.id === conversion);
-  async function configure(e: React.FormEvent) {
-    e.preventDefault();
-    if (!pack || !unit || !online || busy) return;
-    setBusy(true);
-    try {
-      const { data, error } = await createClient().rpc("set_bulk_conversion", {
-        p_pack: pack.id,
-        p_unit: unit.id,
-        p_ratio: ratio,
-      });
-      if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["bulk-conversions"] });
-      setConversion(data!);
-      toast.success("Pack conversion saved");
-    } catch (e) {
-      toast.error(friendlyError((e as Error).message));
-    } finally {
-      setBusy(false);
-    }
-  }
   async function unpack(e: React.FormEvent) {
     e.preventDefault();
     if (
@@ -260,58 +235,10 @@ export function UnpackConsole() {
           </form>
         </CardContent>
       </Card>
-      {can("manager") ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Configure pack conversion</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={configure} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <LocationProductPicker
-                  location={store.id}
-                  label="Bulk pack product"
-                  value={pack}
-                  onChange={setPack}
-                />
-                <LocationProductPicker
-                  location={store.id}
-                  label="Individual unit product"
-                  value={unit}
-                  onChange={setUnit}
-                />
-              </div>
-              <div>
-                <Label htmlFor="pack-ratio">Units in one pack</Label>
-                <Input
-                  id="pack-ratio"
-                  type="number"
-                  min="1"
-                  max="100000"
-                  step="1"
-                  required
-                  value={ratio}
-                  onChange={(e) => setRatio(Number(e.target.value))}
-                />
-              </div>
-              <p className="text-xs text-muted">
-                Manager approval is required to configure conversions. Changing
-                a ratio affects future unpacking only; past records retain their
-                original ratio.
-              </p>
-              <Button
-                type="submit"
-                variant="secondary"
-                disabled={
-                  !online || busy || !pack || !unit || pack.id === unit.id
-                }
-              >
-                Save conversion
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <p className="text-sm text-muted">
+        Configure Bulk Stock and units per pack in the main product’s settings.
+        Unpacking always adds units to that linked product.
+      </p>
       <Card>
         <CardHeader>
           <CardTitle>Unpacking history</CardTitle>

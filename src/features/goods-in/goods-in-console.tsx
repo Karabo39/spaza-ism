@@ -1,6 +1,11 @@
 "use client";
 import * as React from "react";
-import { BulkProductDialog } from "./bulk-product-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -42,11 +47,9 @@ type Line = {
 export function GoodsInConsole() {
   const router = useRouter();
   const cache = useQueryClient();
-  const [itemType, setItemType] = React.useState<"Individual" | "Bulk Stock">(
-    "Individual",
-  );
-  const [bulkOpen, setBulkOpen] = React.useState(false);
-  const { store, stores, currency, setStore, can, canModule } = useStore();
+  const [selectedProduct, setSelectedProduct] =
+    React.useState<ProductStock | null>(null);
+  const { store, stores, currency, setStore } = useStore();
   const { online } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [suppliers, setSuppliers] = React.useState<
@@ -81,17 +84,21 @@ export function GoodsInConsole() {
     [lines],
   );
 
+  function chooseStock(p: ProductStock) {
+    if (p.store_id !== store.id) return;
+    if (p.tracking_type === "SALES_ONLY") {
+      toast.error("Sales Tracked Only products do not receive stock.");
+      return;
+    }
+    if (p.bulk_parent_id) {
+      addProduct(p);
+      return;
+    }
+    setSelectedProduct(p);
+  }
   function addProduct(p: ProductStock) {
-    if (p.store_id !== store.id) {
-      toast.error("Choose a product at this receiving location.");
-      return;
-    }
-    if ((p.item_type ?? "Individual") !== itemType) {
-      toast.error(
-        `Choose ${itemType === "Bulk Stock" ? "Bulk Stock" : "Individual"} receiving for this product.`,
-      );
-      return;
-    }
+    if (p.store_id !== store.id || p.tracking_type === "SALES_ONLY") return;
+    setSelectedProduct(null);
     setLines((prev) => {
       const ex = prev.find((l) => l.productId === p.id);
       if (ex)
@@ -132,16 +139,13 @@ export function GoodsInConsole() {
           .eq("is_active", true)
           .single();
         if (error) throw error;
-        addProduct(data as ProductStock);
+        chooseStock(data as ProductStock);
       } else {
         setUnknownCode(code);
         toast.error(`No product for "${code}"`, {
           action: {
-            label: itemType === "Bulk Stock" ? "Set up bulk" : "Register",
-            onClick: () =>
-              itemType === "Bulk Stock"
-                ? setBulkOpen(true)
-                : setRegisterOpen(true),
+            label: "Register",
+            onClick: () => setRegisterOpen(true),
           },
         });
       }
@@ -212,34 +216,6 @@ export function GoodsInConsole() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <Label htmlFor="receiving-type">Receive stock type</Label>
-            <select
-              id="receiving-type"
-              className="h-10 rounded-md border border-border bg-input px-3 text-sm"
-              value={itemType}
-              disabled={busy}
-              onChange={(e) =>
-                setItemType(e.target.value as "Individual" | "Bulk Stock")
-              }
-            >
-              <option value="Individual">Individual items</option>
-              <option value="Bulk Stock">Bulk Stock</option>
-            </select>
-          </div>
-          {itemType === "Bulk Stock" &&
-            can("manager") &&
-            canModule("products") &&
-            canModule("operations") && (
-              <Button
-                disabled={!online || busy}
-                onClick={() => setBulkOpen(true)}
-              >
-                Create / link bulk product
-              </Button>
-            )}
-        </div>
         <p className="text-xs text-muted">
           Receiving into {store.name}. Bulk stock stays in packs until unpacked
           here.
@@ -428,25 +404,67 @@ export function GoodsInConsole() {
       <ProductSearchDialog
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        onPick={addProduct}
-        itemType={itemType}
+        onPick={chooseStock}
         showPrice={false}
       />
-      {bulkOpen &&
-        can("manager") &&
-        canModule("products") &&
-        canModule("operations") && (
-          <BulkProductDialog
-            key={store.id}
-            onClose={() => setBulkOpen(false)}
-            onPick={addProduct}
-          />
-        )}
+      <Dialog
+        open={!!selectedProduct}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProduct(null);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>Stock Type</DialogTitle>
+          <DialogDescription>
+            {selectedProduct?.name} · Choose the stock being received at{" "}
+            {store.name}.
+          </DialogDescription>
+          {selectedProduct && (
+            <div className="space-y-3">
+              <Button
+                className="w-full"
+                onClick={() =>
+                  addProduct({ ...selectedProduct, item_type: "Individual" })
+                }
+              >
+                Individual
+              </Button>
+              {selectedProduct.bulk_enabled &&
+                selectedProduct.bulk_options?.map((pack) => (
+                  <Button
+                    key={pack.id}
+                    className="h-auto min-h-11 w-full whitespace-normal py-3"
+                    onClick={() =>
+                      addProduct({
+                        ...selectedProduct,
+                        id: pack.id,
+                        name: selectedProduct.name + " – Bulk Stock",
+                        unit: pack.unit,
+                        item_type: "Bulk Stock",
+                        cost_price: pack.cost_price,
+                        quantity: pack.quantity,
+                      })
+                    }
+                  >
+                    Bulk Stock · 1 {pack.unit} = {pack.units_per_pack}{" "}
+                    individual units
+                  </Button>
+                ))}
+              {!selectedProduct.bulk_enabled && (
+                <p className="text-sm text-muted">
+                  Enable Bulk Stock and configure units per pack in this
+                  product’s settings to receive bulk stock.
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <ProductRegisterDialog
         open={registerOpen}
         onOpenChange={setRegisterOpen}
         initialBarcode={unknownCode}
-        onCreated={addProduct}
+        onCreated={chooseStock}
       />
     </div>
   );

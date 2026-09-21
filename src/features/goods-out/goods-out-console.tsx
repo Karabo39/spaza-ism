@@ -45,6 +45,7 @@ type Line = {
   quantity: number;
   unitPrice: number;
   stock: number;
+  salesOnly?: boolean;
   trackExpiry: boolean;
 };
 
@@ -161,6 +162,7 @@ export function GoodsOutConsole() {
           quantity: 1,
           unitPrice: Number(p.selling_price),
           stock: Number(p.quantity),
+          salesOnly: p.tracking_type === "SALES_ONLY",
           trackExpiry: p.track_expiry,
         },
       ];
@@ -172,7 +174,10 @@ export function GoodsOutConsole() {
     const hit = await lookupByCode(store.id, code);
     setBusy(false);
     if ("product" in hit) {
-      if (hit.product.stock_status === "out")
+      if (
+        hit.product.tracking_type !== "SALES_ONLY" &&
+        hit.product.stock_status === "out"
+      )
         toast.warning(`${hit.product.name} is out of stock`);
       addProduct(hit.product);
     } else {
@@ -498,7 +503,7 @@ export function GoodsOutConsole() {
                 </THead>
                 <TBody>
                   {lines.map((l) => {
-                    const over = l.quantity > l.stock;
+                    const over = !l.salesOnly && l.quantity > l.stock;
                     return (
                       <TR key={l.productId}>
                         <TD>
@@ -512,9 +517,11 @@ export function GoodsOutConsole() {
                               over ? "text-danger" : "text-muted",
                             )}
                           >
-                            {over
-                              ? `Only ${qty(l.stock)} in stock`
-                              : `${qty(l.stock)} ${l.unit} available`}
+                            {l.salesOnly
+                              ? "N/A – Sales Tracked Only"
+                              : over
+                                ? `Only ${qty(l.stock)} in stock`
+                                : `${qty(l.stock)} ${l.unit} available`}
                           </p>
                         </TD>
                         <TD>
