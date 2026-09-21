@@ -1,3 +1,4 @@
+import { stockQuantity } from "@/lib/format";
 import { StockExport } from "@/features/stock/stock-export";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -9,7 +10,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/misc";
 import { Pagination } from "@/components/ui/pagination";
 import { StockStatusBadge } from "@/features/stock/status-badge";
-import { money, qty } from "@/lib/format";
+import { money } from "@/lib/format";
 import { Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -135,7 +136,7 @@ export default async function CheckStockPage({
                     </TD>
                     <TD className="text-muted">{r.category_name ?? "—"}</TD>
                     <TD className="text-right tabular-nums">
-                      {qty(r.quantity)}{" "}
+                      {stockQuantity(r)}{" "}
                       <span className="text-xs text-muted">{r.unit}</span>
                     </TD>
                     <TD>

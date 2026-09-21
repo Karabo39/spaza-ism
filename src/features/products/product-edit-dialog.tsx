@@ -1,6 +1,10 @@
 "use client";
 import Link from "next/link";
 import * as React from "react";
+import {
+  StockConfiguration,
+  type StockConfigurationValue,
+} from "./stock-configuration";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
@@ -40,6 +44,14 @@ export function ProductEditDialog({
     track_expiry: product.track_expiry,
     is_active: product.is_active,
   });
+  const [stockConfig, setStockConfig] = React.useState<StockConfigurationValue>(
+    {
+      tracking_type: product.tracking_type ?? "QUANTITY",
+      bulk_enabled: product.bulk_enabled ?? false,
+      units_per_pack: String(product.bulk_options?.[0]?.units_per_pack ?? 6),
+      bulk_unit: product.bulk_options?.[0]?.unit ?? "case",
+    },
+  );
   const [expiry, setExpiry] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const set = (k: keyof typeof form, v: string | boolean) =>
@@ -65,7 +77,10 @@ export function ProductEditDialog({
         min_stock_level: Number(form.min) || 0,
         reorder_level: Number(form.reorder) || 0,
         unit: form.unit.trim() || "each",
-        track_expiry: form.track_expiry,
+        ...stockConfig,
+        units_per_pack: Number(stockConfig.units_per_pack),
+        track_expiry:
+          stockConfig.tracking_type === "QUANTITY" && form.track_expiry,
         is_active: form.is_active,
       },
     });
@@ -159,78 +174,88 @@ export function ProductEditDialog({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label htmlFor="e-min">Min level</Label>
-                <Input
-                  id="e-min"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={form.min}
-                  onChange={(e) => set("min", e.target.value)}
-                />
+            <StockConfiguration value={stockConfig} onChange={setStockConfig} />
+            {stockConfig.tracking_type === "QUANTITY" && (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="e-min">Min level</Label>
+                  <Input
+                    id="e-min"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={form.min}
+                    onChange={(e) => set("min", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="e-re">Reorder</Label>
+                  <Input
+                    id="e-re"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={form.reorder}
+                    onChange={(e) => set("reorder", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="e-unit">Unit</Label>
+                  <Input
+                    id="e-unit"
+                    value={form.unit}
+                    onChange={(e) => set("unit", e.target.value)}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="e-re">Reorder</Label>
-                <Input
-                  id="e-re"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={form.reorder}
-                  onChange={(e) => set("reorder", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="e-unit">Unit</Label>
-                <Input
-                  id="e-unit"
-                  value={form.unit}
-                  onChange={(e) => set("unit", e.target.value)}
-                />
-              </div>
-            </div>
+            )}
             <div className="flex flex-col gap-2 rounded-md border border-border bg-surface-2 p-3">
-              <label className="flex items-center justify-between text-sm">
-                <span>Track expiry (batches)</span>
-                <input
-                  type="checkbox"
-                  checked={form.track_expiry}
-                  onChange={(e) => set("track_expiry", e.target.checked)}
-                />
-              </label>
-              {form.track_expiry &&
-                (product.undated_quantity ?? product.quantity) > 0 && (
-                  <div>
-                    <Label htmlFor="e-expiry">Expiry for undated stock</Label>
-                    <Input
-                      id="e-expiry"
-                      type="date"
-                      required
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
+              {stockConfig.tracking_type === "QUANTITY" && (
+                <>
+                  <label className="flex items-center justify-between text-sm">
+                    <span>Track expiry (batches)</span>
+                    <input
+                      type="checkbox"
+                      checked={form.track_expiry}
+                      onChange={(e) => set("track_expiry", e.target.checked)}
                     />
+                  </label>
+                  {form.track_expiry &&
+                    (product.undated_quantity ?? product.quantity) > 0 && (
+                      <div>
+                        <Label htmlFor="e-expiry">
+                          Expiry for undated stock
+                        </Label>
+                        <Input
+                          id="e-expiry"
+                          type="date"
+                          required
+                          value={expiry}
+                          onChange={(e) => setExpiry(e.target.value)}
+                        />
+                        <p className="text-xs text-muted">
+                          Applies to{" "}
+                          {product.undated_quantity ?? product.quantity} undated
+                          units. Existing dated batches remain separate. Use the
+                          batch section to split quantities.
+                        </p>
+                      </div>
+                    )}
+                  {form.track_expiry && product.quantity > 0 && (
+                    <Link
+                      className="block text-sm text-accent"
+                      href={`/products/${product.id}#expiry-batches`}
+                      onClick={() => setOpen(false)}
+                    >
+                      View and correct individual batch expiry dates
+                    </Link>
+                  )}
+                  {form.track_expiry && product.quantity === 0 && (
                     <p className="text-xs text-muted">
-                      Applies to {product.undated_quantity ?? product.quantity}{" "}
-                      undated units. Existing dated batches remain separate. Use
-                      the batch section to split quantities.
+                      No stock yet. Enter the expiry when stock is received.
                     </p>
-                  </div>
-                )}
-              {form.track_expiry && product.quantity > 0 && (
-                <Link
-                  className="block text-sm text-accent"
-                  href={`/products/${product.id}#expiry-batches`}
-                  onClick={() => setOpen(false)}
-                >
-                  View and correct individual batch expiry dates
-                </Link>
-              )}
-              {form.track_expiry && product.quantity === 0 && (
-                <p className="text-xs text-muted">
-                  No stock yet. Enter the expiry when stock is received.
-                </p>
+                  )}
+                </>
               )}
               <label className="flex items-center justify-between text-sm">
                 <span>Active (available for sale)</span>

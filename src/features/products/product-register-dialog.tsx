@@ -1,5 +1,9 @@
 "use client";
 import * as React from "react";
+import {
+  StockConfiguration,
+  type StockConfigurationValue,
+} from "./stock-configuration";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -40,6 +44,14 @@ function ProductRegisterDialogContent({
   const [minLevel, setMinLevel] = React.useState("");
   const [reorder, setReorder] = React.useState("");
   const [trackExpiry, setTrackExpiry] = React.useState(false);
+  const [stockConfig, setStockConfig] = React.useState<StockConfigurationValue>(
+    {
+      tracking_type: "QUANTITY",
+      bulk_enabled: false,
+      units_per_pack: "6",
+      bulk_unit: "case",
+    },
+  );
   const [loading, setLoading] = React.useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -57,7 +69,9 @@ function ProductRegisterDialogContent({
         selling: Number(selling) || 0,
         min: Number(minLevel) || 0,
         reorder: Number(reorder) || 0,
-        track_expiry: trackExpiry,
+        ...stockConfig,
+        units_per_pack: Number(stockConfig.units_per_pack),
+        track_expiry: stockConfig.tracking_type === "QUANTITY" && trackExpiry,
       },
     });
     if (error || !id) {
@@ -154,45 +168,50 @@ function ProductRegisterDialogContent({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="p-min">Min stock level</Label>
-              <Input
-                id="p-min"
-                type="number"
-                step="0.001"
-                min="0"
-                value={minLevel}
-                onChange={(e) => setMinLevel(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-            <div>
-              <Label htmlFor="p-reorder">Reorder level</Label>
-              <Input
-                id="p-reorder"
-                type="number"
-                step="0.001"
-                min="0"
-                value={reorder}
-                onChange={(e) => setReorder(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-          </div>
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={trackExpiry}
-              onChange={(e) => setTrackExpiry(e.target.checked)}
-            />
-            Track expiry by batch
-          </label>
-          {trackExpiry && (
-            <p className="text-sm text-muted">
-              A date is required when you receive stock. This creates an empty
-              catalogue item.
-            </p>
+          <StockConfiguration value={stockConfig} onChange={setStockConfig} />
+          {stockConfig.tracking_type === "QUANTITY" && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="p-min">Min stock level</Label>
+                  <Input
+                    id="p-min"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={minLevel}
+                    onChange={(e) => setMinLevel(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="p-reorder">Reorder level</Label>
+                  <Input
+                    id="p-reorder"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={reorder}
+                    onChange={(e) => setReorder(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={trackExpiry}
+                  onChange={(e) => setTrackExpiry(e.target.checked)}
+                />
+                Track expiry by batch
+              </label>
+              {trackExpiry && (
+                <p className="text-sm text-muted">
+                  A date is required when you receive stock. This creates an
+                  empty catalogue item.
+                </p>
+              )}
+            </>
           )}
           <DialogFooter>
             <Button

@@ -1,4 +1,5 @@
 "use client";
+import { stockQuantity } from "@/lib/format";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -13,7 +14,7 @@ import {
 import { useStore } from "@/lib/store-context";
 import { createClient } from "@/lib/supabase/client";
 import { searchProducts } from "./lookup";
-import { money, qty } from "@/lib/format";
+import { money } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import type { ProductStock } from "@/lib/db/database.types";
 
@@ -101,7 +102,7 @@ function ProductSearchDialogContent({
                   <p className="text-sm font-medium">{p.name}</p>
                   {p.sku && <p className="text-xs text-muted">SKU: {p.sku}</p>}
                   <p className="text-xs text-muted">
-                    In stock: {qty(p.quantity)} {p.unit}
+                    In stock: {stockQuantity(p)} {p.unit}
                   </p>
                 </div>
                 {p.stock_status === "out" ? (

@@ -1,3 +1,4 @@
+import { stockQuantity } from "@/lib/format";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -38,7 +39,8 @@ export default async function ProductsPage({
   let query = supabase
     .from("v_product_catalog")
     .select("*", { count: "exact" })
-    .eq("store_id", store.id);
+    .eq("store_id", store.id)
+    .is("bulk_parent_id", null);
   if (q) query = query.ilike("search_text", `%${q}%`);
   const status = ["ok", "low", "out", "reorder", "inactive"].includes(
     sp.status ?? "",
@@ -76,11 +78,25 @@ export default async function ProductsPage({
         </p>
         <ExportButton
           filename="products"
-          rows={rows}
+          rows={rows.map((r) => ({
+            ...r,
+            quantity:
+              r.tracking_type === "SALES_ONLY"
+                ? "N/A – Sales Tracked Only"
+                : r.quantity,
+            bulk_stock: (r.bulk_options ?? [])
+              .map((b) => `${b.quantity} ${b.unit} × ${b.units_per_pack}`)
+              .join(", "),
+            tracking:
+              r.tracking_type === "SALES_ONLY"
+                ? "Sales Tracked Only"
+                : "Quantity Tracked",
+          }))}
           columns={[
             { key: "id", label: "Product ID" },
             { key: "name", label: "Product" },
-            { key: "item_type", label: "Item Type" },
+            { key: "tracking", label: "Stock Tracking" },
+            { key: "bulk_stock", label: "Bulk Stock" },
             { key: "sku", label: "SKU" },
             { key: "barcodes", label: "Barcodes" },
             { key: "nearest_expiry", label: "Nearest expiry" },
@@ -124,6 +140,7 @@ export default async function ProductsPage({
                 <TR>
                   <TH>Product</TH>
                   <TH>Item Type</TH>
+                  <TH>Bulk Stock</TH>
                   <TH>SKU</TH>
                   <TH>Barcode</TH>
                   <TH>Nearest expiry</TH>
@@ -150,7 +167,21 @@ export default async function ProductsPage({
                         </Badge>
                       ) : null}
                     </TD>
-                    <TD>{r.item_type ?? "Individual"}</TD>
+                    <TD>
+                      {r.tracking_type === "SALES_ONLY"
+                        ? "Sales Tracked Only"
+                        : "Individual"}
+                    </TD>
+                    <TD>
+                      {r.bulk_enabled
+                        ? (r.bulk_options ?? [])
+                            .map(
+                              (b) =>
+                                `${b.quantity} ${b.unit} × ${b.units_per_pack}`,
+                            )
+                            .join(", ") || "0"
+                        : "Not enabled"}
+                    </TD>
                     <TD>{r.sku || "—"}</TD>
                     <TD className="max-w-48 break-all text-xs">
                       {r.barcodes || "None"}
@@ -168,7 +199,7 @@ export default async function ProductsPage({
                     </TD>
                     <TD className="text-muted">{r.category_name ?? "—"}</TD>
                     <TD className="text-right tabular-nums">
-                      {qty(r.quantity)}
+                      {stockQuantity(r)}
                       {r.track_expiry && (
                         <span className="block text-xs text-muted">
                           {qty(r.sellable_quantity)} sellable

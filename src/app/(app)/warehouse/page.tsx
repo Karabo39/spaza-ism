@@ -1,3 +1,4 @@
+import { stockQuantity } from "@/lib/format";
 import { TransfersConsole } from "@/features/operations/transfers-console";
 import { WarehouseAdd } from "@/features/operations/warehouse-add";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/shell/page-header";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { qty, money } from "@/lib/format";
+import { money } from "@/lib/format";
 import { ExportButton } from "@/features/reports/export-button";
 export default async function WarehouseStockPage() {
   const session = await getSession();
@@ -38,6 +39,7 @@ export default async function WarehouseStockPage() {
     ? await supabase
         .from("v_product_catalog")
         .select("*")
+        .is("bulk_parent_id", null)
         .in(
           "store_id",
           locations.map((s) => s.id),
@@ -65,12 +67,26 @@ export default async function WarehouseStockPage() {
             <WarehouseAdd />
             <ExportButton
               prominent
-              rows={rows}
+              rows={rows.map((r) => ({
+                ...r,
+                quantity:
+                  r.tracking_type === "SALES_ONLY"
+                    ? "N/A – Sales Tracked Only"
+                    : r.quantity,
+                bulk_stock: (r.bulk_options ?? [])
+                  .map((b) => `${b.quantity} ${b.unit} × ${b.units_per_pack}`)
+                  .join(", "),
+                tracking:
+                  r.tracking_type === "SALES_ONLY"
+                    ? "Sales Tracked Only"
+                    : "Quantity Tracked",
+              }))}
               filename="warehouse-stock"
               columns={[
                 { key: "location", label: "Warehouse" },
                 { key: "name", label: "Product" },
-                { key: "item_type", label: "Item Type" },
+                { key: "tracking", label: "Stock Tracking" },
+                { key: "bulk_stock", label: "Bulk Stock" },
                 { key: "sku", label: "SKU" },
                 { key: "cost_price", label: "Unit cost" },
                 { key: "quantity", label: "Quantity" },
@@ -104,6 +120,7 @@ export default async function WarehouseStockPage() {
               <TH>Warehouse</TH>
               <TH>Product</TH>
               <TH>Item Type</TH>
+              <TH>Bulk Stock</TH>
               <TH>SKU / Barcode</TH>
               <TH>Quantity</TH>
               <TH>Unit cost</TH>
@@ -116,7 +133,21 @@ export default async function WarehouseStockPage() {
               <TR key={p.id}>
                 <TD>{p.location}</TD>
                 <TD>{p.name}</TD>
-                <TD>{p.item_type ?? "Individual"}</TD>
+                <TD>
+                  {p.tracking_type === "SALES_ONLY"
+                    ? "Sales Tracked Only"
+                    : "Individual"}
+                </TD>
+                <TD>
+                  {p.bulk_enabled
+                    ? (p.bulk_options ?? [])
+                        .map(
+                          (b) =>
+                            `${b.quantity} ${b.unit} × ${b.units_per_pack}`,
+                        )
+                        .join(", ") || "0"
+                    : "Not enabled"}
+                </TD>
                 <TD>
                   {p.sku || "—"}
                   <p className="text-xs text-muted">
@@ -125,17 +156,31 @@ export default async function WarehouseStockPage() {
                 </TD>
                 <TD
                   className={
-                    Number(p.quantity) > 0 ? "text-success" : "text-danger"
+                    p.tracking_type === "SALES_ONLY"
+                      ? "text-muted"
+                      : Number(p.quantity) > 0
+                        ? "text-success"
+                        : "text-danger"
                   }
                 >
-                  {qty(p.quantity)} {p.unit}
+                  {stockQuantity(p)} {p.unit}
                 </TD>
                 <TD>{money(p.cost_price, p.currency)}</TD>
                 <TD>
                   <Badge
-                    variant={Number(p.quantity) > 0 ? "success" : "danger"}
+                    variant={
+                      p.tracking_type === "SALES_ONLY"
+                        ? "neutral"
+                        : Number(p.quantity) > 0
+                          ? "success"
+                          : "danger"
+                    }
                   >
-                    {Number(p.quantity) > 0 ? "In Stock" : "Out of Stock"}
+                    {p.tracking_type === "SALES_ONLY"
+                      ? "Sales Tracked Only"
+                      : Number(p.quantity) > 0
+                        ? "In Stock"
+                        : "Out of Stock"}
                   </Badge>
                 </TD>
                 <TD>{money(p.stock_value, p.currency)}</TD>

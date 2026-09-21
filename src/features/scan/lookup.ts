@@ -80,7 +80,8 @@ export async function searchProducts(
       .from("v_product_catalog")
       .select("*")
       .eq("store_id", storeId)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .is("bulk_parent_id", null);
     if (t) query = query.ilike("search_text", `%${t}%`);
     const { data } = await query.order("name").limit(20);
     return (data as ProductStock[]) ?? [];

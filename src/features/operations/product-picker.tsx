@@ -1,11 +1,11 @@
 "use client";
+import { stockQuantity } from "@/lib/format";
 import * as React from "react";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { qty } from "@/lib/format";
 import { money } from "@/lib/format";
 import { ChevronDown } from "lucide-react";
 import { useStore } from "@/lib/store-context";
@@ -83,7 +83,7 @@ function LegacyProductPicker({
         {rows.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
-            {p.sku ? ` · SKU: ${p.sku}` : ""} · {qty(p.quantity)} {p.unit}
+            {p.sku ? ` · SKU: ${p.sku}` : ""} · {stockQuantity(p)} {p.unit}
           </option>
         ))}
       </select>
@@ -247,7 +247,7 @@ function SearchProductPicker({
                   </span>
                   <span className="block text-xs text-muted">
                     {money(Number(p.selling_price), currency)} ·{" "}
-                    {qty(p.quantity)} {p.unit} available
+                    {stockQuantity(p)} {p.unit} available
                   </span>
                 </li>
               ))}

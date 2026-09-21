@@ -1,3 +1,4 @@
+import { stockQuantity } from "@/lib/format";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -96,7 +97,7 @@ export default async function ProductDetailPage({
           <CardContent className="p-4">
             <p className="text-xs text-muted">In stock</p>
             <p className="mt-1 text-xl font-semibold tabular-nums">
-              {qty(p.quantity)}{" "}
+              {stockQuantity(p)}{" "}
               <span className="text-sm text-muted">{p.unit}</span>
             </p>
             <div className="mt-1">

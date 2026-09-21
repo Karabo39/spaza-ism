@@ -47,6 +47,10 @@ export function StockExport({
   const rows = scope === "page" ? currentRows : (query.data?.rows ?? []);
   const prepared = rows.map((r) => ({
     ...r,
+    quantity:
+      r.tracking_type === "SALES_ONLY"
+        ? "N/A – Sales Tracked Only"
+        : r.quantity,
     stock_status: r.is_active ? r.stock_status : "Inactive",
     store: store.name,
     filter: status,
