@@ -1,0 +1,306 @@
+{
+  "at": "2026-09-22T14:23:23.770Z",
+  "pages": [
+    {
+      "path": "/",
+      "samples": [
+        {
+          "ttfb": 1139,
+          "total": 1306,
+          "decodedBytes": 96034,
+          "status": 200,
+          "region": "cpt1::dub1::l9vcn-1790087008327-fb54bcda5994"
+        },
+        {
+          "ttfb": 564,
+          "total": 730,
+          "decodedBytes": 96034,
+          "status": 200,
+          "region": "cpt1::dub1::kgdw9-1790087009411-d0ab931972aa"
+        },
+        {
+          "ttfb": 481,
+          "total": 652,
+          "decodedBytes": 96034,
+          "status": 200,
+          "region": "cpt1::dub1::h6rz8-1790087010131-464f49c5a2ce"
+        }
+      ]
+    },
+    {
+      "path": "/goods-out",
+      "samples": [
+        {
+          "ttfb": 676,
+          "total": 833,
+          "decodedBytes": 60927,
+          "status": 200,
+          "region": "cpt1::dub1::h6rz8-1790087010791-87ca22daed2e"
+        },
+        {
+          "ttfb": 633,
+          "total": 802,
+          "decodedBytes": 60927,
+          "status": 200,
+          "region": "cpt1::dub1::t88jt-1790087011616-c8871d881038"
+        },
+        {
+          "ttfb": 491,
+          "total": 656,
+          "decodedBytes": 60927,
+          "status": 200,
+          "region": "cpt1::dub1::sdxgg-1790087012436-fa9c70a55400"
+        }
+      ]
+    },
+    {
+      "path": "/check-stock",
+      "samples": [
+        {
+          "ttfb": 489,
+          "total": 576,
+          "decodedBytes": 104215,
+          "status": 200,
+          "region": "cpt1::dub1::zkrvg-1790087013098-0e8668af58fb"
+        },
+        {
+          "ttfb": 460,
+          "total": 542,
+          "decodedBytes": 104215,
+          "status": 200,
+          "region": "cpt1::dub1::fq4lx-1790087013650-59aa0d4e4e8c"
+        },
+        {
+          "ttfb": 492,
+          "total": 665,
+          "decodedBytes": 104215,
+          "status": 200,
+          "region": "cpt1::dub1::kgdw9-1790087014186-11f0dfc70053"
+        }
+      ]
+    },
+    {
+      "path": "/products",
+      "samples": [
+        {
+          "ttfb": 496,
+          "total": 657,
+          "decodedBytes": 116603,
+          "status": 200,
+          "region": "cpt1::dub1::h6rz8-1790087014877-f69adddcf85b"
+        },
+        {
+          "ttfb": 469,
+          "total": 643,
+          "decodedBytes": 116603,
+          "status": 200,
+          "region": "cpt1::dub1::xk7zg-1790087015530-cea4dd995b06"
+        },
+        {
+          "ttfb": 619,
+          "total": 796,
+          "decodedBytes": 116603,
+          "status": 200,
+          "region": "cpt1::dub1::jkktr-1790087016176-a3ea4ed49664"
+        }
+      ]
+    },
+    {
+      "path": "/reports/goods-out",
+      "samples": [
+        {
+          "ttfb": 740,
+          "total": 899,
+          "decodedBytes": 109004,
+          "status": 200,
+          "region": "cpt1::dub1::l9vcn-1790087016996-029dce6dc4d6"
+        },
+        {
+          "ttfb": 453,
+          "total": 618,
+          "decodedBytes": 109004,
+          "status": 200,
+          "region": "cpt1::dub1::kgdw9-1790087017856-1903026fcdc6"
+        },
+        {
+          "ttfb": 458,
+          "total": 600,
+          "decodedBytes": 109004,
+          "status": 200,
+          "region": "cpt1::dub1::zkrvg-1790087018485-e7057367f7b3"
+        }
+      ]
+    },
+    {
+      "path": "/reports/movements",
+      "samples": [
+        {
+          "ttfb": 491,
+          "total": 669,
+          "decodedBytes": 157673,
+          "status": 200,
+          "region": "cpt1::dub1::kgdw9-1790087019100-6dbb3f2f030d"
+        },
+        {
+          "ttfb": 470,
+          "total": 641,
+          "decodedBytes": 157673,
+          "status": 200,
+          "region": "cpt1::dub1::pj8rj-1790087019751-2811f7b9e127"
+        },
+        {
+          "ttfb": 472,
+          "total": 652,
+          "decodedBytes": 157673,
+          "status": 200,
+          "region": "cpt1::dub1::xk7zg-1790087020391-a4fedde20b8c"
+        }
+      ]
+    },
+    {
+      "path": "/cash-up",
+      "samples": [
+        {
+          "ttfb": 494,
+          "total": 651,
+          "decodedBytes": 53393,
+          "status": 200,
+          "region": "cpt1::dub1::jkktr-1790087021057-a2a1a66f887d"
+        },
+        {
+          "ttfb": 461,
+          "total": 464,
+          "decodedBytes": 53393,
+          "status": 200,
+          "region": "cpt1::dub1::h6rz8-1790087021695-41c32c913447"
+        },
+        {
+          "ttfb": 608,
+          "total": 625,
+          "decodedBytes": 53393,
+          "status": 200,
+          "region": "cpt1::dub1::fq4lx-1790087022161-ea04ed027519"
+        }
+      ]
+    },
+    {
+      "path": "/warehouse",
+      "samples": [
+        {
+          "ttfb": 782,
+          "total": 809,
+          "decodedBytes": 61274,
+          "status": 200,
+          "region": "cpt1::dub1::bvnwb-1790087022788-74b87ce25ced"
+        },
+        {
+          "ttfb": 760,
+          "total": 776,
+          "decodedBytes": 61274,
+          "status": 200,
+          "region": "cpt1::dub1::jkktr-1790087023590-e6044543d3f6"
+        },
+        {
+          "ttfb": 490,
+          "total": 498,
+          "decodedBytes": 61274,
+          "status": 200,
+          "region": "cpt1::dub1::h6rz8-1790087024371-fd88d5098a8d"
+        }
+      ]
+    },
+    {
+      "path": "/audit",
+      "samples": [
+        {
+          "ttfb": 671,
+          "total": 997,
+          "decodedBytes": 158253,
+          "status": 200,
+          "region": "cpt1::dub1::rcz72-1790087024866-c9a4c8ccfaa4"
+        },
+        {
+          "ttfb": 613,
+          "total": 958,
+          "decodedBytes": 158253,
+          "status": 200,
+          "region": "cpt1::dub1::zkrvg-1790087025866-fbef9013d036"
+        },
+        {
+          "ttfb": 462,
+          "total": 828,
+          "decodedBytes": 158253,
+          "status": 200,
+          "region": "cpt1::dub1::p6tf9-1790087026830-ff72b4be84aa"
+        }
+      ]
+    }
+  ],
+  "rpc": [
+    {
+      "name": "session_bootstrap",
+      "ms": 367,
+      "bytes": 847
+    },
+    {
+      "name": "session_access_revision",
+      "ms": 240,
+      "bytes": 34
+    },
+    {
+      "name": "catalog_page",
+      "ms": 346,
+      "bytes": 4158
+    },
+    {
+      "name": "catalog_page",
+      "ms": 284,
+      "bytes": 4152
+    },
+    {
+      "name": "resolve_product_code",
+      "ms": 228,
+      "bytes": 645
+    },
+    {
+      "name": "catalog_manifest",
+      "ms": 240,
+      "bytes": 1141
+    },
+    {
+      "name": "catalog_sync_products",
+      "ms": 244,
+      "bytes": 3222
+    },
+    {
+      "name": "activity_page",
+      "ms": 578,
+      "bytes": 15354
+    },
+    {
+      "name": "activity_page",
+      "ms": 512,
+      "bytes": 15335
+    },
+    {
+      "name": "activity_page",
+      "ms": 284,
+      "bytes": 1493
+    },
+    {
+      "name": "activity_page",
+      "ms": 264,
+      "bytes": 1439
+    },
+    {
+      "name": "activity_page",
+      "ms": 287,
+      "bytes": 1738
+    },
+    {
+      "name": "activity_page",
+      "ms": 268,
+      "bytes": 1738
+    }
+  ]
+}

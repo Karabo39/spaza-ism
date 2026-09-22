@@ -1,0 +1,359 @@
+{
+  "pages": [
+    {
+      "path": "/",
+      "samples": [
+        {
+          "ttfb": 1936,
+          "total": 2867,
+          "decodedBytes": 95798,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::j7z8s-1790058498725-323397ba1ad9"
+        },
+        {
+          "ttfb": 1407,
+          "total": 1844,
+          "decodedBytes": 95798,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058501473-f4bf7cd3a80e"
+        },
+        {
+          "ttfb": 1357,
+          "total": 1795,
+          "decodedBytes": 95798,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::jqbzd-1790058503335-a567942da563"
+        }
+      ]
+    },
+    {
+      "path": "/goods-out",
+      "samples": [
+        {
+          "ttfb": 1365,
+          "total": 1591,
+          "decodedBytes": 60690,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058505120-eda8ba368ffd"
+        },
+        {
+          "ttfb": 1122,
+          "total": 1124,
+          "decodedBytes": 60690,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058506711-8980970abb5f"
+        },
+        {
+          "ttfb": 1309,
+          "total": 1593,
+          "decodedBytes": 60690,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058507840-3a5c49dcad41"
+        }
+      ]
+    },
+    {
+      "path": "/check-stock",
+      "samples": [
+        {
+          "ttfb": 1315,
+          "total": 1568,
+          "decodedBytes": 103181,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058509468-41338bbfae4c"
+        },
+        {
+          "ttfb": 1070,
+          "total": 1301,
+          "decodedBytes": 103181,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058510985-9129f55546d1"
+        },
+        {
+          "ttfb": 1293,
+          "total": 1527,
+          "decodedBytes": 103181,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058512293-19ec031bdfb9"
+        }
+      ]
+    },
+    {
+      "path": "/products",
+      "samples": [
+        {
+          "ttfb": 1358,
+          "total": 1601,
+          "decodedBytes": 118159,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::bj6xx-1790058513825-337df69d917f"
+        },
+        {
+          "ttfb": 1475,
+          "total": 1715,
+          "decodedBytes": 118159,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::bj6xx-1790058515430-ebc3a274beed"
+        },
+        {
+          "ttfb": 1117,
+          "total": 1346,
+          "decodedBytes": 118159,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::bj6xx-1790058517135-9a533d7ba478"
+        }
+      ]
+    },
+    {
+      "path": "/reports/goods-out",
+      "samples": [
+        {
+          "ttfb": 1129,
+          "total": 1544,
+          "decodedBytes": 112379,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::n9pfs-1790058518503-e389db0ebacc"
+        },
+        {
+          "ttfb": 1294,
+          "total": 1699,
+          "decodedBytes": 112379,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::xkgsd-1790058520030-c03397798ead"
+        },
+        {
+          "ttfb": 1138,
+          "total": 1548,
+          "decodedBytes": 112379,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::j7z8s-1790058521725-9c886757e207"
+        }
+      ]
+    },
+    {
+      "path": "/reports/movements",
+      "samples": [
+        {
+          "ttfb": 1294,
+          "total": 1547,
+          "decodedBytes": 266448,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::j7z8s-1790058523278-3114f5b82f6f"
+        },
+        {
+          "ttfb": 1851,
+          "total": 2108,
+          "decodedBytes": 266448,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::87d2r-1790058524836-b92479f80d0d"
+        },
+        {
+          "ttfb": 1111,
+          "total": 1348,
+          "decodedBytes": 266448,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zw4ns-1790058526930-ec4a5c5b464d"
+        }
+      ]
+    },
+    {
+      "path": "/cash-up",
+      "samples": [
+        {
+          "ttfb": 1086,
+          "total": 1309,
+          "decodedBytes": 53153,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zw4ns-1790058528270-031416e1622e"
+        },
+        {
+          "ttfb": 1085,
+          "total": 1313,
+          "decodedBytes": 53153,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zw4ns-1790058529590-f833e40448a9"
+        },
+        {
+          "ttfb": 1501,
+          "total": 1732,
+          "decodedBytes": 53153,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058530910-053d655672f0"
+        }
+      ]
+    },
+    {
+      "path": "/warehouse",
+      "samples": [
+        {
+          "ttfb": 1083,
+          "total": 1311,
+          "decodedBytes": 60521,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::4rjsn-1790058532625-4a3bd48487e8"
+        },
+        {
+          "ttfb": 1453,
+          "total": 1685,
+          "decodedBytes": 60521,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::cd4z8-1790058533948-343390cd52ee"
+        },
+        {
+          "ttfb": 1355,
+          "total": 1463,
+          "decodedBytes": 60521,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::jqbzd-1790058535630-db580c8651da"
+        }
+      ]
+    },
+    {
+      "path": "/audit",
+      "samples": [
+        {
+          "ttfb": 1109,
+          "total": 3590,
+          "decodedBytes": 1115154,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::gp4tf-1790058537090-c4e2f17f5501"
+        },
+        {
+          "ttfb": 1339,
+          "total": 3749,
+          "decodedBytes": 1115154,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058540688-6fcdf25d3037"
+        },
+        {
+          "ttfb": 1508,
+          "total": 3837,
+          "decodedBytes": 1115154,
+          "status": 200,
+          "redirect": null,
+          "region": "cpt1::iad1::zrznq-1790058544430-379ef897a184"
+        }
+      ]
+    }
+  ],
+  "api": [
+    {
+      "name": "search",
+      "samples": [
+        {
+          "ttfb": 361,
+          "total": 363,
+          "decodedBytes": 864,
+          "status": 200
+        },
+        {
+          "ttfb": 248,
+          "total": 249,
+          "decodedBytes": 864,
+          "status": 200
+        },
+        {
+          "ttfb": 258,
+          "total": 259,
+          "decodedBytes": 864,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "name": "mirror",
+      "samples": [
+        {
+          "ttfb": 240,
+          "total": 241,
+          "decodedBytes": 7704,
+          "status": 200
+        },
+        {
+          "ttfb": 243,
+          "total": 245,
+          "decodedBytes": 7704,
+          "status": 200
+        },
+        {
+          "ttfb": 253,
+          "total": 254,
+          "decodedBytes": 7704,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "name": "cash-up",
+      "samples": [
+        {
+          "ttfb": 283,
+          "total": 284,
+          "decodedBytes": 679,
+          "status": 200
+        },
+        {
+          "ttfb": 243,
+          "total": 244,
+          "decodedBytes": 679,
+          "status": 200
+        },
+        {
+          "ttfb": 234,
+          "total": 235,
+          "decodedBytes": 679,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "samples": [
+        {
+          "ttfb": 226,
+          "total": 227,
+          "decodedBytes": 237,
+          "status": 200
+        },
+        {
+          "ttfb": 224,
+          "total": 225,
+          "decodedBytes": 237,
+          "status": 200
+        },
+        {
+          "ttfb": 235,
+          "total": 235,
+          "decodedBytes": 237,
+          "status": 200
+        }
+      ]
+    }
+  ]
+}
