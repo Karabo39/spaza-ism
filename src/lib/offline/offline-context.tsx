@@ -51,8 +51,8 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     busy.current = true;
     setSyncing(true);
     try {
-      await syncProductMirror(store.id);
       const { synced, failed } = await flushSaleQueue(store.id);
+      await syncProductMirror(store.id);
       await refresh();
       if (synced > 0)
         toast.success(
@@ -110,7 +110,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   // Keep the mirror warm while online.
   React.useEffect(() => {
     const t = setInterval(() => {
-      if (navigator.onLine)
+      if (navigator.onLine && document.visibilityState === "visible")
         void syncProductMirror(store.id).catch(() => {
           /* Retain the last usable offline catalogue; retry next interval. */
         });

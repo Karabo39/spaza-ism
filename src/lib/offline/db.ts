@@ -28,15 +28,15 @@ interface SpazaDB extends DBSchema {
   products: {
     key: string;
     value: ProductStock & { _store: string };
-    indexes: { by_store: string };
+    indexes: { by_store: string; by_sku: [string, string] };
   };
   barcodes: {
-    key: string;
+    key: [string, string];
     value: { barcode: string; product_id: string; store_id: string };
-    indexes: { by_store: string };
+    indexes: { by_store: string; by_product: [string, string] };
   };
   salesQueue: { key: string; value: QueuedSale; indexes: { by_store: string } };
-  meta: { key: string; value: { key: string; value: number } };
+  meta: { key: string; value: { key: string; value: number | string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<SpazaDB>> | null = null;
@@ -45,15 +45,29 @@ function getDB() {
   if (typeof indexedDB === "undefined") return null;
   if (!dbPromise) {
     // Keep the original database name so the POS INVENTORY rebrand retains queued sales.
-    dbPromise = openDB<SpazaDB>("spaza-ism", 1, {
-      upgrade(db) {
-        const p = db.createObjectStore("products", { keyPath: "id" });
-        p.createIndex("by_store", "_store");
-        const b = db.createObjectStore("barcodes", { keyPath: "barcode" });
+    dbPromise = openDB<SpazaDB>("spaza-ism", 2, {
+      async upgrade(db, oldVersion, _newVersion, tx) {
+        // Read the old cache inside the upgrade transaction before changing its key.
+        // This retains barcode lookup even if the first online sync fails.
+        const oldBarcodes =
+          oldVersion >= 1 ? await tx.objectStore("barcodes").getAll() : [];
+        if (oldVersion < 1) {
+          const p = db.createObjectStore("products", { keyPath: "id" });
+          p.createIndex("by_store", "_store");
+          const s = db.createObjectStore("salesQueue", { keyPath: "id" });
+          s.createIndex("by_store", "storeId");
+          db.createObjectStore("meta", { keyPath: "key" });
+        }
+        // Only the barcode cache is rebuilt; the durable sales outbox is retained.
+        if (db.objectStoreNames.contains("barcodes"))
+          db.deleteObjectStore("barcodes");
+        const b = db.createObjectStore("barcodes", {
+          keyPath: ["store_id", "barcode"],
+        });
         b.createIndex("by_store", "store_id");
-        const s = db.createObjectStore("salesQueue", { keyPath: "id" });
-        s.createIndex("by_store", "storeId");
-        db.createObjectStore("meta", { keyPath: "key" });
+        b.createIndex("by_product", ["store_id", "product_id"]);
+        tx.objectStore("products").createIndex("by_sku", ["_store", "sku"]);
+        await Promise.all(oldBarcodes.map((barcode) => b.put(barcode)));
       },
     });
   }
@@ -92,15 +106,17 @@ export async function localFindByBarcode(
 ): Promise<ProductStock | null> {
   const db = await getDB();
   if (!db) return null;
-  const bc = await db.get("barcodes", code.trim());
+  const bc = await db.get("barcodes", [storeId, code.trim()]);
   if (bc && bc.store_id === storeId) {
     const p = await db.get("products", bc.product_id);
-    if (p) return p;
+    if (p?.is_active && p._store === storeId) return p;
   }
   // Fall back to SKU/name exact match.
-  const all = await db.getAllFromIndex("products", "by_store", storeId);
-  const hit = all.find((p) => p.sku === code.trim());
-  return hit ?? null;
+  const hit = await db.getFromIndex("products", "by_sku", [
+    storeId,
+    code.trim(),
+  ]);
+  return hit?.is_active ? hit : null;
 }
 
 export async function localFindById(id: string): Promise<ProductStock | null> {
@@ -112,22 +128,31 @@ export async function localFindById(id: string): Promise<ProductStock | null> {
 export async function localSearch(
   storeId: string,
   term: string,
+  itemType?: "Individual" | "Bulk Stock",
 ): Promise<ProductStock[]> {
   const db = await getDB();
   if (!db) return [];
-  const all = await db.getAllFromIndex("products", "by_store", storeId);
   const t = term.trim().toLowerCase();
-  return (
-    t
-      ? all.filter(
-          (p) =>
-            p.name.toLowerCase().includes(t) ||
-            (p.sku ?? "").toLowerCase().includes(t),
-        )
-      : all
-  )
-    .filter((p) => p.is_active && !p.bulk_parent_id)
-    .slice(0, 20);
+  const result: ProductStock[] = [];
+  let cursor = await db
+    .transaction("products")
+    .store.index("by_store")
+    .openCursor(storeId);
+  while (cursor && result.length < 20) {
+    const p = cursor.value;
+    const matchingType =
+      itemType === "Bulk Stock" ? !!p.bulk_parent_id : !p.bulk_parent_id;
+    if (
+      p.is_active &&
+      matchingType &&
+      (!t ||
+        p.name.toLowerCase().includes(t) ||
+        (p.sku ?? "").toLowerCase().includes(t))
+    )
+      result.push(p);
+    cursor = await cursor.continue();
+  }
+  return result;
 }
 
 /** Optimistically reduce a mirrored quantity after an offline sale. */
@@ -144,7 +169,83 @@ export async function lastSync(storeId: string): Promise<number | null> {
   const db = await getDB();
   if (!db) return null;
   const m = await db.get("meta", `sync:${storeId}`);
-  return m?.value ?? null;
+  return typeof m?.value === "number" ? m.value : null;
+}
+
+export type MirrorProduct = ProductStock & { _barcodes: string[] };
+export async function mirrorVersions(
+  storeId: string,
+): Promise<Record<string, string>> {
+  const db = await getDB();
+  const value = db && (await db.get("meta", `versions:${storeId}`))?.value;
+  if (typeof value !== "string") return {};
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+}
+
+/** Commit a complete manifest and changed rows atomically; never discard queued sales. */
+export async function mergeProductMirror(
+  storeId: string,
+  products: MirrorProduct[],
+  versions: Record<string, string>,
+) {
+  const db = await getDB();
+  if (!db) return;
+  const tx = db.transaction(
+    ["products", "barcodes", "meta", "salesQueue"],
+    "readwrite",
+  );
+  const pStore = tx.objectStore("products"),
+    bStore = tx.objectStore("barcodes");
+  const reserved = new Map<string, number>();
+  for (const sale of await tx
+    .objectStore("salesQueue")
+    .index("by_store")
+    .getAll(storeId)) {
+    for (const item of sale.items)
+      reserved.set(
+        item.product_id,
+        (reserved.get(item.product_id) ?? 0) + item.quantity,
+      );
+  }
+  const changed = new Set(products.map((p) => p.id));
+  for (const key of await pStore.index("by_store").getAllKeys(storeId)) {
+    if (!versions[key]) {
+      await pStore.delete(key);
+      changed.add(key);
+    }
+  }
+  for (const key of changed) {
+    const keys = await bStore.index("by_product").getAllKeys([storeId, key]);
+    await Promise.all(keys.map((k) => bStore.delete(k)));
+  }
+  await Promise.all(
+    products.map(async ({ _barcodes, ...p }) => {
+      await pStore.put({
+        ...p,
+        _store: storeId,
+        quantity:
+          p.tracking_type === "SALES_ONLY"
+            ? p.quantity
+            : Math.max(0, Number(p.quantity) - (reserved.get(p.id) ?? 0)),
+      });
+      await Promise.all(
+        _barcodes.map((barcode) =>
+          bStore.put({ barcode, store_id: storeId, product_id: p.id }),
+        ),
+      );
+    }),
+  );
+  await tx
+    .objectStore("meta")
+    .put({ key: `versions:${storeId}`, value: JSON.stringify(versions) });
+  await tx
+    .objectStore("meta")
+    .put({ key: `sync:${storeId}`, value: Date.now() });
+  await tx.done;
 }
 
 // ---------- sales outbox ----------

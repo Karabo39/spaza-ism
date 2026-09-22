@@ -10,6 +10,7 @@ import {
   listQueuedSales,
   updateQueuedSale,
   removeQueuedSale,
+  mergeProductMirror,
   type QueuedSale,
 } from "@/lib/offline/db";
 import type { ProductStock } from "@/lib/db/database.types";
@@ -58,6 +59,40 @@ describe("offline product mirror", () => {
 
   it("returns null for unknown barcode", async () => {
     expect(await localFindByBarcode(STORE, "999")).toBeNull();
+  });
+
+  it("keeps the same barcode isolated between stores", async () => {
+    await replaceProductMirror(
+      "store-2",
+      [{ ...product("other", "Other milk"), store_id: "store-2" }],
+      [{ barcode: "111", product_id: "other", store_id: "store-2" }],
+    );
+    expect((await localFindByBarcode(STORE, "111"))?.id).toBe("p1");
+    expect((await localFindByBarcode("store-2", "111"))?.id).toBe("other");
+  });
+
+  it("merges changes without losing queued reservations or obsolete barcodes", async () => {
+    const queued: QueuedSale = {
+      id: "merge-sale",
+      storeId: STORE,
+      items: [{ product_id: "p1", quantity: 2, unit_price: 10 }],
+      total: 20,
+      createdAt: Date.now(),
+      status: "pending",
+    };
+    await enqueueSaleAndAdjust(queued);
+    await mergeProductMirror(
+      STORE,
+      [{ ...product("p1", "Milk 1L", 15), _barcodes: ["222"] }],
+      { p1: "v2" },
+    );
+    expect(await localFindByBarcode(STORE, "111")).toBeNull();
+    expect((await localFindByBarcode(STORE, "222"))?.quantity).toBe(13);
+    expect(await localSearch(STORE, "Bread")).toEqual([]);
+    expect(
+      (await listQueuedSales(STORE)).find((s) => s.id === queued.id),
+    ).toBeDefined();
+    await removeQueuedSale(queued.id);
   });
 
   it("searches by name", async () => {
