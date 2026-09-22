@@ -1175,6 +1175,48 @@ export type Database = {
       };
     };
     Functions: {
+      activity_page: {
+        Args: {
+          p_kind: string;
+          p_scope: string;
+          p_from?: string | null;
+          p_to?: string | null;
+          p_after?: Json | null;
+          p_limit?: number;
+          p_details?: boolean;
+        };
+        Returns: Json;
+      };
+
+      resolve_product_code: {
+        Args: { p_store: string; p_code: string };
+        Returns: Json;
+      };
+      catalog_page: {
+        Args: {
+          p_stores: string[];
+          p_search?: string;
+          p_status?: string;
+          p_active?: boolean | null;
+          p_main_only?: boolean;
+          p_item_type?: string | null;
+          p_after?: Json | null;
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
+      catalog_manifest: {
+        Args: { p_store: string; p_after?: string | null };
+        Returns: Json;
+      };
+      catalog_sync_products: {
+        Args: { p_store: string; p_ids: string[] };
+        Returns: Json;
+      };
+
+      session_bootstrap: { Args: Record<string, never>; Returns: Json };
+      session_access_revision: { Args: Record<string, never>; Returns: string };
+
       quantity_sales_report: {
         Args: {
           p_store: string;

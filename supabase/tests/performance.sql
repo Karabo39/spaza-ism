@@ -1,0 +1,76 @@
+do $$
+declare owner_id uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid();
+ biz uuid; loc uuid; other_loc uuid; member uuid; product uuid; p2 uuid; pack uuid; r jsonb; page jsonb; cursor jsonb;
+ previous_revision text; version_before uuid; ids uuid[]:='{}'; row jsonb; n integer; denied jsonb;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(owner_id,'perf-owner@test.invalid','{}'),
+ (outsider,'perf-other@test.invalid','{}'),(staff,'perf-staff@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);set local role authenticated;
+ r:=public.create_business('Performance test','Shop');biz:=(r->>'business_id')::uuid;loc:=(r->>'store_id')::uuid;
+ product:=public.create_product_catalog(loc,'Apple sample','{"barcode":"PERF-EXACT","sku":"PERF-SKU","cost":2,"selling":5,"bulk_enabled":true,"units_per_pack":6,"bulk_unit":"case"}');
+ p2:=public.create_product_catalog(loc,'Literal % sign','{"barcode":"PERF-OTHER","cost":1,"selling":2}');
+ select pack_product_id into pack from public.bulk_conversions where unit_product_id=product;
+ r:=public.session_bootstrap();
+ if not (r->>'has_membership')::boolean or jsonb_array_length(r->'stores')<>1 then raise exception 'ASSERT bootstrap stores';end if;
+ if (public.resolve_product_code(loc,'PERF-EXACT')->>'id')::uuid<>product then raise exception 'ASSERT barcode one-call result';end if;
+ -- SKU set explicitly so this checks the SKU path independently of create-product defaults.
+ update public.products set sku='PERF-SKU' where id=product;
+ if (public.resolve_product_code(loc,'PERF-SKU')->>'id')::uuid<>product then raise exception 'ASSERT SKU fallback';end if;
+ if public.resolve_product_code(loc,'unknown') is not null then raise exception 'ASSERT unknown lookup';end if;
+ page:=public.catalog_page(array[loc],p_search=>'PERF-EXACT',p_limit=>20);
+ if jsonb_array_length(page->'rows')<>1 or (page->'rows'->0->>'id')::uuid<>product then raise exception 'ASSERT exact search';end if;
+ page:=public.catalog_page(array[loc],p_search=>'%');
+ if jsonb_array_length(page->'rows')<>1 then raise exception 'ASSERT wildcard escaped';end if;
+ page:=public.catalog_page(array[loc],p_search=>'pple');
+ if jsonb_array_length(page->'rows')<>1 then raise exception 'ASSERT substring name search';end if;
+ select version into version_before from app.catalog_versions where product_id=product;
+ perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',pack,'quantity',2)));
+ if (select version from app.catalog_versions where product_id=product)=version_before then raise exception 'ASSERT bulk parent version';end if;
+ r:=public.catalog_sync_products(loc,array[product]);
+ if jsonb_array_length(r)<>1 or r->0->'_barcodes'->>0<>'PERF-EXACT' or (r->0->'bulk_options'->0->>'quantity')::numeric<>2 then raise exception 'ASSERT incremental product payload';end if;
+ select version into version_before from app.catalog_versions where product_id=product;
+ update public.product_barcodes set is_active=false where product_id=product;
+ if (select version from app.catalog_versions where product_id=product)=version_before then raise exception 'ASSERT barcode version';end if;
+ if public.resolve_product_code(loc,'PERF-EXACT') is not null then raise exception 'ASSERT inactive barcode';end if;
+ insert into public.products(business_id,store_id,name) select biz,loc,'Page product '||lpad(i::text,4,'0') from generate_series(1,505) i;
+ cursor:=null;
+ loop
+  page:=public.catalog_page(array[loc],p_search=>'Page product',p_after=>cursor,p_limit=>37);
+  if jsonb_array_length(page->'rows')>37 then raise exception 'ASSERT page bound';end if;
+  for row in select value from jsonb_array_elements(page->'rows') loop
+   if (row->>'id')::uuid=any(ids) then raise exception 'ASSERT cursor duplicate';end if;
+   ids:=array_append(ids,(row->>'id')::uuid);
+  end loop;
+  cursor:=nullif(page->'next','null'::jsonb);exit when cursor is null;
+ end loop;
+ if cardinality(ids)<>505 then raise exception 'ASSERT cursor skipped rows';end if;
+ r:=public.catalog_manifest(loc);if jsonb_array_length(r)<>500 then raise exception 'ASSERT manifest page';end if;
+ r:=public.catalog_manifest(loc,(r->499->>'id')::uuid);
+ if jsonb_array_length(r)<>8 then raise exception 'ASSERT manifest beyond old batch';end if;
+ page:=public.activity_page('audit',biz,p_limit=>2);
+ if jsonb_array_length(page->'rows')<>2 or (page->'rows'->0) ? 'before_data' or (page->'rows'->0) ? 'stock_items' then raise exception 'ASSERT audit summary only';end if;
+ cursor:=page->'next';r:=public.activity_page('audit',biz,p_after=>cursor,p_limit=>2);
+ if r->'rows'->0->>'id'=page->'rows'->0->>'id' then raise exception 'ASSERT timestamp tie cursor';end if;
+ r:=public.activity_page('audit',biz,p_limit=>1,p_details=>true);
+ if not ((r->'rows'->0) ? 'before_data') then raise exception 'ASSERT explicit export details';end if;
+ reset role;
+ member:=public.add_member_by_email(biz,'perf-staff@test.invalid','employee');set local role authenticated;
+ perform public.set_member_locations(member,array[loc]);
+ select jsonb_object_agg(key,false) into denied from public.module_catalog;
+ perform public.set_store_module_access(member,loc,denied||'{"check_price":true}',0);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+ previous_revision:=public.session_access_revision();
+ if jsonb_array_length(public.catalog_manifest(loc))=0 then raise exception 'ASSERT permitted lookup';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);
+ perform public.set_store_module_access(member,loc,denied,1);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+ if previous_revision=public.session_access_revision() then raise exception 'ASSERT permission revision';end if;
+ if public.resolve_product_code(loc,'PERF-SKU') is not null or public.catalog_manifest(loc)<>'[]'::jsonb or jsonb_array_length(public.catalog_page(array[loc])->'rows')<>0 then raise exception 'ASSERT revocation on all new APIs';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',outsider,'role','authenticated')::text,true);
+ r:=public.create_business('Other business','Other store');other_loc:=(r->>'store_id')::uuid;
+ if public.resolve_product_code(loc,'PERF-SKU') is not null or public.catalog_sync_products(other_loc,array[product])<>'[]'::jsonb or public.catalog_manifest(loc)<>'[]'::jsonb then raise exception 'ASSERT tenant isolation';end if;
+ if jsonb_array_length(public.activity_page('audit',biz)->'rows')<>0 then raise exception 'ASSERT audit isolation';end if;
+ reset role;
+ if has_function_privilege('anon','public.session_bootstrap()','execute') or has_function_privilege('anon','public.resolve_product_code(uuid,text)','execute') then raise exception 'ASSERT anonymous denied';end if;
+ raise exception 'TESTS_PASSED';
+end $$;

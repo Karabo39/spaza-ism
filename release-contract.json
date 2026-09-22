@@ -21,6 +21,7 @@
     "warehouse_transfer_workflow_v1",
     "warehouse_disable_v1",
     "location_bulk_receiving_v1",
-    "product_stock_tracking_v1"
+    "product_stock_tracking_v1",
+    "performance_v1"
   ]
 }

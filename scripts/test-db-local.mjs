@@ -125,6 +125,7 @@ try {
     "warehouse_disable.sql",
     "location_bulk_receiving.sql",
     "product_stock_tracking.sql",
+    "performance.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
