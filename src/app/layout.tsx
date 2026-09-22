@@ -2,6 +2,7 @@ import * as React from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { PerformanceInsights } from "@/components/performance-insights";
 import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/providers";
 import { BRAND_NAME, BRAND_DESCRIPTION, BRAND_URL } from "@/lib/brand";
@@ -14,13 +15,19 @@ export const metadata: Metadata = {
   description: BRAND_DESCRIPTION,
   manifest: "/manifest.webmanifest",
   applicationName: BRAND_NAME,
-  appleWebApp: { capable: true, title: BRAND_NAME, statusBarStyle: "black-translucent" },
+  appleWebApp: {
+    capable: true,
+    title: BRAND_NAME,
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     type: "website",
     title: BRAND_NAME,
     siteName: BRAND_NAME,
     description: BRAND_DESCRIPTION,
-    images: [{ url: "/brand/og-image.png", width: 1200, height: 630, alt: BRAND_NAME }],
+    images: [
+      { url: "/brand/og-image.png", width: 1200, height: 630, alt: BRAND_NAME },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -46,12 +53,21 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${geistSans.variable} h-full`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
         <Analytics />
+        <PerformanceInsights />
       </body>
     </html>
   );
