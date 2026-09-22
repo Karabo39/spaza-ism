@@ -239,9 +239,21 @@ export async function mergeProductMirror(
       );
     }),
   );
+  // A queue entry may have been removed while this manifest was in flight.
+  // Do not overwrite its invalidation unless we actually fetched that product.
+  const currentMeta = await tx.objectStore("meta").get(`versions:${storeId}`);
+  const currentVersions: Record<string, string> =
+    typeof currentMeta?.value === "string" ? JSON.parse(currentMeta.value) : {};
+  const committedVersions = { ...versions };
+  for (const id of Object.keys(committedVersions)) {
+    if (!changed.has(id) && !currentVersions[id]) delete committedVersions[id];
+  }
   await tx
     .objectStore("meta")
-    .put({ key: `versions:${storeId}`, value: JSON.stringify(versions) });
+    .put({
+      key: `versions:${storeId}`,
+      value: JSON.stringify(committedVersions),
+    });
   await tx
     .objectStore("meta")
     .put({ key: `sync:${storeId}`, value: Date.now() });
@@ -275,7 +287,23 @@ export async function updateQueuedSale(id: string, patch: Partial<QueuedSale>) {
 export async function removeQueuedSale(id: string) {
   const db = await getDB();
   if (!db) return;
-  await db.delete("salesQueue", id);
+  const tx = db.transaction(["salesQueue", "meta"], "readwrite");
+  const sale = await tx.objectStore("salesQueue").get(id);
+  await tx.objectStore("salesQueue").delete(id);
+  if (sale) {
+    // Discarding a failed sale releases a local reservation even when the
+    // server's product version has not changed. Reconcile it on the next sync.
+    const key = `versions:${sale.storeId}`;
+    const meta = await tx.objectStore("meta").get(key);
+    if (typeof meta?.value === "string") {
+      const versions: Record<string, string> = JSON.parse(meta.value);
+      for (const item of sale.items) delete versions[item.product_id];
+      await tx
+        .objectStore("meta")
+        .put({ key, value: JSON.stringify(versions) });
+    }
+  }
+  await tx.done;
 }
 
 /** Persist the outbox entry and mirrored quantities together, exactly once. */

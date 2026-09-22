@@ -11,6 +11,7 @@ import {
   updateQueuedSale,
   removeQueuedSale,
   mergeProductMirror,
+  mirrorVersions,
   type QueuedSale,
 } from "@/lib/offline/db";
 import type { ProductStock } from "@/lib/db/database.types";
@@ -93,6 +94,17 @@ describe("offline product mirror", () => {
       (await listQueuedSales(STORE)).find((s) => s.id === queued.id),
     ).toBeDefined();
     await removeQueuedSale(queued.id);
+    expect(await mirrorVersions(STORE)).toEqual({});
+    // A manifest that started before removal must not restore the stale token.
+    await mergeProductMirror(STORE, [], { p1: "v2" });
+    expect(await mirrorVersions(STORE)).toEqual({});
+    await mergeProductMirror(
+      STORE,
+      [{ ...product("p1", "Milk 1L", 15), _barcodes: ["222"] }],
+      { p1: "v2" },
+    );
+    expect((await localFindByBarcode(STORE, "222"))?.quantity).toBe(15);
+    expect(await mirrorVersions(STORE)).toEqual({ p1: "v2" });
   });
 
   it("searches by name", async () => {
