@@ -5,6 +5,7 @@ import type { Session, SessionStore } from "@/lib/session";
 import type { MembershipRole } from "@/lib/db/database.types";
 import { ACTIVE_STORE_COOKIE } from "@/lib/constants";
 import type { ModuleKey } from "@/lib/modules";
+import { createClient } from "@/lib/supabase/client";
 
 type StoreContextValue = {
   user: { id: string; email: string | null; fullName: string | null };
@@ -34,19 +35,48 @@ export function StoreProvider({
 }) {
   const router = useRouter();
   React.useEffect(() => {
-    const refresh = () => {
-      if (navigator.onLine && document.visibilityState === "visible")
-        router.refresh();
+    let cancelled = false;
+    let checking = false;
+    let lastCheck = 0;
+    const refresh = async () => {
+      if (
+        !navigator.onLine ||
+        document.visibilityState !== "visible" ||
+        checking ||
+        Date.now() - lastCheck < 15000
+      )
+        return;
+      checking = true;
+      lastCheck = Date.now();
+      try {
+        const { data, error } = await createClient().rpc(
+          "session_access_revision",
+          {},
+        );
+        // Only rerender when access/profile/location metadata has changed.
+        // RLS and mutation RPCs always enforce current grants independently.
+        if (
+          !cancelled &&
+          ((!error && data !== session.accessRevision) ||
+            error?.code === "PGRST301")
+        )
+          router.refresh();
+      } catch {
+        /* Keep the current view on transient network failure. */
+      } finally {
+        checking = false;
+      }
     };
     window.addEventListener("online", refresh);
     document.addEventListener("visibilitychange", refresh);
     const interval = window.setInterval(refresh, 60000);
     return () => {
+      cancelled = true;
       window.removeEventListener("online", refresh);
       document.removeEventListener("visibilitychange", refresh);
       window.clearInterval(interval);
     };
-  }, [router]);
+  }, [router, session.accessRevision]);
 
   const setStore = React.useCallback(
     (id: string) => {

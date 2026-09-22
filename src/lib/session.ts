@@ -2,7 +2,6 @@ import { activeSellingStore } from "./location-scope";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { databaseReady } from "@/lib/release-status";
 import {
   modulePermissions,
   firstModulePath,
@@ -33,6 +32,24 @@ export type Session = {
   stores: SessionStore[];
   activeStore: SessionStore | null;
   hasMembership: boolean;
+  accessRevision: string;
+};
+
+type SessionBootstrap = {
+  setup_required: boolean;
+  full_name: string | null;
+  has_membership: boolean;
+  revision: string;
+  stores: {
+    id: string;
+    name: string;
+    business_id: string;
+    business_name: string;
+    role: MembershipRole;
+    currency: string;
+    location_type: LocationType;
+    permissions: unknown;
+  }[];
 };
 
 /**
@@ -46,90 +63,21 @@ const loadSession = cache(async (): Promise<Session | null> => {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  if (!(await databaseReady()))
-    throw new Error("SERVICE_TEMPORARILY_UNAVAILABLE");
-
-  const { data: setup, error: setupError } = await supabase.rpc(
-    "my_employee_setup",
-    {},
-  );
-  if (setupError) throw new Error("SERVICE_TEMPORARILY_UNAVAILABLE");
-  if ((setup as { required?: boolean } | null)?.required)
-    redirect("/accept-invitation");
-
-  const [{ data: memberships }, { data: stores }, { data: profile }] =
-    await Promise.all([
-      supabase
-        .from("memberships")
-        .select("id, business_id, role, businesses(name, currency)")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .throwOnError(),
-      supabase
-        .from("stores")
-        .select("id, name, business_id, location_type, currency")
-        .eq("is_active", true)
-        .order("location_type")
-        .order("name")
-        .throwOnError(),
-      supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle(),
-    ]);
-
-  const { data: grants } = memberships?.length
-    ? await supabase
-        .from("store_module_access")
-        .select("membership_id, store_id, permissions")
-        .in(
-          "membership_id",
-          memberships.map((m) => m.id),
-        )
-        .throwOnError()
-    : { data: [] };
-  const grantsByStore = new Map(
-    (grants ?? []).map((g) => [
-      `${g.membership_id}:${g.store_id}`,
-      g.permissions,
-    ]),
-  );
-  const roleByBusiness = new Map<
-    string,
-    { id: string; role: MembershipRole; name: string; currency: string }
-  >();
-  for (const m of memberships ?? []) {
-    const biz = m.businesses as unknown as {
-      name: string;
-      currency: string;
-    } | null;
-    roleByBusiness.set(m.business_id, {
-      id: m.id,
-      role: m.role,
-      name: biz?.name ?? "Business",
-      currency: biz?.currency ?? "ZAR",
-    });
-  }
-
-  const sessionStores: SessionStore[] = (stores ?? [])
-    .filter((s) => roleByBusiness.has(s.business_id))
-    .map((s) => {
-      const b = roleByBusiness.get(s.business_id)!;
-      return {
-        id: s.id,
-        name: s.name,
-        businessId: s.business_id,
-        businessName: b.name,
-        role: b.role,
-        currency: s.currency,
-        locationType: s.location_type,
-        modules: modulePermissions(
-          b.role,
-          grantsByStore.get(`${b.id}:${s.id}`),
-        ),
-      };
-    })
+  const { data, error } = await supabase.rpc("session_bootstrap", {});
+  if (error || !data) throw new Error("SERVICE_TEMPORARILY_UNAVAILABLE");
+  const bootstrap = data as unknown as SessionBootstrap;
+  if (bootstrap.setup_required) redirect("/accept-invitation");
+  const sessionStores: SessionStore[] = bootstrap.stores
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      businessId: s.business_id,
+      businessName: s.business_name,
+      role: s.role,
+      currency: s.currency,
+      locationType: s.location_type,
+      modules: modulePermissions(s.role, s.permissions ?? undefined),
+    }))
     .filter((s) => s.locationType !== "warehouse" || s.modules.warehouse);
 
   const cookieStore = await cookies();
@@ -139,10 +87,11 @@ const loadSession = cache(async (): Promise<Session | null> => {
   return {
     userId: user.id,
     email: user.email ?? null,
-    fullName: profile?.full_name ?? user.email ?? null,
+    fullName: bootstrap.full_name ?? user.email ?? null,
     stores: sessionStores,
     activeStore,
-    hasMembership: (memberships ?? []).length > 0,
+    hasMembership: bootstrap.has_membership,
+    accessRevision: bootstrap.revision,
   };
 });
 

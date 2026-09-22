@@ -2,7 +2,17 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/db/database.types";
 
-const PUBLIC_PATHS = ["/accept-invitation", "/login", "/signup", "/forgot-password", "/auth", "/_next", "/favicon", "/icon", "/manifest"];
+const PUBLIC_PATHS = [
+  "/accept-invitation",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/auth",
+  "/_next",
+  "/favicon",
+  "/icon",
+  "/manifest",
+];
 
 /** Refreshes the auth session and gates the app behind login. */
 export async function updateSession(request: NextRequest) {
@@ -19,7 +29,9 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
@@ -29,7 +41,10 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // Signature-verified token gate; the server DAL still checks the current user.
+  // With asymmetric keys this avoids an Auth round-trip on every prefetch.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
 
@@ -37,13 +52,17 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
   }
 
   if (user && (path === "/login" || path === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
   }
 
   return response;
