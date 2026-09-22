@@ -8,7 +8,8 @@ import { ToolbarSearch } from "@/components/shell/toolbar-search";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/misc";
 import { Badge } from "@/components/ui/badge";
-import { Pagination } from "@/components/ui/pagination";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
+import { readCursor, dataPage, type CatalogProduct } from "@/lib/data-pages";
 import { StockStatusBadge } from "@/features/stock/status-badge";
 import { AddProductButton } from "@/features/products/add-product-button";
 import { money, qty } from "@/lib/format";
@@ -24,7 +25,7 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{
     q?: string;
-    page?: string;
+    cursor?: string;
     status?: string;
   }>;
 }) {
@@ -32,30 +33,26 @@ export default async function ProductsPage({
   const session = await getSession("products");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
-  const page = Math.max(1, Number(sp.page) || 1);
+
   const q = sp.q ?? "";
   const supabase = await createClient();
 
-  let query = supabase
-    .from("v_product_catalog")
-    .select("*", { count: "exact" })
-    .eq("store_id", store.id)
-    .is("bulk_parent_id", null);
-  if (q) query = query.ilike("search_text", `%${q}%`);
   const status = ["ok", "low", "out", "reorder", "inactive"].includes(
     sp.status ?? "",
   )
-    ? (sp.status! as "ok" | "low" | "out" | "reorder" | "inactive")
+    ? sp.status!
     : "all";
-  if (status === "inactive") query = query.eq("is_active", false);
-  else if (status !== "all")
-    query = query.eq("is_active", true).eq("stock_status", status);
-  const { data, count } = await query
-    .order("is_active", { ascending: false })
-    .order("name")
-    .order("id")
-    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-  const rows = data ?? [];
+  const { data, error } = await supabase.rpc("catalog_page", {
+    p_stores: [store.id],
+    p_search: q,
+    p_status: status,
+    p_active: status === "all" ? null : status !== "inactive",
+    p_main_only: true,
+    p_after: readCursor(sp.cursor),
+    p_limit: PAGE_SIZE,
+  });
+  if (error) throw error;
+  const { rows, next } = dataPage<CatalogProduct>(data);
 
   return (
     <>
@@ -223,10 +220,10 @@ export default async function ProductsPage({
                 ))}
               </TBody>
             </Table>
-            <Pagination
-              page={page}
-              pageSize={PAGE_SIZE}
-              total={count ?? 0}
+            <CursorPagination
+              next={next}
+              current={sp.cursor}
+              count={rows.length}
               params={{ q, status }}
               basePath="/products"
             />

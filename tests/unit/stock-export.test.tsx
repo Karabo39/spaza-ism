@@ -1,13 +1,62 @@
-import {beforeEach,expect,it,vi} from "vitest";
-import {cleanup,fireEvent,render,screen} from "@testing-library/react";
-import {StockExport} from "@/features/stock/stock-export";
-const mock=vi.hoisted(()=>({rows:[] as Record<string,unknown>[]}));
-vi.mock("@/lib/store-context",()=>({useStore:()=>({store:{id:"store",name:"Shop"}})}));
-vi.mock("@tanstack/react-query",()=>({useQuery:()=>({data:{rows:Array.from({length:24},(_,i)=>({name:`Product ${i}`,is_active:true})),generated:"2026-09-07"}})}));
-vi.mock("@/features/reports/export-button",()=>({ExportButton:({rows}:{rows:Record<string,unknown>[]})=>{mock.rows=rows;return null;}}));
-beforeEach(cleanup);
-it("exports all matches by default and supports an explicit current-page scope",()=>{
- render(<StockExport status="low" search="water" currentRows={[{name:"Page item",is_active:true}]}/>);
- expect(mock.rows).toHaveLength(24);expect(mock.rows[0]).toMatchObject({store:"Shop",filter:"low",search:"water"});
- fireEvent.change(screen.getByLabelText("Export scope"),{target:{value:"page"}});expect(mock.rows).toHaveLength(1);expect(mock.rows[0].name).toBe("Page item");
+import { beforeEach, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { StockExport } from "@/features/stock/stock-export";
+const mock = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  load: null as null | (() => Promise<Record<string, unknown>[]>),
+}));
+vi.mock("@/lib/store-context", () => ({
+  useStore: () => ({ store: { id: "store", name: "Shop" } }),
+}));
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ rpc: mock.rpc }),
+}));
+vi.mock("@/features/reports/export-button", () => ({
+  ExportButton: ({
+    loadRows,
+  }: {
+    loadRows: () => Promise<Record<string, unknown>[]>;
+  }) => {
+    mock.load = loadRows;
+    return null;
+  },
+}));
+beforeEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+it("does not fetch until export is requested, then includes every matching page", async () => {
+  mock.rpc
+    .mockResolvedValueOnce({
+      data: {
+        rows: [{ name: "First", is_active: true }],
+        next: { id: "next", name: "First" },
+      },
+      error: null,
+    })
+    .mockResolvedValueOnce({
+      data: { rows: [{ name: "Second", is_active: true }], next: null },
+      error: null,
+    });
+  render(
+    <StockExport
+      status="low"
+      search="water"
+      currentRows={[{ name: "Page item", is_active: true }]}
+    />,
+  );
+  expect(mock.rpc).not.toHaveBeenCalled();
+  const rows = await mock.load!();
+  expect(rows.map((r) => r.name)).toEqual(["First", "Second"]);
+  expect(rows[0]).toMatchObject({
+    store: "Shop",
+    filter: "low",
+    search: "water",
+  });
+  fireEvent.change(screen.getByLabelText("Export scope"), {
+    target: { value: "page" },
+  });
+  mock.rpc.mockClear();
+  expect((await mock.load!())[0].name).toBe("Page item");
+  expect(mock.rpc).not.toHaveBeenCalled();
 });

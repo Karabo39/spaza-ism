@@ -7,7 +7,11 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/misc";
 import { Badge } from "@/components/ui/badge";
 import { DateFilter } from "@/features/reports/date-filter";
-import { ExportButton } from "@/features/reports/export-button";
+import { ActivityExport } from "@/features/reports/paged-export";
+import { type ActivityRow } from "@/features/reports/activity-data";
+import { readCursor, dataPage } from "@/lib/data-pages";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
+
 import { MOVEMENT_META } from "@/features/stock/movement-meta";
 import { qty, dateTime } from "@/lib/format";
 import { ArrowLeftRight } from "lucide-react";
@@ -15,7 +19,7 @@ import { ArrowLeftRight } from "lucide-react";
 export default async function MovementsReport({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; cursor?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession("reports");
@@ -23,47 +27,17 @@ export default async function MovementsReport({
   const store = session.activeStore;
   const supabase = await createClient();
 
-  let query = supabase
-    .from("stock_movements")
-    .select(
-      "id, movement_type, stock_type, quantity_delta, quantity_before, quantity_after, reason, created_at, products(name,sku,bulk_parent_id)",
-    )
-    .eq("store_id", store.id);
-  if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
-  if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const { data, error } = await supabase.rpc("activity_page", {
+    p_kind: "movements",
+    p_scope: store.id,
+    p_from: sp.from ? businessDayStart(sp.from) : null,
+    p_to: sp.to ? businessDayAfter(sp.to) : null,
+    p_after: readCursor(sp.cursor),
+    p_limit: 50,
+  });
   if (error) throw error;
-  const rows = (data ?? []) as unknown as {
-    id: string;
-    stock_type: string;
-    movement_type: keyof typeof MOVEMENT_META;
-    quantity_delta: number;
-    quantity_before: number;
-    quantity_after: number;
-    reason: string | null;
-    created_at: string;
-    products: {
-      name: string;
-      sku: string | null;
-      bulk_parent_id: string | null;
-    } | null;
-  }[];
+  const { rows, next } = dataPage<ActivityRow>(data);
 
-  const exportRows = rows.map((m) => ({
-    date: dateTime(m.created_at),
-    product: m.products?.name ?? "",
-    sku: m.products?.sku ?? "",
-    stock_type:
-      m.stock_type ??
-      (m.products?.bulk_parent_id ? "Bulk Stock" : "Individual"),
-    type: MOVEMENT_META[m.movement_type]?.label ?? m.movement_type,
-    change: m.quantity_delta,
-    before: m.quantity_before,
-    after: m.quantity_after,
-    reason: m.reason ?? "",
-  }));
   const columns = [
     { key: "date", label: "Date" },
     { key: "product", label: "Product" },
@@ -88,8 +62,11 @@ export default async function MovementsReport({
         actions={
           <>
             <DateFilter />
-            <ExportButton
-              rows={exportRows}
+            <ActivityExport
+              kind="movements"
+              scope={store.id}
+              from={sp.from ? businessDayStart(sp.from) : undefined}
+              to={sp.to ? businessDayAfter(sp.to) : undefined}
               columns={columns}
               filename="stock-movements"
             />
@@ -97,10 +74,7 @@ export default async function MovementsReport({
         }
       />
       <p className="mb-4 text-sm text-muted">
-        {rows.length} records shown. Exports and totals cover these results.
-        {rows.length === 500
-          ? " Latest 500; narrow the dates for earlier records."
-          : ""}
+        {rows.length} records shown. Export includes all matching records.
       </p>
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
@@ -155,6 +129,13 @@ export default async function MovementsReport({
           </Table>
         )}
       </div>
+      <CursorPagination
+        next={next}
+        current={sp.cursor}
+        count={rows.length}
+        basePath="/reports/movements"
+        params={sp}
+      />
     </>
   );
 }

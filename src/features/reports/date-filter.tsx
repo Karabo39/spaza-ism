@@ -13,6 +13,7 @@ export function DateFilter() {
     if (value) next.set(key, value);
     else next.delete(key);
     next.delete("page");
+    next.delete("cursor");
     router.replace(`${pathname}?${next.toString()}`);
   }
 

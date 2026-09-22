@@ -93,7 +93,12 @@ it("still runs the offline-aware product lookup without a connection", async () 
   await act(async () => {
     await vi.advanceTimersByTimeAsync(200);
   });
-  expect(lookup).toHaveBeenCalledWith("store", "");
+  expect(lookup).toHaveBeenCalledWith(
+    "store",
+    "",
+    expect.any(AbortSignal),
+    undefined,
+  );
 });
 it("coalesces a typing burst into one search and resets on reopening", async () => {
   const client = new QueryClient({
@@ -122,7 +127,12 @@ it("coalesces a typing burst into one search and resets on reopening", async () 
     await vi.advanceTimersByTimeAsync(200);
   });
   expect(lookup).toHaveBeenCalledTimes(1);
-  expect(lookup).toHaveBeenLastCalledWith("store", "milk");
+  expect(lookup).toHaveBeenLastCalledWith(
+    "store",
+    "milk",
+    expect.any(AbortSignal),
+    undefined,
+  );
   rerender(view(false));
   rerender(view(true));
   expect(

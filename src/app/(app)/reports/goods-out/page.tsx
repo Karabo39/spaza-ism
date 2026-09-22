@@ -8,14 +8,23 @@ import { EmptyState } from "@/components/ui/misc";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DateFilter } from "@/features/reports/date-filter";
-import { ExportButton } from "@/features/reports/export-button";
+import { ActivityExport } from "@/features/reports/paged-export";
+import {
+  type ActivityRow,
+  paymentType,
+  paymentAmount,
+  approverName as approver,
+} from "@/features/reports/activity-data";
+import { readCursor, dataPage } from "@/lib/data-pages";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
+
 import { money, dateTime } from "@/lib/format";
 import { PackageMinus } from "lucide-react";
 
 export default async function GoodsOutReport({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; cursor?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession("reports");
@@ -23,88 +32,17 @@ export default async function GoodsOutReport({
   const store = session.activeStore;
   const supabase = await createClient();
 
-  let query = supabase
-    .from("goods_out")
-    .select(
-      "id, sale_type, total_amount, credit_override, performed_by, authorized_by, created_at, customers(name), goods_out_items(id)",
-    )
-    .eq("store_id", store.id);
-  if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
-  if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const { data, error } = await supabase.rpc("activity_page", {
+    p_kind: "sales",
+    p_scope: store.id,
+    p_from: sp.from ? businessDayStart(sp.from) : null,
+    p_to: sp.to ? businessDayAfter(sp.to) : null,
+    p_after: readCursor(sp.cursor),
+    p_limit: 50,
+  });
   if (error) throw error;
-  const rows = (data ?? []) as unknown as {
-    id: string;
-    sale_type: string;
-    total_amount: number;
-    credit_override: boolean;
-    performed_by: string;
-    authorized_by: string | null;
-    created_at: string;
-    customers: { name: string } | null;
-    goods_out_items: { id: string }[];
-  }[];
-
-  const userIds = [
-    ...new Set(
-      rows.flatMap((r) =>
-        [r.performed_by, r.authorized_by].filter((id): id is string => !!id),
-      ),
-    ),
-  ];
-  const { data: people, error: peopleError } = userIds.length
-    ? await supabase.from("profiles").select("id,full_name").in("id", userIds)
-    : { data: [], error: null };
-  if (peopleError) throw peopleError;
-  const names = new Map((people ?? []).map((p) => [p.id, p.full_name]));
-  const { data: receiptRows, error: receiptError } = rows.length
-    ? await supabase
-        .from("sale_receipts")
-        .select("sale_id,snapshot")
-        .eq("store_id", store.id)
-        .in(
-          "sale_id",
-          rows.map((r) => r.id),
-        )
-    : { data: [], error: null };
-  if (receiptError) throw receiptError;
-  const receipts = new Map(
-    (receiptRows ?? []).map((r) => [
-      r.sale_id,
-      r.snapshot as import("@/features/goods-out/payments").SaleReceipt,
-    ]),
-  );
-  const paymentType = (r: (typeof rows)[number]) =>
-    receipts
-      .get(r.id)
-      ?.payments.map((p) => p.method)
-      .join(" + ") || r.sale_type;
-  const paymentAmount = (
-    r: (typeof rows)[number],
-    methods: string[],
-    legacy: string,
-  ) => {
-    const receipt = receipts.get(r.id);
-    return receipt
-      ? receipt.payments
-          .filter((p) => methods.includes(p.method))
-          .reduce((sum, p) => sum + Number(p.amount), 0)
-      : r.sale_type === legacy
-        ? Number(r.total_amount)
-        : 0;
-  };
-  const salesperson = (r: (typeof rows)[number]) =>
-    receipts.get(r.id)?.cashier ||
-    names.get(r.performed_by) ||
-    "User unavailable";
-  const approver = (r: (typeof rows)[number]) =>
-    r.credit_override
-      ? r.authorized_by
-        ? names.get(r.authorized_by) || "User unavailable"
-        : "Not recorded"
-      : "—";
+  const { rows, next } = dataPage<ActivityRow>(data);
+  const salesperson = (r: ActivityRow) => r.cashier;
   const cash = rows.reduce(
     (sum, r) => sum + paymentAmount(r, ["CASH"], "CASH"),
     0,
@@ -117,16 +55,6 @@ export default async function GoodsOutReport({
     0,
   );
 
-  const exportRows = rows.map((r) => ({
-    date: dateTime(r.created_at),
-    type: paymentType(r),
-    customer: r.customers?.name ?? "",
-    items: r.goods_out_items?.length ?? 0,
-    total: r.total_amount,
-    override: r.credit_override ? "yes" : "",
-    salesperson: salesperson(r),
-    approved_by: approver(r),
-  }));
   const columns = [
     { key: "date", label: "Date" },
     { key: "type", label: "Type" },
@@ -150,8 +78,11 @@ export default async function GoodsOutReport({
         actions={
           <>
             <DateFilter />
-            <ExportButton
-              rows={exportRows}
+            <ActivityExport
+              kind="sales"
+              scope={store.id}
+              from={sp.from ? businessDayStart(sp.from) : undefined}
+              to={sp.to ? businessDayAfter(sp.to) : undefined}
               columns={columns}
               filename="goods-out"
             />
@@ -193,10 +124,8 @@ export default async function GoodsOutReport({
         </Card>
       </div>
       <p className="mb-4 text-sm text-muted">
-        {rows.length} records shown. Exports and totals cover these results.
-        {rows.length === 500
-          ? " Latest 500; narrow the dates for earlier records."
-          : ""}
+        {rows.length} records shown. Totals above cover this page. Export
+        includes all matching records.
       </p>
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
@@ -232,11 +161,11 @@ export default async function GoodsOutReport({
                       </Badge>
                     ) : null}
                   </TD>
-                  <TD className="text-muted">{r.customers?.name ?? "—"}</TD>
+                  <TD className="text-muted">{r.customer_name ?? "—"}</TD>
                   <TD>{salesperson(r)}</TD>
                   <TD>{approver(r)}</TD>
                   <TD className="text-right tabular-nums">
-                    {r.goods_out_items?.length ?? 0}
+                    {r.items_count ?? 0}
                   </TD>
                   <TD className="text-right tabular-nums font-medium">
                     {money(r.total_amount, store.currency)}
@@ -247,6 +176,13 @@ export default async function GoodsOutReport({
           </Table>
         )}
       </div>
+      <CursorPagination
+        next={next}
+        current={sp.cursor}
+        count={rows.length}
+        basePath="/reports/goods-out"
+        params={sp}
+      />
     </>
   );
 }

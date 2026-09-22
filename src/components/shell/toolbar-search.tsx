@@ -4,7 +4,13 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 
 /** Debounced search box that syncs to the `q` URL param (server components read it). */
-export function ToolbarSearch({ placeholder = "Search…", paramName = "q" }: { placeholder?: string; paramName?: string }) {
+export function ToolbarSearch({
+  placeholder = "Search…",
+  paramName = "q",
+}: {
+  placeholder?: string;
+  paramName?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -12,10 +18,12 @@ export function ToolbarSearch({ placeholder = "Search…", paramName = "q" }: { 
 
   React.useEffect(() => {
     const t = setTimeout(() => {
+      if (value.trim() === (params.get(paramName) ?? "")) return;
       const next = new URLSearchParams(Array.from(params.entries()));
       if (value.trim()) next.set(paramName, value.trim());
       else next.delete(paramName);
       next.delete("page");
+      next.delete("cursor");
       router.replace(`${pathname}?${next.toString()}`);
     }, 250);
     return () => clearTimeout(t);
@@ -25,8 +33,12 @@ export function ToolbarSearch({ placeholder = "Search…", paramName = "q" }: { 
   return (
     <div className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-input px-3 sm:w-72">
       <Search className="size-4 text-muted" />
-      <input value={value} onChange={(e) => setValue(e.target.value)} placeholder={placeholder}
-        className="flex-1 bg-transparent text-sm focus:outline-none" />
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="flex-1 bg-transparent text-sm focus:outline-none"
+      />
     </div>
   );
 }

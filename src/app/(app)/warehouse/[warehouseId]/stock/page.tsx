@@ -1,3 +1,5 @@
+import { readCursor, dataPage, type CatalogProduct } from "@/lib/data-pages";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
 import { ProductEditDialog } from "@/features/products/product-edit-dialog";
 import { AddProductButton } from "@/features/products/add-product-button";
 import { stockQuantity } from "@/lib/format";
@@ -9,21 +11,23 @@ import { Badge } from "@/components/ui/badge";
 import { money } from "@/lib/format";
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ warehouseId: string }>;
+  searchParams: Promise<{ cursor?: string }>;
 }) {
   const { warehouseId } = await params;
+  const sp = await searchParams;
   const session = await warehouseSession(warehouseId, "check_stock");
   const db = await createClient();
-  const { data, error } = await db
-    .from("v_product_catalog")
-    .select("*")
-    .eq("store_id", warehouseId)
-    .is("bulk_parent_id", null)
-    .eq("is_active", true)
-    .order("name")
-    .limit(1000);
-  if (error) throw error;
+  const result = await db.rpc("catalog_page", {
+    p_stores: [warehouseId],
+    p_active: true,
+    p_after: readCursor(sp.cursor),
+    p_limit: 50,
+  });
+  if (result.error) throw result.error;
+  const { rows: data, next } = dataPage<CatalogProduct>(result.data);
   return (
     <>
       <PageHeader
@@ -115,7 +119,13 @@ export default async function Page({
         </TBody>
       </Table>
       {!data?.length && <p>No warehouse stock products.</p>}
-      {data?.length === 1000 && <p>First 1,000 products shown.</p>}
+      <CursorPagination
+        next={next}
+        current={sp.cursor}
+        count={data.length}
+        basePath={`/warehouse/${warehouseId}/stock`}
+        params={sp}
+      />
     </>
   );
 }

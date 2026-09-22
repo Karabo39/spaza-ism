@@ -1,91 +1,56 @@
+"use client";
 import { createClient } from "@/lib/supabase/client";
 import type { ProductStock } from "@/lib/db/database.types";
+import { dataPage } from "@/lib/data-pages";
 import { localFindByBarcode, localSearch } from "@/lib/offline/db";
-
 export type LookupHit =
   | { product: ProductStock }
   | { notFound: true; code: string };
-
-function isOffline() {
-  return typeof navigator !== "undefined" && !navigator.onLine;
-}
-
-/**
- * Resolve a scanned/typed code to a product in the active store.
- * Online: exact barcode -> SKU -> id. Offline (or on network failure): the
- * local IndexedDB mirror is used so scanning still identifies products.
- */
+const isOffline = () => typeof navigator !== "undefined" && !navigator.onLine;
+const networkFailure = (message: string) =>
+  /fetch|network|failed to fetch/i.test(message);
 export async function lookupByCode(
   storeId: string,
   rawCode: string,
 ): Promise<LookupHit> {
   const code = rawCode.trim();
   if (!code) return { notFound: true, code };
-
-  if (isOffline()) {
-    const local = await localFindByBarcode(storeId, code);
-    return local ? { product: local } : { notFound: true, code };
+  if (!isOffline()) {
+    const { data, error } = await createClient().rpc("resolve_product_code", {
+      p_store: storeId,
+      p_code: code,
+    });
+    if (!error)
+      return data
+        ? { product: data as unknown as ProductStock }
+        : { notFound: true, code };
+    if (!networkFailure(error.message)) throw error;
   }
-
-  try {
-    const supabase = createClient();
-    const { data: bc } = await supabase
-      .from("product_barcodes")
-      .select("product_id")
-      .eq("store_id", storeId)
-      .eq("barcode", code)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-
-    let productId = bc?.product_id ?? null;
-    if (!productId) {
-      const { data: bySku } = await supabase
-        .from("products")
-        .select("id")
-        .eq("store_id", storeId)
-        .eq("is_active", true)
-        .eq("sku", code)
-        .limit(1)
-        .maybeSingle();
-      productId = bySku?.id ?? null;
-    }
-    if (!productId) return { notFound: true, code };
-
-    const { data: product } = await supabase
-      .from("v_product_stock")
-      .select("*")
-      .eq("id", productId)
-      .maybeSingle();
-    return product
-      ? { product: product as ProductStock }
-      : { notFound: true, code };
-  } catch {
-    // Network hiccup mid-request — fall back to the local mirror.
-    const local = await localFindByBarcode(storeId, code);
-    return local ? { product: local } : { notFound: true, code };
-  }
+  const local = await localFindByBarcode(storeId, code);
+  return local ? { product: local } : { notFound: true, code };
 }
-
-/** Free-text product search for manual add within a store (offline-aware). */
 export async function searchProducts(
   storeId: string,
   term: string,
+  signal?: AbortSignal,
+  itemType?: "Individual" | "Bulk Stock",
 ): Promise<ProductStock[]> {
   const t = term.trim();
-  if (isOffline()) return localSearch(storeId, t);
-  try {
-    const supabase = createClient();
-    let query = supabase
-      .from("v_product_catalog")
-      .select("*")
-      .eq("store_id", storeId)
-      .eq("is_active", true)
-      .is("bulk_parent_id", null);
-    if (t) query = query.ilike("search_text", `%${t}%`);
-    const { data } = await query.order("name").limit(20);
-    return (data as ProductStock[]) ?? [];
-  } catch {
-    return localSearch(storeId, t);
+  if (isOffline()) return localSearch(storeId, t, itemType);
+  let query = createClient().rpc("catalog_page", {
+    p_stores: [storeId],
+    p_search: t,
+    p_active: true,
+    p_main_only: !itemType,
+    p_item_type: itemType ?? null,
+    p_limit: 20,
+  });
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query;
+  if (signal?.aborted) throw new DOMException("Search cancelled", "AbortError");
+  if (error) {
+    if (networkFailure(error.message)) return localSearch(storeId, t, itemType);
+    throw error;
   }
+  return dataPage<ProductStock>(data).rows;
 }

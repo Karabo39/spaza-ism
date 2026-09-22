@@ -2,7 +2,11 @@
 import * as React from "react";
 import { ScanLine, Loader2, X, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CameraScanner } from "./camera-scanner";
+import dynamic from "next/dynamic";
+const CameraScanner = dynamic(
+  () => import("./camera-scanner").then((m) => m.CameraScanner),
+  { ssr: false },
+);
 
 /**
  * Large barcode scan field optimised for USB keyboard-wedge scanners.
@@ -36,10 +40,16 @@ export function ScanInput({
 
   // Only show the camera button where the API + a video input exist.
   React.useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.enumerateDevices
+    )
+      return;
     navigator.mediaDevices
       .enumerateDevices()
-      .then((devices) => setHasCamera(devices.some((d) => d.kind === "videoinput")))
+      .then((devices) =>
+        setHasCamera(devices.some((d) => d.kind === "videoinput")),
+      )
       .catch(() => setHasCamera(false));
   }, []);
 
@@ -58,7 +68,9 @@ export function ScanInput({
           "flex items-center gap-3 rounded-lg border-2 bg-input px-4 py-3 transition-colors",
           busy ? "border-primary/60" : "border-primary/40 scan-active",
         )}
-        onClick={() => { if (!cameraOpen) refocus(); }}
+        onClick={() => {
+          if (!cameraOpen) refocus();
+        }}
       >
         <ScanLine className="size-6 shrink-0 text-primary-hover" />
         <input
@@ -70,36 +82,59 @@ export function ScanInput({
           disabled={busy}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); void submit(); }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void submit();
+            }
           }}
-          onBlur={() => { if (autoFocus && !cameraOpen) setTimeout(refocus, 60); }}
+          onBlur={() => {
+            if (autoFocus && !cameraOpen) setTimeout(refocus, 60);
+          }}
           placeholder={placeholder}
           className="h-8 flex-1 bg-transparent text-lg text-foreground placeholder:text-muted focus:outline-none"
         />
         {busy ? (
           <Loader2 className="size-5 animate-spin text-muted" />
         ) : value ? (
-          <button onClick={() => { setValue(""); refocus(); }} className="text-muted hover:text-foreground" aria-label="Clear">
+          <button
+            onClick={() => {
+              setValue("");
+              refocus();
+            }}
+            className="text-muted hover:text-foreground"
+            aria-label="Clear"
+          >
             <X className="size-5" />
           </button>
         ) : null}
         {hasCamera ? (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setCameraOpen(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCameraOpen(true);
+            }}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
             aria-label="Scan with camera"
           >
-            <Camera className="size-4" /> <span className="hidden sm:inline">Camera</span>
+            <Camera className="size-4" />{" "}
+            <span className="hidden sm:inline">Camera</span>
           </button>
         ) : null}
       </div>
 
-      <CameraScanner
-        open={cameraOpen}
-        onOpenChange={(v) => { setCameraOpen(v); if (!v) refocus(); }}
-        onDetected={(code) => { void onScan(code); }}
-      />
+      {cameraOpen && (
+        <CameraScanner
+          open={cameraOpen}
+          onOpenChange={(v) => {
+            setCameraOpen(v);
+            if (!v) refocus();
+          }}
+          onDetected={(code) => {
+            void onScan(code);
+          }}
+        />
+      )}
     </>
   );
 }

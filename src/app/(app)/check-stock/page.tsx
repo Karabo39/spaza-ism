@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/shell/page-header";
 import { ToolbarSearch } from "@/components/shell/toolbar-search";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/misc";
-import { Pagination } from "@/components/ui/pagination";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
+import { readCursor, dataPage, type CatalogProduct } from "@/lib/data-pages";
 import { StockStatusBadge } from "@/features/stock/status-badge";
 import { money } from "@/lib/format";
 import { Boxes } from "lucide-react";
@@ -28,34 +29,28 @@ const FILTERS = [
 export default async function CheckStockPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; cursor?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession("check_stock");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
-  const page = Math.max(1, Number(sp.page) || 1);
+
   const status = FILTERS.some((f) => f.key === sp.status) ? sp.status! : "all";
   const q = sp.q ?? "";
 
   const supabase = await createClient();
-  let query = supabase
-    .from("v_product_stock")
-    .select("*", { count: "exact" })
-    .eq("store_id", store.id)
-    .eq("is_active", status !== "inactive");
-  if (q) query = query.ilike("name", `%${q}%`);
-  if (status === "low") query = query.eq("stock_status", "low");
-  else if (status === "out") query = query.eq("stock_status", "out");
-  else if (status === "reorder" || status === "ok")
-    query = query.eq("stock_status", status);
-
-  const { data, count, error } = await query
-    .order("name")
-    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-
+  const { data, error } = await supabase.rpc("catalog_page", {
+    p_stores: [store.id],
+    p_search: q,
+    p_status: status,
+    p_active: status !== "inactive",
+    p_main_only: false,
+    p_after: readCursor(sp.cursor),
+    p_limit: PAGE_SIZE,
+  });
   if (error) throw error;
-  const rows = data ?? [];
+  const { rows, next } = dataPage<CatalogProduct>(data);
 
   return (
     <>
@@ -88,7 +83,7 @@ export default async function CheckStockPage({
       </div>
 
       <StockExport
-        key={`${store.id}:${status}:${q}:${page}`}
+        key={`${store.id}:${status}:${q}:${sp.cursor ?? ""}`}
         status={status}
         search={q}
         currentRows={rows}
@@ -159,10 +154,10 @@ export default async function CheckStockPage({
                 ))}
               </TBody>
             </Table>
-            <Pagination
-              page={page}
-              pageSize={PAGE_SIZE}
-              total={count ?? 0}
+            <CursorPagination
+              next={next}
+              current={sp.cursor}
+              count={rows.length}
               params={{ q, status: status === "all" ? undefined : status }}
               basePath="/check-stock"
             />

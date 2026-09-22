@@ -10,8 +10,15 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/shell/page-header";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { money } from "@/lib/format";
-import { ExportButton } from "@/features/reports/export-button";
-export default async function WarehouseStockPage() {
+import { CatalogExport } from "@/features/reports/paged-export";
+import { readCursor, dataPage, type CatalogProduct } from "@/lib/data-pages";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
+export default async function WarehouseStockPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cursor?: string }>;
+}) {
+  const sp = await searchParams;
   const session = await getSession();
   if (!session?.activeStore) redirect("/onboarding");
   const locations = session.stores.filter(
@@ -21,33 +28,26 @@ export default async function WarehouseStockPage() {
       s.modules.warehouse,
   );
   const supabase = await createClient();
-  const summary = await supabase.rpc("warehouse_summary", {
-    p_business: session.activeStore.businessId,
-  });
+  const locationIds = locations.map((s) => s.id);
+  const [summary, metadata, catalog] = await Promise.all([
+    supabase.rpc("warehouse_summary", {
+      p_business: session.activeStore.businessId,
+    }),
+    locations.length
+      ? supabase.from("stores").select("id,code").in("id", locationIds)
+      : Promise.resolve({ data: [], error: null }),
+    locations.length
+      ? supabase.rpc("catalog_page", {
+          p_stores: locationIds,
+          p_after: readCursor(sp.cursor),
+          p_limit: 50,
+        })
+      : Promise.resolve({ data: { rows: [], next: null }, error: null }),
+  ]);
   if (summary.error) throw summary.error;
-  const metadata = locations.length
-    ? await supabase
-        .from("stores")
-        .select("id,code")
-        .in(
-          "id",
-          locations.map((s) => s.id),
-        )
-    : { data: [], error: null };
   if (metadata.error) throw metadata.error;
-  const { data, error } = locations.length
-    ? await supabase
-        .from("v_product_catalog")
-        .select("*")
-        .is("bulk_parent_id", null)
-        .in(
-          "store_id",
-          locations.map((s) => s.id),
-        )
-        .order("name")
-        .limit(1000)
-    : { data: [], error: null };
-  if (error) throw error;
+  if (catalog.error) throw catalog.error;
+  const { rows: data, next } = dataPage<CatalogProduct>(catalog.data);
   const rows = (data ?? []).map((p) => ({
     ...p,
     currency:
@@ -65,22 +65,9 @@ export default async function WarehouseStockPage() {
           <div className="flex flex-wrap items-center gap-2">
             <WarehouseCatalogTools />
             <WarehouseAdd />
-            <ExportButton
-              prominent
-              rows={rows.map((r) => ({
-                ...r,
-                quantity:
-                  r.tracking_type === "SALES_ONLY"
-                    ? "N/A – Sales Tracked Only"
-                    : r.quantity,
-                bulk_stock: (r.bulk_options ?? [])
-                  .map((b) => `${b.quantity} ${b.unit} × ${b.units_per_pack}`)
-                  .join(", "),
-                tracking:
-                  r.tracking_type === "SALES_ONLY"
-                    ? "Sales Tracked Only"
-                    : "Quantity Tracked",
-              }))}
+            <CatalogExport
+              stores={locationIds}
+              locations={locations}
               filename="warehouse-stock"
               columns={[
                 { key: "location", label: "Warehouse" },
@@ -189,12 +176,13 @@ export default async function WarehouseStockPage() {
           </TBody>
         </Table>
       )}
-      {rows.length === 1000 ? (
-        <p className="mt-4 text-sm text-muted">
-          Showing the first 1,000 products. Open Check Stock at a specific
-          warehouse for a narrower view.
-        </p>
-      ) : null}
+      <CursorPagination
+        next={next}
+        current={sp.cursor}
+        count={rows.length}
+        basePath="/warehouse"
+        params={sp}
+      />
     </>
   );
 }

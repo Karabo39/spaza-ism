@@ -24,6 +24,7 @@ export function ListFilter({
           const next = new URLSearchParams(params.toString());
           next.set(param, event.target.value);
           next.delete("page");
+          next.delete("cursor");
           router.replace(`${pathname}?${next}`);
         }}
       >

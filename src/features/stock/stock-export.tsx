@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { collectPages, dataPage, type CatalogProduct } from "@/lib/data-pages";
 import { useStore } from "@/lib/store-context";
 import { createClient } from "@/lib/supabase/client";
 import { ExportButton } from "@/features/reports/export-button";
@@ -29,34 +29,37 @@ export function StockExport({
 }) {
   const { store } = useStore();
   const [scope, setScope] = useState("all");
-  const query = useQuery({
-    queryKey: ["stock-export", store.id, status, search],
-    queryFn: async () => {
-      const { data, error } = await createClient().rpc("stock_export", {
-        p_store: store.id,
-        p_status: status,
-        p_search: search,
-      });
-      if (error) throw error;
-      return {
-        rows: data as Record<string, unknown>[],
-        generated: new Date().toISOString(),
-      };
-    },
-  });
-  const rows = scope === "page" ? currentRows : (query.data?.rows ?? []);
-  const prepared = rows.map((r) => ({
-    ...r,
-    quantity:
-      r.tracking_type === "SALES_ONLY"
-        ? "N/A – Sales Tracked Only"
-        : r.quantity,
-    stock_status: r.is_active ? r.stock_status : "Inactive",
-    store: store.name,
-    filter: status,
-    search,
-    generated: query.data?.generated ?? "",
-  }));
+  const prepare = (rows: Record<string, unknown>[]) =>
+    rows.map((r) => ({
+      ...r,
+      quantity:
+        r.tracking_type === "SALES_ONLY"
+          ? "N/A – Sales Tracked Only"
+          : r.quantity,
+      stock_status: r.is_active ? r.stock_status : "Inactive",
+      store: store.name,
+      filter: status,
+      search,
+      generated: new Date().toISOString(),
+    }));
+  const loadRows = async () => {
+    if (scope === "page") return prepare(currentRows);
+    return prepare(
+      await collectPages<CatalogProduct>(async (after) => {
+        const { data, error } = await createClient().rpc("catalog_page", {
+          p_stores: [store.id],
+          p_search: search,
+          p_status: status,
+          p_active: status !== "inactive",
+          p_main_only: false,
+          p_after: after,
+          p_limit: 200,
+        });
+        if (error) throw error;
+        return dataPage<CatalogProduct>(data);
+      }),
+    );
+  };
   return (
     <div className="mb-4 space-y-2">
       <div className="flex flex-wrap items-center gap-3">
@@ -70,25 +73,18 @@ export function StockExport({
           <option value="page">Current page only</option>
         </select>
         <ExportButton
-          rows={prepared}
+          rows={[]}
+          loadRows={loadRows}
           columns={columns}
           filename={`stock-${status}`}
           module="check_stock"
         />
         <span className="text-sm text-muted-foreground">
-          {prepared.length} products selected for export
+          {scope === "page"
+            ? `${currentRows.length} products on this page`
+            : "All matching products will be fetched when requested"}
         </span>
       </div>
-      {query.error && scope === "all" ? (
-        <p role="alert">
-          Could not prepare all matching products. Try a narrower search
-          (maximum 5,000 products), or export the current page.
-        </p>
-      ) : query.isLoading ? (
-        <p role="status">Preparing filtered stock...</p>
-      ) : !rows.length ? (
-        <p>No matching products to export.</p>
-      ) : null}
     </div>
   );
 }

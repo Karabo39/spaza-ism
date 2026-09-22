@@ -6,7 +6,11 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/misc";
 import { Badge } from "@/components/ui/badge";
 import { DateFilter } from "@/features/reports/date-filter";
-import { ExportButton } from "@/features/reports/export-button";
+import { ActivityExport } from "@/features/reports/paged-export";
+import { type ActivityRow } from "@/features/reports/activity-data";
+import { readCursor, dataPage } from "@/lib/data-pages";
+import { CursorPagination } from "@/components/ui/cursor-pagination";
+import { AuditDetails } from "@/features/reports/audit-details";
 import { businessDayStart, businessDayAfter } from "@/lib/business-date";
 import { dateTime } from "@/lib/format";
 import { ScrollText, Lock } from "lucide-react";
@@ -14,7 +18,7 @@ import { ScrollText, Lock } from "lucide-react";
 export default async function AuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; cursor?: string }>;
 }) {
   const sp = await searchParams;
   const session = await getSession("audit");
@@ -38,17 +42,16 @@ export default async function AuditPage({
   }
 
   const supabase = await createClient();
-  let query = supabase
-    .from("v_audit_activity")
-    .select("*")
-    .eq("business_id", store.businessId);
-  if (sp.from) query = query.gte("created_at", businessDayStart(sp.from));
-  if (sp.to) query = query.lt("created_at", businessDayAfter(sp.to));
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(300);
+  const { data, error } = await supabase.rpc("activity_page", {
+    p_kind: "audit",
+    p_scope: store.businessId,
+    p_from: sp.from ? businessDayStart(sp.from) : null,
+    p_to: sp.to ? businessDayAfter(sp.to) : null,
+    p_after: readCursor(sp.cursor),
+    p_limit: 50,
+  });
   if (error) throw error;
-  const rows = data ?? [];
+  const { rows, next } = dataPage<ActivityRow>(data);
 
   return (
     <>
@@ -59,18 +62,12 @@ export default async function AuditPage({
         actions={
           <>
             <DateFilter />
-            <ExportButton
+            <ActivityExport
+              kind="audit"
+              scope={store.businessId}
+              from={sp.from ? businessDayStart(sp.from) : undefined}
+              to={sp.to ? businessDayAfter(sp.to) : undefined}
               filename="audit-history"
-              rows={rows.map((r) => ({
-                when: dateTime(r.created_at),
-                action: r.action,
-                location: r.location_name,
-                stock: r.stock_items,
-                by: r.actor_name,
-                reference: r.entity_id,
-                before: JSON.stringify(r.before_data),
-                after: JSON.stringify(r.after_data),
-              }))}
               columns={[
                 { key: "when", label: "When" },
                 { key: "action", label: "Action" },
@@ -85,12 +82,6 @@ export default async function AuditPage({
           </>
         }
       />
-      {rows.length === 300 && (
-        <p className="mb-4 text-sm text-warning">
-          Latest 300 matching actions. Narrow the date range to review earlier
-          history.
-        </p>
-      )}
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
           <EmptyState
@@ -120,7 +111,7 @@ export default async function AuditPage({
                   <TD>
                     <p>{r.location_name ?? "Business"}</p>
                     <p className="max-w-sm text-sm text-muted">
-                      {r.stock_items || "—"}
+                      Stock items in details
                     </p>
                   </TD>
                   <TD>
@@ -129,21 +120,7 @@ export default async function AuditPage({
                       : "System"}
                   </TD>
                   <TD>
-                    <details>
-                      <summary className="cursor-pointer text-accent">
-                        View details
-                      </summary>
-                      <p className="mt-2 max-w-xs break-all text-xs">
-                        {r.entity_type}: {r.entity_id}
-                      </p>
-                      <pre className="mt-2 max-h-64 max-w-sm overflow-auto whitespace-pre-wrap break-all text-xs">
-                        {JSON.stringify(
-                          { before: r.before_data, after: r.after_data },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </details>
+                    <AuditDetails id={r.id} businessId={store.businessId} />
                   </TD>
                 </TR>
               ))}
@@ -151,6 +128,13 @@ export default async function AuditPage({
           </Table>
         )}
       </div>
+      <CursorPagination
+        next={next}
+        current={sp.cursor}
+        count={rows.length}
+        basePath="/audit"
+        params={sp}
+      />
     </>
   );
 }

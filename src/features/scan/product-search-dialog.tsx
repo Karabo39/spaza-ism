@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store-context";
-import { createClient } from "@/lib/supabase/client";
+
 import { searchProducts } from "./lookup";
 import { money } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -36,22 +36,9 @@ function ProductSearchDialogContent({
   const term = useDebouncedValue(q.trim(), 180);
   const search = useQuery({
     queryKey: ["product-picker", store.id, term, itemType],
-    queryFn: async () => {
-      if (!itemType) return searchProducts(store.id, term);
-      const { data, error } = await createClient()
-        .from("v_product_catalog")
-        .select("*")
-        .eq("store_id", store.id)
-        .eq("is_active", true)
-        .eq("item_type", itemType)
-        .ilike("search_text", `%${term}%`)
-        .order("name")
-        .limit(100);
-      if (error) throw error;
-      return data as ProductStock[];
-    },
+    queryFn: ({ signal }) => searchProducts(store.id, term, signal, itemType),
     networkMode: "always",
-    staleTime: 0,
+    staleTime: 15_000,
   });
   const waiting = q.trim() !== term || search.isLoading;
   const rows = waiting ? [] : (search.data ?? []);
