@@ -1,7 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within, fireEvent } from "@testing-library/react";
 import { money } from "@/lib/format";
+import type { CashSummary } from "@/features/cash-up/types";
+import { businessDate } from "@/lib/business-date";
 import { CashUpConsole } from "@/features/cash-up/cash-up-console";
 const m = vi.hoisted(() => ({
   manager: true,
@@ -20,6 +22,7 @@ const m = vi.hoisted(() => ({
       added: 0,
       removed: 0,
       net: 286,
+      fingerprint: "test",
       unclassified: [],
       activity: {
         cash_sales: 286,
@@ -32,7 +35,7 @@ const m = vi.hoisted(() => ({
         net_collected: 1054,
       },
     },
-  },
+  } as CashSummary,
 }));
 vi.mock("@/lib/store-context", () => ({
   useStore: () => ({
@@ -60,6 +63,9 @@ vi.mock("@tanstack/react-query", () => ({
 beforeEach(() => {
   cleanup();
   m.manager = true;
+  m.data.session = null;
+  m.data.shifts = undefined;
+  m.data.history = [];
 });
 it("keeps sale totals separate from collected cash and opening cash", () => {
   render(<CashUpConsole />);
@@ -83,4 +89,24 @@ it("does not expose manager drawer tools to a cashier", () => {
   expect(
     screen.getByRole("button", { name: "Start first shift" }),
   ).toBeVisible();
+});
+
+it("places next shift directly below approval in the same column and keeps shift selectors clickable", () => {
+ const now = new Date().toISOString();
+ m.data.session = { id: "shift", business_date: businessDate(), opening_float: 100, status: "APPROVED", version: 1, latest_submission: "count", shift_number: 1 };
+ m.data.shifts = [{ id: "shift", shift_number: 1, status: "APPROVED", created_by_name: "Cashier", created_at: now, opening_float: 100 }];
+ m.data.history = [{ id: "count", revision: 1, counted: 286, expected: 286, variance: 0, note: null, created_at: now, created_by_name: "Cashier", reviews: [] }];
+ render(<CashUpConsole />);
+ const approved = screen.getByRole("heading", { name: "Cash-up approved" }).closest("section")!;
+ const next = screen.getByRole("heading", { name: "Start next shift" }).closest("section")!;
+ expect(approved.nextElementSibling).toBe(next);
+ expect(approved.parentElement).toBe(next.parentElement);
+ const shift = screen.getByRole("button", { name: /Shift 1.*Cashier/ });
+ const latest = screen.getByRole("button", { name: "Latest shift" });
+ expect(shift).toHaveClass("bg-emerald-500");
+ expect(latest).toHaveClass("bg-emerald-500");
+ fireEvent.click(shift);
+ expect(latest).toHaveAttribute("aria-pressed", "false");
+ fireEvent.click(latest);
+ expect(latest).toHaveAttribute("aria-pressed", "true");
 });

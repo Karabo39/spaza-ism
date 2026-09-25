@@ -48,10 +48,19 @@ Queued employee sales with a price that differs from the current authorised cata
 ## Validation
 
 - Full application suite: 220 tests across 58 files passed; a subsequent targeted run including two additional employee stock-screen tests passed all 28 tests across six files.
+- The final Cash-up regression tests also passed (3 tests), checking that the next-shift panel immediately follows approval in the same column and that green shift selectors remain interactive.
 - Type checking, lint and production build passed.
 - All migrations replayed into a fresh disposable local database. All 38 SQL suites passed, including new employee/Excel checks, checkout, cash-up ownership, transfers, stock reconciliation and existing performance tests. Warehouse-disable concurrency tests passed in both operation orders.
 - New SQL tests cover employee cost/price denial, explicit store price grants, export/import retries, TRUE using the authoritative snapshot, cross-store refusal, intervening movements and counts, atomic rejection, zero counts, manager approval and immediate permission revocation.
 - The migration was applied to the live Supabase project; the hosted release contract passed. Anonymous export, direct private import execution and direct snapshot reads were verified denied.
 - Security advisor changes are the expected two authenticated guarded API wrappers and one private RLS table without public policies. Existing advisor notices, including disabled leaked-password protection, are unchanged.
 
-The existing Dublin (`dub1`) deployment configuration and previous performance work are preserved. Live screen verification is performed after the application deployment. Stock-writing and approval scenarios use disposable local fixtures; no test sale, receipt, stock count or cash-up is created in production for validation.
+## Live release verification
+
+Five functional commits were pushed to main: `71b49f5`, `78df7f3`, `ef26687`, `c6a60c6`, and `e520e73`. Vercel successfully deployed `e520e73e279b043fe720db72ca6629bb427e5c76`; the Dublin (`dub1`) function region and previous performance work remain in place.
+
+All 14 authenticated page checks returned HTTP 200 without application-error markers: Dashboard, Goods Out, Check Stock, Products, sales report, movement report, Cash-up, Warehouse, Audit, Orders, Invoicing, Stock Take, Goods In and Check Price. Observed single-sample response completion times were 480–1,432 ms; these are smoke checks, not a new performance benchmark. Read-only RPC checks, cursor continuation, audit details, health, login and telemetry script checks also passed.
+
+Live browser checks confirmed Dashboard expand/collapse and movement loading; order details directly beneath the selected row and collapse on a second click; the invoice-history link; invoice action styling and receipt back navigation; green recent cash-up selection and shift selectors; and enabled Excel export/import actions. The original active store was restored after verification.
+
+Employee and stock-writing/approval scenarios were tested with disposable local fixtures. No test sale, receipt, stock count or cash-up was created in production. There was no current-day approved shift suitable for a live next-shift layout check; its placement was verified with an approved-shift component fixture. Desktop layout was visually checked; a full device/browser matrix and physical Excel desktop application were not exercised.
