@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/session";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PrintReceipt } from "@/features/billing/print-receipt";
@@ -36,10 +37,10 @@ export default async function ReceiptPage({
   if (lines.error || entries.error) throw lines.error ?? entries.error;
   return (
     <>
-      <div className="mb-4 flex justify-between print:hidden">
-        <Link className="text-accent" href={`/invoices/${id}`}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <Button asChild><Link href={`/invoices/${id}`}>
           Back to invoice
-        </Link>
+        </Link></Button>
         <PrintReceipt type="invoice" id={id} />
       </div>
       <article

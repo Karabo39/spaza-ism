@@ -113,16 +113,16 @@ export function InvoiceWorkspace({
         <p className="text-warning">Invoice actions require a connection.</p>
       )}
       <div className="flex flex-wrap gap-3">
-        <Link className="text-accent" href={`/invoices/${i.id}/receipt`}>
+        <Button asChild><Link href={`/invoices/${i.id}/receipt`}>
           Open invoice / receipt
-        </Link>
-        <Link className="text-accent" href={`/credit/${i.customer_id}`}>
+        </Link></Button>
+        <Button asChild><Link href={`/credit/${i.customer_id}`}>
           Customer statement
-        </Link>
+        </Link></Button>
         {i.goods_issued_at && (
-          <Link className="text-accent" href={`/returns?invoice=${i.id}`}>
+          <Button asChild><Link href={`/returns?invoice=${i.id}`}>
             Return goods
-          </Link>
+          </Link></Button>
         )}
       </div>
       <div className="grid gap-3 sm:grid-cols-4">

@@ -123,3 +123,15 @@ it("shows new and recent order areas independently", () => {
   ).toBeInTheDocument();
   mocks.newOrder = true;
 });
+
+it("expands details directly below the clicked order and collapses on another click", () => {
+  render(<OrdersConsole />);
+  const toggle = screen.getByRole("button", { name: "ORDER-1" });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByRole("region", { name: "Order summary" })).toBeNull();
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(toggle.closest("tr")?.nextElementSibling).toContainElement(screen.getByRole("region", { name: "Order summary" }));
+  fireEvent.click(toggle);
+  expect(screen.queryByRole("region", { name: "Order summary" })).toBeNull();
+});
