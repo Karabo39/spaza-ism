@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@/lib/store-context";
 import { useOffline } from "@/lib/offline/offline-context";
@@ -15,12 +17,13 @@ import { Button } from "@/components/ui/button";
 import { money, qty, friendlyError } from "@/lib/format";
 
 export function LocationOverview() {
+  const [open, setOpen] = useState(false);
   const { store, stores, can, canModule, setStore } = useStore();
   const { online } = useOffline();
   const allowed = can("owner") && canModule("dashboard_locations");
   const { data, isLoading, error } = useQuery({
     queryKey: ["location-overview", store.businessId],
-    enabled: allowed && online,
+    enabled: allowed && online && open,
     queryFn: async () => {
       const { data, error } = await createClient().rpc(
         "business_location_summary",
@@ -34,12 +37,21 @@ export function LocationOverview() {
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle>All business locations</CardTitle>
+        <CardTitle>
+          <Button
+            aria-expanded={open}
+            aria-controls="dashboard-locations"
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <ChevronDown /> : <ChevronRight />}View All Business
+            Locations
+          </Button>
+        </CardTitle>
         <CardDescription>
           Stock held at selling stores. Open Warehouse for warehouse balances.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent id="dashboard-locations" hidden={!open}>
         {!online ? (
           <p className="text-sm text-muted">
             Connect to see current stock across your business.

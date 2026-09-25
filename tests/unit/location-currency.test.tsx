@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { render, screen, cleanup, within, fireEvent } from "@testing-library/react";
 import { LocationOverview } from "@/features/dashboard/location-overview";
 import { money } from "@/lib/format";
 const state = vi.hoisted(() => ({
@@ -64,6 +64,7 @@ it("keeps each location currency when the active store changes", () => {
       ),
     ).toBeInTheDocument();
   };
+  fireEvent.click(screen.getByRole("button", { name: "View All Business Locations" }));
   check();
   state.active = "us";
   rerender(<LocationOverview />);
