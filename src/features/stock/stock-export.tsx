@@ -27,7 +27,7 @@ export function StockExport({
   search: string;
   currentRows: Record<string, unknown>[];
 }) {
-  const { store } = useStore();
+  const { store, can } = useStore();
   const [scope, setScope] = useState("all");
   const prepare = (rows: Record<string, unknown>[]) =>
     rows.map((r) => ({
@@ -75,7 +75,7 @@ export function StockExport({
         <ExportButton
           rows={[]}
           loadRows={loadRows}
-          columns={columns}
+          columns={can("manager") ? columns : columns.filter((c) => ["name", "quantity", "stock_status", "selling_price"].includes(c.key))}
           filename={`stock-${status}`}
           module="check_stock"
         />

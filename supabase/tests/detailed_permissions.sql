@@ -19,7 +19,7 @@ begin
  if app.has_module(s,'dashboard_adjust') or app.has_module(s,'dashboard_locations') then raise exception 'ASSERT role restrictions';end if;
  if exists(select 1 from public.sales_orders where store_id=s) or exists(select 1 from public.sales_quotes where store_id=s) or exists(select 1 from public.sales_invoices where store_id=s) or exists(select 1 from public.stock_movements where store_id=s) then raise exception 'ASSERT direct reads denied';end if;
  result:=public.dashboard_summary(s);if result ? 'stock_value' or result ? 'outstanding_credit' then raise exception 'ASSERT dashboard widget projection';end if;
- result:=public.invoice_summary(s);if result ? 'outstanding' or result ? 'paid' or not result ? 'invoiced' then raise exception 'ASSERT summary projection';end if;
+ begin perform public.invoice_summary(s);raise exception 'ASSERT employee summary denied';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
  blocked:=false;begin perform public.create_order_with_contact(s,null,payload,gen_random_uuid(),null,'{"name":"Forbidden guest"}');exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT new order denied';end if;
  blocked:=false;begin perform public.order_workflow_summary(s);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT recent denied';end if;
  blocked:=false;begin perform public.process_sales_order(ord,'cancel','Denied');exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT order action denied';end if;

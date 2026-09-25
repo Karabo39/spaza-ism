@@ -61,7 +61,7 @@ function isNetworkError(message?: string) {
 
 export function GoodsOutConsole() {
   const router = useRouter();
-  const { store, currency, can, user } = useStore();
+  const { store, currency, can, canModule, user } = useStore();
   const { online, refresh: refreshOffline } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [saleType, setSaleType] = React.useState<PaymentMode>("CASH");
@@ -183,7 +183,7 @@ export function GoodsOutConsole() {
     } else {
       setUnknownCode(code);
       toast.error(`No product for "${code}"`, {
-        action: { label: "Register", onClick: () => setRegisterOpen(true) },
+        action: can("manager") && canModule("products") ? { label: "Register", onClick: () => setRegisterOpen(true) } : undefined,
       });
     }
   }
@@ -196,6 +196,7 @@ export function GoodsOutConsole() {
     );
   }
   function setPrice(id: string, p: number) {
+    if (!canModule("goods_out_change_price")) return;
     setLines((prev) =>
       prev.map((l) =>
         l.productId === id ? { ...l, unitPrice: Math.max(0, p) } : l,
@@ -560,6 +561,8 @@ export function GoodsOutConsole() {
                         </TD>
                         <TD className="text-right">
                           <Input
+                            readOnly={!canModule("goods_out_change_price")}
+                            aria-label={`Selling price ${l.name}`}
                             value={l.unitPrice}
                             onChange={(e) =>
                               setPrice(l.productId, Number(e.target.value) || 0)

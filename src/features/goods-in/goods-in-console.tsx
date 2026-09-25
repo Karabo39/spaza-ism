@@ -49,7 +49,7 @@ export function GoodsInConsole() {
   const cache = useQueryClient();
   const [selectedProduct, setSelectedProduct] =
     React.useState<ProductStock | null>(null);
-  const { store, stores, currency, setStore } = useStore();
+  const { store, stores, currency, setStore, can, canModule } = useStore();
   const { online } = useOffline();
   const [lines, setLines] = React.useState<Line[]>([]);
   const [suppliers, setSuppliers] = React.useState<
@@ -143,10 +143,10 @@ export function GoodsInConsole() {
       } else {
         setUnknownCode(code);
         toast.error(`No product for "${code}"`, {
-          action: {
+          action: can("manager") && canModule("products") ? {
             label: "Register",
             onClick: () => setRegisterOpen(true),
-          },
+          } : undefined,
         });
       }
     } catch {
@@ -294,6 +294,8 @@ export function GoodsInConsole() {
                     </TD>
                     <TD className="text-right">
                       <Input
+                        readOnly={!can("manager")}
+                        aria-label={`Unit cost ${l.name}`}
                         value={l.unitCost}
                         onChange={(e) =>
                           patch(l.productId, {

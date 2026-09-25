@@ -11,6 +11,11 @@ it("does not fetch a disabled summary",async()=>{
  expect(await InvoiceSummary({storeId:"s",currency:"ZAR",permissions:modulePermissions("employee",{invoices_summary:false})})).toBeNull();expect(rpc).not.toHaveBeenCalled();
 });
 it("renders only enabled totals and hides the invoice navigation when denied",async()=>{
- render(await InvoiceSummary({storeId:"s",currency:"ZAR",permissions:modulePermissions("employee",{invoices_paid:false,invoices_view_invoices:false})}));
+ render(await InvoiceSummary({storeId:"s",currency:"ZAR",permissions:modulePermissions("manager",{invoices_paid:false,invoices_view_invoices:false})}));
  expect(screen.getByText("Invoiced")).toBeInTheDocument();expect(screen.getByText("Outstanding")).toBeInTheDocument();expect(screen.queryByText("Paid / allocated")).not.toBeInTheDocument();expect(screen.queryByRole("link",{name:"View invoices"})).not.toBeInTheDocument();expect(screen.queryByText("Overdue")).not.toBeInTheDocument();
+});
+
+it("hides every summary and invoice shortcut for employees even if explicitly enabled", async () => {
+ expect(await InvoiceSummary({storeId:"s",currency:"ZAR",permissions:modulePermissions("employee",{invoices_summary:true,invoices_invoiced:true})})).toBeNull();
+ expect(rpc).not.toHaveBeenCalled();
 });

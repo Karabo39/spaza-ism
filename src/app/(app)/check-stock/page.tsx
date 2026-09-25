@@ -35,6 +35,7 @@ export default async function CheckStockPage({
   const session = await getSession("check_stock");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
+  const showCosts = store.role !== "employee";
 
   const status = FILTERS.some((f) => f.key === sp.status) ? sp.status! : "all";
   const q = sp.q ?? "";
@@ -86,7 +87,18 @@ export default async function CheckStockPage({
         key={`${store.id}:${status}:${q}:${sp.cursor ?? ""}`}
         status={status}
         search={q}
-        currentRows={rows}
+        currentRows={
+          showCosts
+            ? rows
+            : rows.map((r) => ({
+                name: r.name,
+                quantity: r.quantity,
+                stock_status: r.stock_status,
+                selling_price: r.selling_price,
+                is_active: r.is_active,
+                tracking_type: r.tracking_type,
+              }))
+        }
       />
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
@@ -105,12 +117,12 @@ export default async function CheckStockPage({
               <THead>
                 <TR>
                   <TH>Product</TH>
-                  <TH>Category</TH>
+                  {showCosts && <TH>Category</TH>}
                   <TH className="text-right">In stock</TH>
                   <TH>Status</TH>
-                  <TH className="text-right">Cost</TH>
+                  {showCosts && <TH className="text-right">Cost</TH>}
                   <TH className="text-right">Selling</TH>
-                  <TH className="text-right">Stock value</TH>
+                  {showCosts && <TH className="text-right">Stock value</TH>}
                 </TR>
               </THead>
               <TBody>
@@ -129,7 +141,9 @@ export default async function CheckStockPage({
                         )}
                       </Link>
                     </TD>
-                    <TD className="text-muted">{r.category_name ?? "—"}</TD>
+                    {showCosts && (
+                      <TD className="text-muted">{r.category_name ?? "—"}</TD>
+                    )}
                     <TD className="text-right tabular-nums">
                       {stockQuantity(r)}{" "}
                       <span className="text-xs text-muted">{r.unit}</span>
@@ -141,15 +155,19 @@ export default async function CheckStockPage({
                         <Badge variant="neutral">Inactive</Badge>
                       )}
                     </TD>
-                    <TD className="text-right tabular-nums text-muted-foreground">
-                      {money(r.cost_price, store.currency)}
-                    </TD>
+                    {showCosts && (
+                      <TD className="text-right tabular-nums text-muted-foreground">
+                        {money(r.cost_price, store.currency)}
+                      </TD>
+                    )}
                     <TD className="text-right tabular-nums">
                       {money(r.selling_price, store.currency)}
                     </TD>
-                    <TD className="text-right tabular-nums">
-                      {money(r.stock_value, store.currency)}
-                    </TD>
+                    {showCosts && (
+                      <TD className="text-right tabular-nums">
+                        {money(r.stock_value, store.currency)}
+                      </TD>
+                    )}
                   </TR>
                 ))}
               </TBody>

@@ -87,7 +87,7 @@ describe("child permissions", () => {
     expect(p.orders_new).toBe(false);
     expect(p.orders_recent).toBe(true);
     expect(p.invoices_paid).toBe(false);
-    expect(p.invoices_outstanding).toBe(true);
+    expect(p.invoices_outstanding).toBe(false);
   });
 });
 
@@ -126,4 +126,13 @@ it("keeps unpacking under Stock Control and honours existing Operations grants",
   expect(
     itemVisible(stock.items[expiry + 1], "employee", (key) => grants[key]),
   ).toBe(false);
+});
+
+it("requires explicit employee sale-price permission and never grants invoice summaries", () => {
+  expect(modulePermissions("employee").goods_out_change_price).toBe(false);
+  expect(modulePermissions("employee", { goods_out_change_price: true }).goods_out_change_price).toBe(true);
+  expect(modulePermissions("employee", { goods_out: false, goods_out_change_price: true }).goods_out_change_price).toBe(false);
+  expect(modulePermissions("manager").goods_out_change_price).toBe(true);
+  expect(modulePermissions("employee", { invoices_summary: true, invoices_outstanding: true, dashboard_invoicing: true }).invoices_outstanding).toBe(false);
+  expect(modulePermissions("employee").invoices_view_invoices).toBe(true);
 });

@@ -210,6 +210,7 @@ export function permissionSettings(
                   ![
                     "warehouse",
                     "goods_in_new_stock",
+                    "goods_out_change_price",
                     "goods_in_receive_transfer",
                   ].includes(m.key))))),
       ];

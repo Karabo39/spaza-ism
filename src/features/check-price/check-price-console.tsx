@@ -13,7 +13,7 @@ import { money, qty } from "@/lib/format";
 import type { ProductStock } from "@/lib/db/database.types";
 
 export function CheckPriceConsole() {
-  const { store, currency, can } = useStore();
+  const { store, currency, can, canModule } = useStore();
   const [current, setCurrent] = React.useState<ProductStock | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -29,7 +29,7 @@ export function CheckPriceConsole() {
     else {
       setUnknown(code);
       setCurrent(null);
-      toast.error(`No product for "${code}"`, { action: { label: "Register", onClick: () => setRegisterOpen(true) } });
+      toast.error(`No product for "${code}"`, { action: can("manager") && canModule("products") ? { label: "Register", onClick: () => setRegisterOpen(true) } : undefined });
     }
   }
 

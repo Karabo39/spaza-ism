@@ -207,6 +207,14 @@ export function friendlyError(message: string | undefined | null): string {
     return "Enter a whole number of bulk packs.";
   if (m.includes("UNPACK_COUNT_OVERRIDE_DISABLED"))
     return "Receive the packs first, or correct a verified count through Adjust Stock before unpacking.";
+  if (m.includes("PRICE_CHANGE_NOT_ALLOWED")) return "Your store permissions do not allow a different selling price. Refresh the product price or ask an owner to grant access.";
+  if (m.includes("UNIT_COST_CHANGE_NOT_ALLOWED")) return "Only a manager can change unit cost. Reload the product to use its current cost.";
+  if (m.includes("TEMPLATE_STOCK_CHANGED")) return "Stock or product details changed after this template was exported. Export a new template and recount before importing.";
+  if (m.includes("TEMPLATE_COUNT_CHANGED")) return "A count was saved after this template was exported. Export a new template to avoid overwriting it.";
+  if (m.includes("TEMPLATE_ALREADY_IMPORTED")) return "This template has already been imported. Export a new template before changing counts.";
+  if (m.includes("TEMPLATE_NOT_FOUND") || m.includes("TEMPLATE_ITEM_MISMATCH")) return "The template does not match this location or stock take. Download a fresh template.";
+  if (m.includes("TEMPLATE_TOO_LARGE")) return "Excel stock takes support up to 10,000 products. Use the stock-take screen for this location.";
+  if (m.includes("INVALID_COUNTS") || m.includes("DUPLICATE_COUNT")) return "Check for invalid quantities or duplicate products in the workbook. No counts were saved.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
   if (m.includes("PAYMENT_UNDERPAID"))
     return "Collect the remaining balance before completing this sale.";

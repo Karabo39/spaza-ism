@@ -1568,6 +1568,8 @@ export type Database = {
         };
         Returns: number;
       };
+      export_stock_take_template: { Args: { p_store: string; p_export: string; p_stock_take?: string }; Returns: Json };
+      import_stock_take_template: { Args: { p_store: string; p_export: string; p_rows: Json }; Returns: string };
       save_stock_take_count: {
         Args: { p_item: string; p_quantity: number | null; p_expiry?: string };
         Returns: undefined;

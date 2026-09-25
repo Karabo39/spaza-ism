@@ -43,6 +43,8 @@ vi.mock("@/lib/store-context", () => ({
     stores: [{ id: "shop", name: "Shop", locationType: "store" }],
     currency: "ZAR",
     setStore: vi.fn(),
+    can: () => false,
+    canModule: () => true,
   }),
 }));
 vi.mock("@/lib/offline/offline-context", () => ({
