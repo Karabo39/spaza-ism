@@ -141,12 +141,14 @@ export function CashUpConsole() {
           Refresh totals
         </Button>
       </div>
-      {recent.data && recent.data.length > 1 && (
+      {recent.data && recent.data.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
           <span>Recent cash-ups:</span>
           {recent.data.map((s) => (
-            <button
-              className="focus-ring rounded-md border border-border px-2 py-1 hover:bg-surface-2"
+            <Button
+              size="sm"
+              variant="success"
+              aria-pressed={selectedShift === s.id}
               key={s.id}
               onClick={() => {
                 setDay(s.business_date);
@@ -158,7 +160,7 @@ export function CashUpConsole() {
             >
               {s.business_date} · Shift {s.shift_number} ·{" "}
               {s.status.toLowerCase()}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -239,7 +241,8 @@ export function CashUpConsole() {
                 <h2 className="font-semibold">Shifts on {day}</h2>
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    variant="outline"
+                    variant="success"
+                    aria-pressed={!selectedShift}
                     size="sm"
                     onClick={() => {
                       setSelectedShift(null);
@@ -251,8 +254,12 @@ export function CashUpConsole() {
                   {data.shifts.map((shift) => (
                     <Button
                       key={shift.id}
-                      variant={
-                        session?.id === shift.id ? "secondary" : "outline"
+                      variant="success"
+                      aria-pressed={session?.id === shift.id}
+                      className={
+                        session?.id === shift.id
+                          ? "ring-2 ring-offset-2 ring-emerald-400 ring-offset-surface"
+                          : undefined
                       }
                       size="sm"
                       onClick={() => {
@@ -418,145 +425,147 @@ export function CashUpConsole() {
                   </p>
                 </details>
               </div>
-              {!session ? (
-                <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                  <h2 className="text-lg font-semibold">Start first shift</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Enter the cash that was in the drawer before trading began
-                    on {day}.
-                  </p>
-                  <form
-                    className="mt-5 space-y-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const cents = amountCents(opening);
-                      if (cents === null) {
-                        setError("Enter a valid opening cash.");
-                        return;
-                      }
-                      void run(
-                        () =>
-                          createClient().rpc("open_cash_up", {
-                            p_store: store.id,
-                            p_day: day,
-                            p_float: cents / 100,
-                          }),
-                        "Cash-up opened",
-                      );
-                    }}
-                  >
-                    <div>
-                      <Label htmlFor="opening-float">
-                        Opening cash ({currency})
-                      </Label>
-                      <Input
-                        id="opening-float"
-                        inputMode="decimal"
-                        required
-                        value={opening}
-                        onChange={(e) => setOpening(e.target.value)}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      loading={busy}
-                      disabled={disabled || amountCents(opening) === null}
+              <div className="min-w-0 space-y-5">
+                {!session ? (
+                  <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                    <h2 className="text-lg font-semibold">Start first shift</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Enter the cash that was in the drawer before trading began
+                      on {day}.
+                    </p>
+                    <form
+                      className="mt-5 space-y-4"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const cents = amountCents(opening);
+                        if (cents === null) {
+                          setError("Enter a valid opening cash.");
+                          return;
+                        }
+                        void run(
+                          () =>
+                            createClient().rpc("open_cash_up", {
+                              p_store: store.id,
+                              p_day: day,
+                              p_float: cents / 100,
+                            }),
+                          "Cash-up opened",
+                        );
+                      }}
                     >
-                      Start first shift
+                      <div>
+                        <Label htmlFor="opening-float">
+                          Opening cash ({currency})
+                        </Label>
+                        <Input
+                          id="opening-float"
+                          inputMode="decimal"
+                          required
+                          value={opening}
+                          onChange={(e) => setOpening(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        loading={busy}
+                        disabled={disabled || amountCents(opening) === null}
+                      >
+                        Start first shift
+                      </Button>
+                    </form>
+                  </section>
+                ) : session.status === "OPEN" && !ending ? (
+                  <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                    <h2 className="text-lg font-semibold">Shift open</h2>
+                    <p className="my-4 text-sm text-muted">
+                      Continue trading. When all tills are synced, end the shift
+                      and count the shared drawer.
+                    </p>
+                    <Button
+                      disabled={disabled || pending + failed > 0}
+                      onClick={() => setEnding(true)}
+                    >
+                      End shift
                     </Button>
-                  </form>
-                </section>
-              ) : session.status === "OPEN" && !ending ? (
-                <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-                  <h2 className="text-lg font-semibold">Shift open</h2>
-                  <p className="my-4 text-sm text-muted">
-                    Continue trading. When all tills are synced, end the shift
-                    and count the shared drawer.
-                  </p>
-                  <Button
-                    disabled={disabled || pending + failed > 0}
-                    onClick={() => setEnding(true)}
-                  >
-                    End shift
-                  </Button>
-                </section>
-              ) : session.status === "OPEN" ? (
-                <CashCount
-                  key={`${session.id}:${session.version}`}
-                  data={data}
-                  disabled={
-                    disabled ||
-                    pending + failed > 0 ||
-                    data.sources.unclassified.length > 0
-                  }
-                  busy={busy}
-                  onSubmit={(counted, denominations, note, request) =>
-                    run(
-                      () =>
-                        createClient().rpc("submit_cash_up", {
-                          p_cash_up: session.id,
-                          p_counted: counted,
-                          p_denominations: denominations,
-                          p_fingerprint: data.count_token,
-                          p_note: note,
-                          p_request: request,
-                        }),
-                      "Shift count saved for manager approval",
-                      true,
-                    )
-                  }
-                />
-              ) : (
-                <ReviewCount
-                  key={`${session.id}:${session.version}`}
-                  data={data}
-                  disabled={disabled || !!data.sealed}
-                  busy={busy}
-                  onReview={(action, note) =>
-                    run(
-                      () =>
-                        createClient().rpc("review_cash_up", {
-                          p_cash_up: session.id,
-                          p_submission: session.latest_submission!,
-                          p_action: action,
-                          p_note: note,
-                        }),
-                      action === "APPROVE"
-                        ? "Cash-up approved"
-                        : "Cash-up reopened",
-                      action === "APPROVE",
-                    )
-                  }
-                />
-              )}
+                  </section>
+                ) : session.status === "OPEN" ? (
+                  <CashCount
+                    key={`${session.id}:${session.version}`}
+                    data={data}
+                    disabled={
+                      disabled ||
+                      pending + failed > 0 ||
+                      data.sources.unclassified.length > 0
+                    }
+                    busy={busy}
+                    onSubmit={(counted, denominations, note, request) =>
+                      run(
+                        () =>
+                          createClient().rpc("submit_cash_up", {
+                            p_cash_up: session.id,
+                            p_counted: counted,
+                            p_denominations: denominations,
+                            p_fingerprint: data.count_token,
+                            p_note: note,
+                            p_request: request,
+                          }),
+                        "Shift count saved for manager approval",
+                        true,
+                      )
+                    }
+                  />
+                ) : (
+                  <ReviewCount
+                    key={`${session.id}:${session.version}`}
+                    data={data}
+                    disabled={disabled || !!data.sealed}
+                    busy={busy}
+                    onReview={(action, note) =>
+                      run(
+                        () =>
+                          createClient().rpc("review_cash_up", {
+                            p_cash_up: session.id,
+                            p_submission: session.latest_submission!,
+                            p_action: action,
+                            p_note: note,
+                          }),
+                        action === "APPROVE"
+                          ? "Cash-up approved"
+                          : "Cash-up reopened",
+                        action === "APPROVE",
+                      )
+                    }
+                  />
+                )}
+                {session?.status === "APPROVED" &&
+                  !data.sealed &&
+                  day === businessDate() && (
+                    <NextShift
+                      key={session.id}
+                      previous={session.id}
+                      counted={data.history[0]?.counted ?? 0}
+                      disabled={disabled || pending + failed > 0}
+                      onStart={(amount, note, request) =>
+                        run(
+                          () =>
+                            createClient().rpc("start_next_cash_shift", {
+                              p_previous: session.id,
+                              p_float: amount,
+                              p_note: note,
+                              p_request: request,
+                            }),
+                          "New shift started for the signed-in user",
+                          true,
+                        ).then(() => {
+                          setSelectedShift(null);
+                          setEnding(false);
+                        })
+                      }
+                    />
+                  )}
+              </div>
             </div>
-            {session?.status === "APPROVED" &&
-              !data.sealed &&
-              day === businessDate() && (
-                <NextShift
-                  key={session.id}
-                  previous={session.id}
-                  counted={data.history[0]?.counted ?? 0}
-                  disabled={disabled || pending + failed > 0}
-                  onStart={(amount, note, request) =>
-                    run(
-                      () =>
-                        createClient().rpc("start_next_cash_shift", {
-                          p_previous: session.id,
-                          p_float: amount,
-                          p_note: note,
-                          p_request: request,
-                        }),
-                      "New shift started for the signed-in user",
-                      true,
-                    ).then(() => {
-                      setSelectedShift(null);
-                      setEnding(false);
-                    })
-                  }
-                />
-              )}
             {data.day_activity && (
               <p className="rounded-lg border border-border p-4 text-sm">
                 Whole day · Net collected across all shifts:{" "}
