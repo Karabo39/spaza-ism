@@ -1,4 +1,5 @@
 "use client";
+import { StockTakeExcelActions } from "./excel-actions";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,19 +45,33 @@ export function StockTakeCounter({
     [expiry, setExpiry] = useState<Record<string, string>>({}),
     [reason, setReason] = useState("");
   const pending = useRef(0);
+  const [page, setPage] = useState(0);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["stock-take-items", stockTakeId],
     enabled: online,
     queryFn: async () => {
-      const { data, error } = await createClient()
-        .from("stock_take_items")
-        .select(
-          "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,products(name,sku,track_expiry)",
-        )
-        .eq("stock_take_id", stockTakeId)
-        .order("product_id");
-      if (error) throw error;
-      return data as unknown as Item[];
+      const all: Item[] = [];
+      let after: string | undefined;
+      for (;;) {
+        let query = createClient()
+          .from("stock_take_items")
+          .select(
+            "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,products(name,sku,track_expiry)",
+          )
+          .eq("stock_take_id", stockTakeId)
+          .order("id")
+          .limit(500);
+        if (after) query = query.gt("id", after);
+        const { data, error } = await query;
+        if (error) throw error;
+        const page = data as unknown as Item[];
+        all.push(...page);
+        if (page.length < 500) break;
+        after = page[page.length - 1].id;
+      }
+      return all.sort((a, b) =>
+        (a.products?.name ?? "").localeCompare(b.products?.name ?? ""),
+      );
     },
   });
   const items = (data ?? []).filter(
@@ -66,6 +81,11 @@ export function StockTakeCounter({
         .toLowerCase()
         .includes(filter.toLowerCase()),
   );
+  const currentPage = Math.min(
+    page,
+    Math.max(0, Math.ceil(items.length / 50) - 1),
+  );
+  const visibleItems = items.slice(currentPage * 50, (currentPage + 1) * 50);
   const counted = (data ?? []).filter((i) => i.counted).length;
   async function save(item: Item) {
     const value = local[item.id] ?? String(item.counted_qty ?? ""),
@@ -160,6 +180,13 @@ export function StockTakeCounter({
           </span>
         </div>
         <ToolbarSearch placeholder="Filter products…" />
+        {!closed && (
+          <StockTakeExcelActions
+            key={`${store.id}:${stockTakeId}`}
+            stockTakeId={stockTakeId}
+            disabled={busy || saving > 0 || Object.keys(local).length > 0}
+          />
+        )}
         <ExportButton
           filename="stock-take-variance"
           rows={exportRows}
@@ -188,7 +215,7 @@ export function StockTakeCounter({
             </TR>
           </THead>
           <TBody>
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <TR key={item.id}>
                 <TD>
                   {item.products?.name ?? "—"}
@@ -288,6 +315,31 @@ export function StockTakeCounter({
           </TBody>
         </Table>
       </div>
+      {items.length > 50 && (
+        <nav
+          aria-label="Count pages"
+          className="flex items-center justify-between gap-3"
+        >
+          <Button
+            size="sm"
+            disabled={currentPage === 0}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {currentPage + 1} of {Math.ceil(items.length / 50)} ·{" "}
+            {items.length} products
+          </span>
+          <Button
+            size="sm"
+            disabled={(currentPage + 1) * 50 >= items.length}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Next
+          </Button>
+        </nav>
+      )}
       {!closed && (
         <div className="flex flex-wrap items-center gap-3">
           {can("manager") && (

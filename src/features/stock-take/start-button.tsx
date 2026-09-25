@@ -1,4 +1,5 @@
 "use client";
+import { StockTakeExcelActions } from "./excel-actions";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -44,10 +45,11 @@ export function StartStockTakeButton() {
   }
 
   return (
-    <>
+    <div className="flex flex-wrap items-center gap-2">
       <Button size="sm" disabled={!online} onClick={() => setOpen(true)}>
         <Plus className="size-4" /> Start stock take
       </Button>
+      <StockTakeExcelActions key={store.id} disabled={busy || open} />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -84,6 +86,6 @@ export function StartStockTakeButton() {
           </Button>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
