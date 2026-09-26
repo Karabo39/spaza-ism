@@ -127,6 +127,7 @@ try {
     "product_stock_tracking.sql",
     "performance.sql",
     "employee_excel.sql",
+    "store_setup_catalog_sync.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

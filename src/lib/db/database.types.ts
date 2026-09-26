@@ -1568,8 +1568,14 @@ export type Database = {
         };
         Returns: number;
       };
-      export_stock_take_template: { Args: { p_store: string; p_export: string; p_stock_take?: string }; Returns: Json };
-      import_stock_take_template: { Args: { p_store: string; p_export: string; p_rows: Json }; Returns: string };
+      export_stock_take_template: {
+        Args: { p_store: string; p_export: string; p_stock_take?: string };
+        Returns: Json;
+      };
+      import_stock_take_template: {
+        Args: { p_store: string; p_export: string; p_rows: Json };
+        Returns: string;
+      };
       save_stock_take_count: {
         Args: { p_item: string; p_quantity: number | null; p_expiry?: string };
         Returns: undefined;
@@ -1814,6 +1820,14 @@ export type Database = {
         Args: { p_store: string; p_name: string; p_code?: string };
         Returns: undefined;
       };
+      set_store_member_access: {
+        Args: { p_store: string; p_membership: string; p_assigned: boolean };
+        Returns: undefined;
+      };
+      sync_store_products: {
+        Args: { p_store: string; p_warehouse: string; p_preview?: boolean };
+        Returns: Json;
+      };
       set_member_locations: {
         Args: { p_membership: string; p_stores: string[] };
         Returns: undefined;
@@ -1970,11 +1984,7 @@ export type Database = {
 export type MembershipRole = "owner" | "manager" | "employee";
 export type LocationType = "store" | "warehouse";
 export type TransferStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "DISPATCHED"
-  | "RECEIVED"
-  | "CANCELLED";
+  "DRAFT" | "SUBMITTED" | "DISPATCHED" | "RECEIVED" | "CANCELLED";
 export type MovementType =
   | "GOODS_IN"
   | "SALE_CASH"
@@ -2000,15 +2010,9 @@ export type AdjustmentReason =
   | "THEFT"
   | "OTHER";
 export type CreditTxnType =
-  | "CREDIT_SALE"
-  | "PAYMENT"
-  | "ADJUSTMENT"
-  | "OPENING_BALANCE";
+  "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT" | "OPENING_BALANCE";
 export type StockTakeStatus =
-  | "IN_PROGRESS"
-  | "PENDING_APPROVAL"
-  | "COMPLETED"
-  | "CANCELLED";
+  "IN_PROGRESS" | "PENDING_APPROVAL" | "COMPLETED" | "CANCELLED";
 
 type PublicSchema = Database["public"];
 export type ProductStock = {
