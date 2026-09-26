@@ -77,7 +77,7 @@ export default async function Page({
         {selected === "imports" && (
           <ImportConsole initialKind="products" productsOnly />
         )}
-        {selected === "receive" && <GoodsInConsole />}
+        {selected === "receive" && <GoodsInConsole fixedLocation />}
       </OfflineProvider>
     </StoreProvider>
   );

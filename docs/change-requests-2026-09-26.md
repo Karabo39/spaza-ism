@@ -10,9 +10,9 @@
 
 ## Location and data protection
 
-Store setup actions use `/stores/[storeId]/...`, independently of the active-store cookie. Each server entry checks owner access and the required module for that specific store. The client provider is scoped to that same store. The team operation changes only one membership/location pair and audits it; it cannot edit another business or alter another store’s assignments.
+Store setup actions use `/stores/[storeId]/...`, independently of the active-store cookie. Each server entry checks owner access and the required module for that specific store. The client provider is scoped to that same store. The receiving destination is locked in store setup, and its import screen only offers products and opening stock. The team operation changes only one membership/location pair and audits it; it cannot edit another business or alter another store’s assignments.
 
-Product sync checks manager-or-owner product access at the destination and warehouse access at the source. Matching uses saved product links, SKU and active barcode; names alone never establish a match. Conflicting identifiers, inactive matches, incompatible units/expiry/bulk configuration and new products needing another currency are reported and skipped. Each product plus its bulk definitions is atomic. Repeating a sync does not create duplicates. Confirmation revalidates current database data. Preview uses the same validation inside a rolled-back subtransaction, persisting no products, links, audits or catalog revisions. The current operation explicitly rejects catalogues exceeding 10,000 active records.
+Product sync checks manager-or-owner product access at the destination and warehouse access at the source. Matching uses saved product links, SKU and active barcode; names alone never establish a match. Conflicting identifiers, inactive matches, incompatible units/expiry/bulk configuration and new products needing another currency are reported and skipped. Each product plus its bulk definitions is atomic. Repeating a sync does not create duplicates. Successful sync invalidates the destination’s sale, order and receiving product-picker caches. Confirmation revalidates current database data. Preview uses the same validation inside a rolled-back subtransaction, persisting no products, links, audits or catalog revisions. The current operation explicitly rejects catalogues exceeding 10,000 active records.
 
 ## Main files and database changes
 
@@ -27,7 +27,7 @@ Product sync checks manager-or-owner product access at the destination and wareh
 
 ## Validation
 
-- 229 application tests across 60 files passed.
+- 229 application tests across 60 files passed; the final receiving-scope/cache refinements passed all 7 targeted tests, including two additional destination-selection cases (231 distinct tests).
 - TypeScript, lint and production build passed.
 - Fresh local database: the full SQL regression runner passed, including the new sync/assignment suite and warehouse-disable concurrency checks. Additional checks cover revoked product permission and inactive destinations.
 - Sync tests cover 100 warehouse units and 20 store units remaining unchanged, existing cost/selling prices, preview rollback, retry safety, bulk configuration, conflicts, currencies, employee denial and cross-business denial.

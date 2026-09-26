@@ -44,7 +44,7 @@ type Line = {
   expiry: string;
 };
 
-export function GoodsInConsole() {
+export function GoodsInConsole({ fixedLocation = false }: { fixedLocation?: boolean } = {}) {
   const router = useRouter();
   const cache = useQueryClient();
   const [selectedProduct, setSelectedProduct] =
@@ -335,13 +335,14 @@ export function GoodsInConsole() {
           <select
             id="receiving-location"
             value={store.id}
-            disabled={!online || lines.length > 0 || busy}
+            disabled={fixedLocation || !online || lines.length > 0 || busy}
             onChange={(e) => setStore(e.target.value)}
             className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm"
           >
             {stores
               .filter(
                 (s) =>
+                  (!fixedLocation || s.id === store.id) &&
                   s.businessId === store.businessId &&
                   s.locationType === store.locationType &&
                   (store.locationType !== "warehouse" || s.id === store.id),
@@ -354,7 +355,9 @@ export function GoodsInConsole() {
               ))}
           </select>
           <p className="mt-1 text-xs text-muted">
-            {lines.length
+            {fixedLocation
+              ? "Receiving into this store only. Goods In requires a connection."
+              : lines.length
               ? "Clear the items before changing destination."
               : "Choose a destination before scanning. Goods In requires a connection."}
           </p>

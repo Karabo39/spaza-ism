@@ -40,7 +40,7 @@ vi.mock("@/lib/store-context", () => ({
       name: "Shop",
       locationType: "store",
     },
-    stores: [{ id: "shop", name: "Shop", locationType: "store" }],
+    stores: [{ id: "shop", businessId: "business", name: "Shop", locationType: "store" }, {id: "other", businessId: "business",name:"Other store",locationType:"store"}],
     currency: "ZAR",
     setStore: vi.fn(),
     can: () => false,
@@ -120,4 +120,17 @@ it("receives existing linked packs without creating another catalogue product", 
     ),
   );
   expect(m.rpc.mock.calls.map((c) => c[0])).toEqual(["receive_stock"]);
+});
+
+it("locks the destination inside a store setup workspace", () => {
+  render(<GoodsInConsole fixedLocation />);
+  const destination = screen.getByLabelText("Receiving destination");
+  expect(destination).toBeDisabled();
+  expect(destination).toHaveValue("shop");
+  expect(screen.queryByRole("option", {name: "Other store · Store"})).toBeNull();
+});
+it("retains destination selection on the ordinary receiving page", () => {
+  render(<GoodsInConsole />);
+  expect(screen.getByLabelText("Receiving destination")).toBeEnabled();
+  expect(screen.getByRole("option", {name: "Other store · Store"})).toBeVisible();
 });

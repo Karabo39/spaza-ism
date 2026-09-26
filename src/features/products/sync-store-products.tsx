@@ -81,9 +81,11 @@ export function SyncStoreProducts() {
           );
         else toast.success("Products synced successfully.");
         await cache.invalidateQueries({ queryKey: ["store-setup"] });
-        await cache.invalidateQueries({
-          queryKey: ["product-search", store.id],
-        });
+        await Promise.all(
+          ["product-picker", "operation-products", "order-product-search"].map(
+            key => cache.invalidateQueries({ queryKey: [key, store.id] }),
+          ),
+        );
         router.refresh();
       }
     } catch (e) {

@@ -217,13 +217,13 @@ export function ImportConsole({
         </div>
         <p className="mt-4 text-sm text-muted">
           Keep the template columns unchanged. Blank cells preserve existing
-          values. Products match their ID or barcode; suppliers and customers
-          match their ID. Suppliers are shared across {store.businessName}.
+          values. Products match their ID or barcode.
+          {!productsOnly && <> Suppliers and customers match their ID. Suppliers are shared across {store.businessName}.</>}
         </p>
         <p className="mt-2 text-sm text-muted">
           Product quantity sets the total on hand. Expiry-tracked increases need
-          an expiry date. Customer imports change contact details and credit
-          limits; balances are maintained by transactions.
+          an expiry date.
+          {!productsOnly && <> Customer imports change contact details and credit limits; balances are maintained by transactions.</>}
         </p>
         <label className="mt-5 block text-sm font-medium">
           Choose completed Excel template
