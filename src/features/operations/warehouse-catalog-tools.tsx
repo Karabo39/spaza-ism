@@ -51,7 +51,8 @@ export function WarehouseCatalogTools() {
     (s) =>
       s.businessId === store.businessId &&
       s.locationType === "warehouse" &&
-      s.modules.warehouse,
+      s.modules.warehouse &&
+      (store.locationType !== "warehouse" || s.id === store.id),
   );
   if (!can("owner") || !warehouses.length) return null;
   return (
@@ -74,7 +75,8 @@ function CatalogPanel() {
     (s) =>
       s.businessId === store.businessId &&
       s.locationType === "warehouse" &&
-      s.modules.warehouse,
+      s.modules.warehouse &&
+      (store.locationType !== "warehouse" || s.id === store.id),
   );
   const sources = stores.filter(
     (s) => s.businessId === store.businessId && s.locationType === "store",

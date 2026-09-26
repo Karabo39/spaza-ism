@@ -9,7 +9,9 @@ import { money, qty } from "@/lib/format";
 import type { ModuleKey } from "@/lib/modules";
 export function WarehouseLocations({
   rows,
+  opened = false,
 }: {
+  opened?: boolean;
   rows: {
     location_id: string;
     name: string;
@@ -63,7 +65,11 @@ export function WarehouseLocations({
             className="space-y-3 rounded-lg border border-border bg-surface p-4"
           >
             <h2 className="text-lg font-semibold">{row.name}</h2>
-            <p className="text-xs text-muted">Code: {row.code || "Not set"}</p>
+            {opened && (
+              <p className="text-xs text-muted">
+                Code: {row.code || "Not set"}
+              </p>
+            )}
             {stores.some(
               (s) =>
                 s.id === row.location_id &&
@@ -88,35 +94,46 @@ export function WarehouseLocations({
               />
             )}
             <p>
-              {row.product_count} products · {qty(row.stock_quantity)} units ·{" "}
+              {row.product_count} products ·{" "}
+              {opened && <>{qty(row.stock_quantity)} units · </>}
               {money(row.stock_value, row.currency)}
             </p>
             <div className="flex flex-wrap gap-2">
-              {actions
-                .filter(
-                  (a) =>
-                    stores.find((s) => s.id === row.location_id)?.modules[
-                      a.module
-                    ],
-                )
-                .map((a) => (
-                  <Button
-                    disabled={!online}
-                    key={a.path}
-                    size="sm"
-                    variant="secondary"
-                    className="bg-[#2c142b] hover:bg-[#402244] border-[#402244] text-white"
-                    onClick={() => {
-                      router.push(
-                        a.path === "movements"
-                          ? `/reports/warehouse-movements?warehouse=${row.location_id}`
-                          : `/warehouse/${row.location_id}/${a.path}`,
-                      );
-                    }}
-                  >
-                    {a.label}
-                  </Button>
-                ))}
+              {!opened ? (
+                <Button
+                  size="sm"
+                  disabled={!online}
+                  onClick={() => router.push(`/warehouse/${row.location_id}`)}
+                >
+                  Open Warehouse
+                </Button>
+              ) : (
+                actions
+                  .filter(
+                    (a) =>
+                      stores.find((s) => s.id === row.location_id)?.modules[
+                        a.module
+                      ],
+                  )
+                  .map((a) => (
+                    <Button
+                      disabled={!online}
+                      key={a.path}
+                      size="sm"
+                      variant="secondary"
+                      className="bg-[#2c142b] hover:bg-[#402244] border-[#402244] text-white"
+                      onClick={() => {
+                        router.push(
+                          a.path === "movements"
+                            ? `/reports/warehouse-movements?warehouse=${row.location_id}`
+                            : `/warehouse/${row.location_id}/${a.path}`,
+                        );
+                      }}
+                    >
+                      {a.label}
+                    </Button>
+                  ))
+              )}
             </div>
           </section>
         ))}

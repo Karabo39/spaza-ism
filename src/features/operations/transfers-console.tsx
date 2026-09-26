@@ -93,7 +93,7 @@ export function TransfersConsole({
           { p_business: store.businessId },
         );
         if (error) throw error;
-        return data;
+        return warehouse ? data?.filter((t) => t.source_id === store.id) : data;
       }
       const { data, error } = await createClient().rpc("transfer_history", {
         p_business: store.businessId,
@@ -675,7 +675,9 @@ export function TransfersConsole({
                           Received
                         </Button>
                       ) : (
-                        <p className="mt-1 text-xs">
+                        <p
+                          className={`mt-1 inline-flex rounded-md px-3 py-2 text-xs font-medium ${t.status === "DISPATCHED" || t.status === "CANCELLED" ? "bg-danger text-white" : "text-muted"}`}
+                        >
                           {t.status === "DISPATCHED"
                             ? "Pending store receipt"
                             : t.status}

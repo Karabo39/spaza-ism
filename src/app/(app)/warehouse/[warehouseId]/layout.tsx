@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { warehouseSession } from "@/lib/warehouse-session";
 import { StoreProvider } from "@/lib/store-context";
 import { OfflineProvider } from "@/lib/offline/offline-context";
@@ -12,7 +14,17 @@ export default async function WarehouseLayout({
   const session = await warehouseSession(warehouseId);
   return (
     <StoreProvider key={warehouseId} session={session}>
-      <OfflineProvider>{children}</OfflineProvider>
+      <OfflineProvider>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/warehouse">Exit Warehouse</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/warehouse/${warehouseId}`}>Warehouse overview</Link>
+          </Button>
+        </div>
+        {children}
+      </OfflineProvider>
     </StoreProvider>
   );
 }

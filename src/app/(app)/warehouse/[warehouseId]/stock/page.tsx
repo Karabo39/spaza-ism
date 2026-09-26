@@ -1,3 +1,4 @@
+import { CatalogExport } from "@/features/reports/paged-export";
 import { readCursor, dataPage, type CatalogProduct } from "@/lib/data-pages";
 import { CursorPagination } from "@/components/ui/cursor-pagination";
 import { ProductEditDialog } from "@/features/products/product-edit-dialog";
@@ -33,10 +34,24 @@ export default async function Page({
       <PageHeader
         title="Warehouse Stock View"
         actions={
-          session.activeStore.modules.products &&
-          session.activeStore.role !== "employee" ? (
-            <AddProductButton />
-          ) : undefined
+          <>
+            {session.activeStore.modules.products &&
+              session.activeStore.role !== "employee" && <AddProductButton />}
+            <CatalogExport
+              stores={[warehouseId]}
+              locations={[session.activeStore]}
+              filename="warehouse-stock"
+              columns={[
+                { key: "name", label: "Product" },
+                { key: "sku", label: "SKU" },
+                { key: "quantity", label: "Quantity" },
+                { key: "unit", label: "Unit" },
+                { key: "cost_price", label: "Unit cost" },
+                { key: "stock_value", label: "Cost value" },
+                { key: "currency", label: "Currency" },
+              ]}
+            />
+          </>
         }
         description={session.activeStore.name}
         crumbs={[
