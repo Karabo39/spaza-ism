@@ -31,7 +31,7 @@ type Line = {
 export function OrdersConsole({
   initialOrder,
 }: { initialOrder?: string } = {}) {
-  const { store, currency, canModule } = useStore();
+  const { store, currency, canModule, role } = useStore();
   const router = useRouter();
   const { online, busy, request, run } = useBillingAction();
   const [customer, setCustomer] = useState<CreditCustomer | null>(null);
@@ -512,7 +512,7 @@ export function OrdersConsole({
           <CollapsibleSection
             title="Recent Orders"
             actions={
-              canModule("invoices_view_invoices") ? (
+              role !== "employee" && canModule("invoices_view_invoices") ? (
                 <Button asChild>
                   <Link href="/invoices">View invoices</Link>
                 </Button>

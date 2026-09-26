@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { OrdersConsole } from "@/features/billing/orders-console";
 const mocks = vi.hoisted(() => ({
+  role: "manager",
   invoices: true,
   recent: true,
   newOrder: true,
@@ -13,6 +14,7 @@ vi.mock("@/lib/store-context", () => ({
   useStore: () => ({
     store: { id: "s", businessId: "b" },
     currency: "ZAR",
+    role: mocks.role,
     canModule: (key: string) =>
       key === "orders_recent"
         ? mocks.recent
@@ -66,6 +68,9 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 beforeEach(() => {
   cleanup();
+  mocks.role = "manager";
+  mocks.recent = true;
+  mocks.newOrder = true;
   mocks.invoices = true;
   mocks.status = "COMPLETED";
 });
@@ -131,7 +136,25 @@ it("expands details directly below the clicked order and collapses on another cl
   expect(screen.queryByRole("region", { name: "Order summary" })).toBeNull();
   fireEvent.click(toggle);
   expect(toggle).toHaveAttribute("aria-expanded", "true");
-  expect(toggle.closest("tr")?.nextElementSibling).toContainElement(screen.getByRole("region", { name: "Order summary" }));
+  expect(toggle.closest("tr")?.nextElementSibling).toContainElement(
+    screen.getByRole("region", { name: "Order summary" }),
+  );
   fireEvent.click(toggle);
   expect(screen.queryByRole("region", { name: "Order summary" })).toBeNull();
+});
+
+it("hides the Orders invoice-list shortcut for employees with invoice access", () => {
+  mocks.role = "employee";
+  render(<OrdersConsole />);
+  expect(
+    screen.queryByRole("link", { name: "View invoices" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "ORDER-1" })).toBeVisible();
+});
+it("retains the Orders invoice-list shortcut for managers with permission", () => {
+  render(<OrdersConsole />);
+  expect(screen.getByRole("link", { name: "View invoices" })).toHaveAttribute(
+    "href",
+    "/invoices",
+  );
 });
