@@ -1,3 +1,4 @@
+import { SyncStoreProducts } from "@/features/products/sync-store-products";
 import { stockQuantity } from "@/lib/format";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -64,6 +65,7 @@ export default async function ProductsPage({
             <ToolbarSearch placeholder="Search name or barcode..." />
             <AddProductButton />
             <ImportLink kind="products" />
+            <SyncStoreProducts key={store.id} />
           </>
         }
       />
