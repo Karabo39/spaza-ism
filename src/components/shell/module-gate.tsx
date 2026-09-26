@@ -41,6 +41,19 @@ export function ModuleGate({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const key = moduleForPath(path);
   const { canModule, stores } = useStore();
+  const setupId = /^\/stores\/([^/]+)/.exec(path)?.[1];
+  if (setupId)
+    return stores.some(
+      (s) =>
+        s.id === setupId &&
+        s.locationType === "store" &&
+        s.role === "owner" &&
+        s.modules.stores,
+    ) ? (
+      children
+    ) : (
+      <AccessDenied />
+    );
   if (
     (key === "warehouse" || path === "/reports/warehouse-movements") &&
     stores.some(

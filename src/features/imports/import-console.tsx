@@ -41,8 +41,10 @@ function save(blob: Blob, filename: string) {
 }
 export function ImportConsole({
   initialKind = "products",
+  productsOnly = false,
 }: {
   initialKind?: ImportKind;
+  productsOnly?: boolean;
 }) {
   const { store, can } = useStore(),
     { online } = useOffline(),
@@ -173,7 +175,7 @@ export function ImportConsole({
           <select
             className="mt-1 block h-10 w-full max-w-sm rounded-md border border-border bg-input px-3"
             value={kind}
-            disabled={busy}
+            disabled={busy || productsOnly}
             onChange={(e) => {
               setKind(e.target.value as ImportKind);
               setPreview(null);
@@ -182,8 +184,10 @@ export function ImportConsole({
             }}
           >
             <option value="products">Products and stock quantity</option>
-            <option value="suppliers">Suppliers</option>
-            <option value="customers">Credit customers</option>
+            {!productsOnly && <option value="suppliers">Suppliers</option>}
+            {!productsOnly && (
+              <option value="customers">Credit customers</option>
+            )}
           </select>
         </label>
         <div className="mt-4 flex flex-wrap items-end gap-3">
