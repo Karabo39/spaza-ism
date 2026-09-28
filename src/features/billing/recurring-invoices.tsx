@@ -1,5 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
@@ -245,10 +251,14 @@ function RecurringEditor({
   const { store, currency } = useStore(),
     action = useBillingAction();
   const [id] = useState(() => initial?.id ?? crypto.randomUUID());
+  const form = useRef<HTMLFormElement>(null);
+  const request = useRef<{ payload: string; id: string } | null>(null);
+  const [review, setReview] = useState(false);
   const [draft, setDraft] = useState(() => ({
     title: initial?.title ?? "",
     customer_id: initial?.customer_id ?? "",
     frequency: initial?.frequency ?? "MONTHLY",
+    send_time: initial?.send_time?.slice(0, 5) ?? "08:00",
     start_date: initial?.start_date ?? businessDate(),
     next_date: initial?.next_date ?? businessDate(),
     end_date: initial?.end_date ?? "",
@@ -269,12 +279,24 @@ function RecurringEditor({
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("customers")
-        .select("name,email,credit_enabled")
+        .select("name,email,credit_enabled,auto_email_invoices")
         .eq("id", draft.customer_id)
         .eq("store_id", store.id)
         .single();
       if (error) throw error;
       return data;
+    },
+  });
+  const location = useQuery({
+    queryKey: ["billing", "recurring-timezone", store.id],
+    queryFn: async () => {
+      const { data, error } = await createClient()
+        .from("stores")
+        .select("timezone")
+        .eq("id", store.id)
+        .single();
+      if (error) throw error;
+      return data.timezone;
     },
   });
   const settings = useQuery({
@@ -296,6 +318,7 @@ function RecurringEditor({
     total = subtotal + Math.round(subtotal * draft.tax_percent) / 100;
   return (
     <form
+      ref={form}
       className="space-y-4 rounded-xl border border-primary/40 bg-surface p-5"
       onSubmit={(e) => {
         e.preventDefault();
@@ -334,6 +357,12 @@ function RecurringEditor({
           </span>
         </div>
         {contact.error && <p role="alert">Could not load customer details.</p>}
+        {contact.data?.auto_email_invoices && (
+          <p className="text-xs text-muted">
+            This customer has automatic invoice emails enabled. Their profile
+            email is used unless the schedule specifies an automatic recipient.
+          </p>
+        )}
         <CustomerPicker
           open={pick}
           onOpenChange={setPick}
@@ -520,6 +549,21 @@ function RecurringEditor({
             Use business tax ({settings.data ?? 0}%)
           </Button>
         </div>
+        <label className="block text-sm">
+          Send Time
+          <Input
+            type="time"
+            required
+            step="60"
+            value={draft.send_time}
+            onChange={(e) => setDraft({ ...draft, send_time: e.target.value })}
+          />
+        </label>
+        <p className="text-xs text-muted">
+          Time zone: {location.data ?? "Loading store time zone…"}. Generation
+          starts at the selected time, checked every minute. Email delivery can
+          take longer.
+        </p>
         <p className="text-sm">
           Invoice total: <strong>{money(total, currency)}</strong>
         </p>
@@ -563,7 +607,7 @@ function RecurringEditor({
             Enable customer credit or choose cash/card terms.
           </p>
         )}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             type="submit"
             loading={action.busy}
@@ -576,11 +620,106 @@ function RecurringEditor({
           >
             Save recurring invoice
           </Button>
+          <Button
+            type="button"
+            disabled={
+              !draft.customer_id ||
+              !lines.length ||
+              action.busy ||
+              !location.data ||
+              !contact.data ||
+              (draft.terms === "CREDIT" &&
+                contact.data.credit_enabled === false)
+            }
+            onClick={() => {
+              if (form.current?.reportValidity()) setReview(true);
+            }}
+          >
+            Manual Send
+          </Button>
           <Button type="button" variant="secondary" onClick={close}>
             Cancel
           </Button>
         </div>
       </fieldset>
+      <Dialog open={review} onOpenChange={(v) => !action.busy && setReview(v)}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto">
+          <DialogTitle>Review additional invoice</DialogTitle>
+          <DialogDescription>
+            This creates an additional invoice and emails it from
+            invoice@posinventory.store. Your next automatic invoice remains
+            unchanged. A new unsaved schedule is saved inactive.
+          </DialogDescription>
+          <p className="font-medium">
+            {draft.title} · {contact.data?.name}
+          </p>
+          <p>
+            Invoice date: today ({location.data}). Due {draft.due_days} days
+            later. Terms: {draft.terms.replaceAll("_", " / ")}.
+          </p>
+          <ul className="space-y-2">
+            {lines.map((l) => (
+              <li key={l.product_id}>
+                {l.name} · {l.quantity} × {money(l.unit_price, currency)} ={" "}
+                {money(
+                  Math.round(l.quantity * l.unit_price * 100) / 100,
+                  currency,
+                )}
+              </li>
+            ))}
+          </ul>
+          <p>
+            Tax: {draft.tax_percent}% · Total:{" "}
+            <strong>{money(total, currency)}</strong>
+          </p>
+          <p className="break-all">
+            To: {draft.recipient || "Enter a recipient using Edit"}
+          </p>
+          <p className="text-xs text-muted">
+            An invoice number is assigned when you confirm. Stock is deducted
+            only when goods are issued.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              disabled={action.busy}
+              onClick={() => setReview(false)}
+            >
+              Edit
+            </Button>
+            <Button
+              type="button"
+              loading={action.busy}
+              disabled={
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.recipient.trim())
+              }
+              onClick={() => {
+                const details = { ...draft, items: lines };
+                const payload = JSON.stringify(details);
+                if (request.current?.payload !== payload)
+                  request.current = { payload, id: crypto.randomUUID() };
+                void action.run(
+                  () =>
+                    createClient().rpc("send_manual_recurring_invoice", {
+                      p_store: store.id,
+                      p_id: id,
+                      p_expected: initial?.version ?? 0,
+                      p_details: details as Json,
+                      p_request: request.current!.id,
+                    }),
+                  "Additional invoice created and queued for email",
+                  () => {
+                    setReview(false);
+                    close();
+                  },
+                );
+              }}
+            >
+              Confirm and send the Invoice
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

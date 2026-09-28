@@ -37,6 +37,7 @@ function CustomerPickerContent({
   const [customerType, setCustomerType] = React.useState<
     "INDIVIDUAL" | "BUSINESS"
   >("INDIVIDUAL");
+  const [autoEmail, setAutoEmail] = React.useState(false);
   const [creditEnabled, setCreditEnabled] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
@@ -72,6 +73,7 @@ function CustomerPickerContent({
         email: email.trim() || null,
         customer_type: customerType,
         credit_enabled: can("manager") && creditEnabled,
+        auto_email_invoices: autoEmail && !!email.trim(),
         phone: newPhone.trim() || null,
       })
       .select("id")
@@ -132,7 +134,7 @@ function CustomerPickerContent({
                 type="email"
                 maxLength={254}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {setEmail(e.target.value);if(!e.target.value.trim())setAutoEmail(false);}}
               />
             </label>
             <label className="block text-sm">
@@ -158,6 +160,7 @@ function CustomerPickerContent({
                 Allow credit purchases
               </label>
             )}
+            <label className="flex gap-2 text-sm"><input type="checkbox" disabled={!email.trim()} checked={autoEmail} onChange={e=>setAutoEmail(e.target.checked)}/>Automatically email each issued invoice to this customer</label>
             <div className="flex justify-between gap-2">
               <Button
                 type="button"

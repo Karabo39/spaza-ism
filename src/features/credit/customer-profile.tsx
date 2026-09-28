@@ -76,6 +76,7 @@ export function CustomerProfile({
                       ...fields.map(([key]) => [key, draft[key] ?? ""]),
                       ["customer_type", draft.customer_type],
                       ["credit_enabled", draft.credit_enabled],
+                      ["auto_email_invoices", !!draft.auto_email_invoices],
                     ]),
                   },
                 );
@@ -115,7 +116,7 @@ export function CustomerProfile({
                     }
                     value={draft[key] ?? ""}
                     onChange={(e) =>
-                      setDraft({ ...draft, [key]: e.target.value })
+                      setDraft({ ...draft, [key]: e.target.value, ...(key === "email" && !e.target.value.trim() ? {auto_email_invoices:false} : {}) })
                     }
                   />
                 </label>
@@ -149,6 +150,8 @@ export function CustomerProfile({
                 />
                 Allow credit purchases
               </label>
+              <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={!!draft.auto_email_invoices} disabled={!draft.email?.trim()} onChange={e=>setDraft({...draft,auto_email_invoices:e.target.checked})}/>Automatically email each issued invoice to this customer</label>
+              <p className="text-xs text-muted sm:col-span-2">Requires a valid email address. Applies to future issued invoices; drafts and existing invoices are not sent.</p>
             </fieldset>
             {customer.address && !customer.street && (
               <p className="text-xs text-muted">
