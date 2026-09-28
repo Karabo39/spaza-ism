@@ -68,8 +68,8 @@ export default async function CreditPage({
   return (
     <>
       <PageHeader
-        title="Credit Customers"
-        crumbs={[{ label: "Operations" }, { label: "Credit" }]}
+        title="Customers"
+        crumbs={[{ label: "Operations" }, { label: "Customers" }]}
         actions={
           <>
             <ToolbarSearch placeholder="Search customers…" />
@@ -158,10 +158,11 @@ export default async function CreditPage({
           ]}
         />
         <ExportButton
-          filename="credit-customers"
+          filename="customers"
           rows={rows.map((r) => ({
             name: r.name,
             phone: r.phone,
+            email: r.email, address: r.address, type: r.customer_type, credit_enabled: r.credit_enabled,
             balance: Number(r.balance),
             credit_limit: Number(r.credit_limit),
             status: !r.is_active
@@ -175,6 +176,7 @@ export default async function CreditPage({
           columns={[
             { key: "name", label: "Customer" },
             { key: "phone", label: "Phone" },
+            {key:"email",label:"Email"},{key:"address",label:"Address"},{key:"type",label:"Customer type"},{key:"credit_enabled",label:"Credit enabled"},
             { key: "balance", label: "Balance" },
             { key: "credit_limit", label: "Limit" },
             { key: "status", label: "Status" },
@@ -186,15 +188,15 @@ export default async function CreditPage({
         {rows.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="No credit customers"
-            description="Add a customer to start tracking what they owe."
+            title="No customers"
+            description="Add an individual or business customer to save their details and purchases."
           />
         ) : (
           <Table>
             <THead>
               <TR>
                 <TH>Customer</TH>
-                <TH>Phone</TH>
+                <TH>Contact details</TH>
                 <TH className="text-right">Balance</TH>
                 <TH className="text-right">Limit</TH>
                 <TH className="text-right">Available</TH>
@@ -210,9 +212,9 @@ export default async function CreditPage({
                       className="hover:text-primary-hover"
                     >
                       {r.name}
-                    </Link>
+                    </Link><p className="text-xs text-muted">{r.customer_type === "BUSINESS" ? "Business" : "Individual"} · {r.credit_enabled ? "Credit enabled" : "Cash / card"}</p>
                   </TD>
-                  <TD className="text-muted">{r.phone ?? "—"}</TD>
+                  <TD className="text-muted"><p>{r.phone || "No phone"}</p><p>{r.email || "No email"}</p><p className="max-w-xs whitespace-normal">{r.address || "No address"}</p></TD>
                   <TD
                     className={cn(
                       "text-right tabular-nums",

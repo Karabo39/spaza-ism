@@ -93,7 +93,7 @@ export const MODULE_FEATURES = [
   },
   {
     key: "dashboard_credit",
-    label: "Credit",
+    label: "Customers",
     parent: "dashboard",
     role: "employee",
     requires: ["credit"],

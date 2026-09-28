@@ -1,3 +1,4 @@
+import { CustomerProfile } from "@/features/credit/customer-profile";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -53,6 +54,8 @@ export default async function CustomerCreditPage({
     .eq("store_id", store.id)
     .maybeSingle();
   if (!customer) notFound();
+  const { data: profile, error: profileError } = await supabase.from("customers").select("*").eq("id", id).eq("store_id", store.id).single();
+  if (profileError) throw profileError;
 
   let query = supabase
     .from("credit_transactions")
@@ -86,12 +89,13 @@ export default async function CustomerCreditPage({
       <PageHeader
         title={customer.name}
         crumbs={[
-          { label: "Credit", href: "/credit" },
+          { label: "Customers", href: "/credit" },
           { label: customer.name },
         ]}
         description={customer.phone ?? undefined}
         actions={
           <>
+            <CustomerProfile customer={profile} />
             <ExportButton
               rows={rows.map((t) => ({
                 date: dateTime(t.created_at),
@@ -121,6 +125,7 @@ export default async function CustomerCreditPage({
         }
       />
 
+      <section className="mb-5 rounded-lg border border-border p-4 text-sm"><p>{profile.customer_type === "BUSINESS" ? "Business customer" : "Individual customer"} · {profile.credit_enabled ? "Credit enabled" : "Cash / card customer"}</p><p className="mt-2">Email: {profile.email || "Not provided"}</p><p>Address: {profile.address || "Not provided"}</p></section>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
           <CardContent className="p-4">

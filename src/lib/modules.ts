@@ -75,7 +75,7 @@ export const MODULES = [
   },
   {
     key: "credit",
-    label: "Credit Customers",
+    label: "Customers",
     href: "/credit",
     role: "employee",
     group: "Daily work",

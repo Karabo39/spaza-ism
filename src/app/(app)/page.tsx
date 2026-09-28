@@ -129,7 +129,7 @@ export default async function DashboardPage() {
             <MetricCard
               label="Over limit"
               value={String(s.over_limit)}
-              sub="credit customers"
+              sub="customers"
               icon={Users}
               tone={s.over_limit > 0 ? "danger" : "default"}
               href={

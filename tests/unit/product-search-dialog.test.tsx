@@ -31,7 +31,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 vi.mock("@/features/scan/lookup", () => ({ searchProducts: lookup }));
 vi.mock("@/lib/store-context", () => ({
-  useStore: () => ({ store: { id: "store" }, currency: "ZAR" }),
+  useStore: () => ({ store: { id: "store" }, currency: "ZAR", can: () => false }),
 }));
 beforeEach(() => {
   vi.useFakeTimers();

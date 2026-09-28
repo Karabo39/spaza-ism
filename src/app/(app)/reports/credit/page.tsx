@@ -76,7 +76,7 @@ export default async function CreditBalancesReport({
       />
       <div className="rounded-lg border border-border bg-surface">
         {rows.length === 0 ? (
-          <EmptyState icon={Wallet} title="No credit customers" />
+          <EmptyState icon={Wallet} title="No customers" />
         ) : (
           <Table>
             <THead>

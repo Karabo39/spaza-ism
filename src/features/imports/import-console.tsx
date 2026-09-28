@@ -186,7 +186,7 @@ export function ImportConsole({
             <option value="products">Products and stock quantity</option>
             {!productsOnly && <option value="suppliers">Suppliers</option>}
             {!productsOnly && (
-              <option value="customers">Credit customers</option>
+              <option value="customers">Customers</option>
             )}
           </select>
         </label>

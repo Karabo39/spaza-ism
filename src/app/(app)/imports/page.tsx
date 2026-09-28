@@ -17,7 +17,7 @@ export default async function ImportsPage({
     <>
       <PageHeader
         title="Data Imports and Exports"
-        description="Download a template, review the changes and import products, suppliers or credit customers."
+        description="Download a template, review the changes and import products, suppliers or customers."
         crumbs={[{ label: "Catalog" }, { label: "Data Imports and Exports" }]}
       />
       <ImportConsole

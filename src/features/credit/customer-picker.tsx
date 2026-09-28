@@ -27,12 +27,17 @@ function CustomerPickerContent({
   onOpenChange: (v: boolean) => void;
   onSelect: (c: CreditCustomer) => void;
 }) {
-  const { store, currency } = useStore();
+  const { store, currency, can } = useStore();
   const [q, setQ] = React.useState("");
   const term = useDebouncedValue(q.trim());
   const [creating, setCreating] = React.useState(false);
   const [newName, setNewName] = React.useState("");
   const [newPhone, setNewPhone] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [customerType, setCustomerType] = React.useState<
+    "INDIVIDUAL" | "BUSINESS"
+  >("INDIVIDUAL");
+  const [creditEnabled, setCreditEnabled] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
   const search = useQuery({
@@ -64,6 +69,9 @@ function CustomerPickerContent({
         business_id: store.businessId,
         store_id: store.id,
         name: newName.trim(),
+        email: email.trim() || null,
+        customer_type: customerType,
+        credit_enabled: can("manager") && creditEnabled,
         phone: newPhone.trim() || null,
       })
       .select("id")
@@ -118,6 +126,38 @@ function CustomerPickerContent({
                 placeholder="072 000 0000"
               />
             </div>
+            <label className="block text-sm">
+              Email address
+              <Input
+                type="email"
+                maxLength={254}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            <label className="block text-sm">
+              Customer type
+              <select
+                className="h-10 w-full rounded border border-border bg-input px-3"
+                value={customerType}
+                onChange={(e) =>
+                  setCustomerType(e.target.value as "INDIVIDUAL" | "BUSINESS")
+                }
+              >
+                <option value="INDIVIDUAL">Individual</option>
+                <option value="BUSINESS">Business</option>
+              </select>
+            </label>
+            {can("manager") && (
+              <label className="flex gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={creditEnabled}
+                  onChange={(e) => setCreditEnabled(e.target.checked)}
+                />
+                Allow credit purchases
+              </label>
+            )}
             <div className="flex justify-between gap-2">
               <Button
                 type="button"
@@ -182,9 +222,11 @@ function CustomerPickerContent({
                         {money(c.balance, currency)}
                       </p>
                       <p className="text-[10px] text-muted">
-                        {c.over_limit
-                          ? "Over limit"
-                          : `Avail ${money(c.available_credit, currency)}`}
+                        {c.credit_enabled === false
+                          ? "Cash / card only"
+                          : c.over_limit
+                            ? "Over limit"
+                            : `Avail ${money(c.available_credit, currency)}`}
                       </p>
                     </div>
                     <Check className="size-4 text-muted opacity-0" />

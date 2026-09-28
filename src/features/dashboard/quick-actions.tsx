@@ -23,7 +23,7 @@ const ACTIONS: {
   { href: "/check-stock", label: "Check Stock", icon: Search },
   { href: "/check-price", label: "Check Price", icon: Tag },
   { href: "/adjust", label: "Adjust Stock", icon: SlidersHorizontal },
-  { href: "/credit", label: "Credit", icon: Users },
+  { href: "/credit", label: "Customers", icon: Users },
 ];
 
 export function QuickActions() {

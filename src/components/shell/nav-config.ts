@@ -51,7 +51,7 @@ export const NAV: NavGroup[] = [
       },
       { href: "/check-stock", label: "Check Stock", icon: Search },
       { href: "/check-price", label: "Check Price", icon: Tag },
-      { href: "/credit", label: "Credit Customers", icon: Users },
+      { href: "/credit", label: "Customers", icon: Users },
       { href: "/cash-up", label: "Cash Up", icon: Wallet },
     ],
   },
