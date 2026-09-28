@@ -41,6 +41,8 @@ export function SalePrintActions({
           );
           return;
         }
+        await Promise.all(Array.from(document.querySelectorAll<HTMLImageElement>("#receipt img")).map(img=>img.decode()));
+        if (document.fonts) await document.fonts.ready;
         window.print();
         if (!copy && secondCopy) {
           setReady(false);

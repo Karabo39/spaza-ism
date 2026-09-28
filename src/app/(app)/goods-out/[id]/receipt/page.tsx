@@ -1,3 +1,4 @@
+import { DocumentLogo } from "@/components/document-logo";
 import { receiptCustomer } from "@/features/goods-out/receipt-customer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -66,6 +67,7 @@ export default async function ReceiptPage({
         className="mx-auto max-w-3xl space-y-5 rounded-lg bg-white p-8 text-black"
       >
         <header>
+          <DocumentLogo businessId={session.activeStore.businessId} />
           <h1 className="text-2xl font-bold">{receipt.business}</h1>
           <p>{receipt.store}</p>
           <h2 className="text-xl">Sales receipt</h2>

@@ -1,3 +1,4 @@
+import { DocumentLogo } from "@/components/document-logo";
 import { getSession } from "@/lib/session";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export default async function ReceiptPage({
         className="mx-auto max-w-3xl bg-white p-8 text-black rounded-lg space-y-5"
       >
         <header className="flex flex-wrap justify-between gap-4">
+          <DocumentLogo businessId={session.activeStore.businessId} />
           <div>
             <h1 className="text-2xl font-bold">{i.business_name}</h1>
             <p>{i.store_name}</p>
