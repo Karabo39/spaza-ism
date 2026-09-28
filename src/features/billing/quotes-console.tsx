@@ -319,9 +319,9 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
           </Button>
         )}
         {q.order_id && canModule("orders_recent") && (
-          <Link href={`/orders?order=${q.order_id}`} className="text-accent">
+          <Button asChild><Link href={`/orders?order=${q.order_id}`}>
             Open Orders — converted quotation
-          </Link>
+          </Link></Button>
         )}
       </div>
       {convert && active && (

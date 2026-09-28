@@ -398,7 +398,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
           </div>
           <Button
             className="self-end"
-            variant="secondary"
+            variant="primary"
             disabled={!item || quantity <= 0 || (expiryRequired && !expiry)}
             onClick={add}
           >
