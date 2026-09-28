@@ -65,6 +65,9 @@ export default async function ReceiptPage({
         </header>
         <div className="grid gap-2 sm:grid-cols-2">
           <p>Customer: {i.customer_name}</p>
+          <p>Address: {(i.customer_snapshot as {address?: string}|null)?.address || "Not recorded"}</p>
+          <p>Email: {(i.customer_snapshot as {email?: string}|null)?.email || "Not recorded"}</p>
+          <p>Invoice date: {dateOnly(i.invoice_date || i.created_at)}</p>
           <p>Salesperson: {i.salesperson}</p>
           <p>Ordered By: {i.ordered_by_name || "Not recorded"}</p>
           <p>Invoiced By: {i.invoiced_by_name || "Not recorded"}</p>

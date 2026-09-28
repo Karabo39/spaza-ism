@@ -76,6 +76,14 @@ export default async function InvoicesPage({
                 <Link href="/invoices/quotes?create=1">Create Quotes</Link>
               </Button>
             )}
+            {store.role !== "employee" &&
+              store.modules.invoices_create_from_order &&
+              store.modules.invoices_view_invoices &&
+              store.modules.orders_recent && (
+                <Button asChild>
+                  <Link href="/invoices/recurring">Recurring Invoice</Link>
+                </Button>
+              )}
             {store.modules.invoices_view_quotes && (
               <Button asChild>
                 <Link href="/invoices/quotes">View all quotes</Link>

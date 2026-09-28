@@ -47,7 +47,7 @@ export function InvoiceWorkspace({
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("v_credit_customers")
-        .select("customer_id,name")
+        .select("customer_id,name,credit_enabled")
         .eq("customer_id", i.customer_id)
         .eq("is_active", true)
         .maybeSingle();
@@ -57,7 +57,7 @@ export function InvoiceWorkspace({
   });
   const useCredit = kind === "PAYMENT" && method === "CREDIT";
   const creditAllowed =
-    !!creditCustomer && !i.goods_issued_at && Number(i.outstanding) > 0;
+    !!creditCustomer && creditCustomer.credit_enabled !== false && !i.goods_issued_at && Number(i.outstanding) > 0;
   const settled = i.state === "ISSUED" && Number(i.outstanding) <= 0;
   const cents = amountCents(amount);
   const invalidEntry =

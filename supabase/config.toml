@@ -5,3 +5,7 @@ verify_jwt = false
 [functions.employee-invitations]
 # The handler verifies the bearer session through Auth before any privileged work.
 verify_jwt = false
+
+[functions.recurring-invoices]
+# Custom worker authentication checks a dedicated recurring invoice secret.
+verify_jwt = false

@@ -115,12 +115,14 @@ Transaction: ${r.id}`,
         });
     if (i.note) rows.push({ description: i.note });
     return {
-      recipient: contact.data?.email ?? "",
+      recipient: (i.customer_snapshot as {email?: string}|null)?.email ?? contact.data?.email ?? "",
       reference: i.reference,
       data: {
         title: `${i.state === "DRAFT" ? "Draft invoice" : "Invoice / receipt"} ${i.reference}`,
         subtitle: `${i.business_name} · ${i.store_name}
-Customer: ${i.customer_name} · ${i.currency} · Due ${dateOnly(i.due_date)} · ${i.status}
+Customer: ${i.customer_name}
+Address: ${(i.customer_snapshot as {address?: string}|null)?.address || "Not recorded"}
+Invoice date: ${dateOnly(i.invoice_date || i.created_at)} · ${i.currency} · Due ${dateOnly(i.due_date)} · ${i.status}
 Ordered By: ${i.ordered_by_name || "Not recorded"} · Invoiced By: ${i.invoiced_by_name || "Not recorded"}
 Salesperson: ${i.salesperson} · Goods: ${i.goods_issued_at ? dateTime(i.goods_issued_at) : "Awaiting delivery"}`,
         columns,
