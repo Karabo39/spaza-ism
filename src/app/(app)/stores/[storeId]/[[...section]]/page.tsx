@@ -1,3 +1,6 @@
+import ProductsPage from "@/app/(app)/products/page";
+import { WarehouseEdit } from "@/features/operations/warehouse-edit";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { storeSetupSession } from "@/lib/store-setup-session";
@@ -11,6 +14,7 @@ import { ImportConsole } from "@/features/imports/import-console";
 import { GoodsInConsole } from "@/features/goods-in/goods-in-console";
 import type { ModuleKey } from "@/lib/modules";
 const sections: Record<string, { label: string; module: ModuleKey }> = {
+  stock: { label: "View Stock", module: "products" },
   team: { label: "Assign Team Members", module: "users" },
   products: { label: "Add Products", module: "products" },
   imports: {
@@ -21,7 +25,9 @@ const sections: Record<string, { label: string; module: ModuleKey }> = {
 };
 export default async function Page({
   params,
+  searchParams,
 }: {
+  searchParams: Promise<{ q?: string; cursor?: string; status?: string }>;
   params: Promise<{ storeId: string; section?: string[] }>;
 }) {
   const { storeId, section } = await params;
@@ -31,6 +37,13 @@ export default async function Page({
     storeId,
     selected ? sections[selected].module : "stores",
   );
+  const db = await createClient();
+  const { data: location, error } = await db
+    .from("stores")
+    .select("code")
+    .eq("id", storeId)
+    .single();
+  if (error) throw error;
   return (
     <StoreProvider key={`${storeId}:${selected ?? "home"}`} session={session}>
       <OfflineProvider>
@@ -38,9 +51,17 @@ export default async function Page({
           title={session.activeStore.name}
           description="Store setup — changes apply to this store."
           actions={
-            <Button asChild>
-              <Link href="/stores">Exit My Store</Link>
-            </Button>
+            <>
+              <WarehouseEdit
+                id={storeId}
+                name={session.activeStore.name}
+                code={location.code ?? ""}
+                locationLabel="Store"
+              />
+              <Button asChild>
+                <Link href="/stores">Exit My Store</Link>
+              </Button>
+            </>
           }
         />
         <nav aria-label="Store setup" className="mb-6 flex flex-wrap gap-3">
@@ -71,6 +92,9 @@ export default async function Page({
             Choose a setup action above. Owners already have access to this
             store.
           </p>
+        )}
+        {selected === "stock" && (
+          <ProductsPage scopedStoreId={storeId} searchParams={searchParams} />
         )}
         {selected === "team" && <StoreTeam />}
         {selected === "products" && <AddProductButton />}

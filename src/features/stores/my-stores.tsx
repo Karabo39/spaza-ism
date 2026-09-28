@@ -1,4 +1,5 @@
 "use client";
+import { WarehouseEdit } from "@/features/operations/warehouse-edit";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Store, Warehouse, ArrowRight } from "lucide-react";
@@ -20,26 +21,36 @@ export function MyStores() {
     enabled: online,
     queryFn: async () => {
       const db = createClient();
-      const [{ data: totals }, { data: assignments }, { data: members }] =
-        await Promise.all([
-          db
-            .rpc("business_location_summary", { p_business: store.businessId })
-            .throwOnError(),
-          db
-            .from("store_memberships")
-            .select("store_id, membership_id")
-            .eq("business_id", store.businessId)
-            .throwOnError(),
-          db
-            .from("memberships")
-            .select("id")
-            .eq("business_id", store.businessId)
-            .eq("is_active", true)
-            .neq("role", "owner")
-            .throwOnError(),
-        ]);
+      const [
+        { data: totals },
+        { data: assignments },
+        { data: members },
+        { data: codes },
+      ] = await Promise.all([
+        db
+          .rpc("business_location_summary", { p_business: store.businessId })
+          .throwOnError(),
+        db
+          .from("store_memberships")
+          .select("store_id, membership_id")
+          .eq("business_id", store.businessId)
+          .throwOnError(),
+        db
+          .from("memberships")
+          .select("id")
+          .eq("business_id", store.businessId)
+          .eq("is_active", true)
+          .neq("role", "owner")
+          .throwOnError(),
+        db
+          .from("stores")
+          .select("id,code")
+          .eq("business_id", store.businessId)
+          .throwOnError(),
+      ]);
       return (totals ?? []).map((s) => ({
         ...s,
+        code: codes?.find((c) => c.id === s.location_id)?.code ?? "",
         staff:
           assignments?.filter(
             (a) =>
@@ -117,6 +128,16 @@ export function MyStores() {
                     Open Store <ArrowRight className="size-4" />
                   </Link>
                 </Button>
+                {totals && s.role === "owner" && s.modules.stores && (
+                  <div className="mt-3">
+                    <WarehouseEdit
+                      id={s.id}
+                      name={s.name}
+                      code={totals?.code ?? ""}
+                      locationLabel="Store"
+                    />
+                  </div>
+                )}
               </section>
             );
           })}

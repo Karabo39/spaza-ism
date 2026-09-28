@@ -1,3 +1,4 @@
+import { storeSetupSession } from "@/lib/store-setup-session";
 import { SyncStoreProducts } from "@/features/products/sync-store-products";
 import { stockQuantity } from "@/lib/format";
 import Link from "next/link";
@@ -23,7 +24,9 @@ const PAGE_SIZE = 20;
 
 export default async function ProductsPage({
   searchParams,
+  scopedStoreId,
 }: {
+  scopedStoreId?: string;
   searchParams: Promise<{
     q?: string;
     cursor?: string;
@@ -31,7 +34,9 @@ export default async function ProductsPage({
   }>;
 }) {
   const sp = await searchParams;
-  const session = await getSession("products");
+  const session = scopedStoreId
+    ? await storeSetupSession(scopedStoreId, "products")
+    : await getSession("products");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
 

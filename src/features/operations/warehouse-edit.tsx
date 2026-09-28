@@ -13,12 +13,14 @@ export function WarehouseEdit({
   code,
   canDisable = false,
   canEdit = true,
+  locationLabel = "Warehouse",
 }: {
   id: string;
   name: string;
   code: string;
   canDisable?: boolean;
   canEdit?: boolean;
+  locationLabel?: "Warehouse" | "Store";
 }) {
   const router = useRouter();
   const { online } = useOffline();
@@ -41,7 +43,11 @@ export function WarehouseEdit({
           setOpen(!open);
         }}
       >
-        {canEdit ? "Edit warehouse details" : "Manage warehouse"}
+        {canEdit
+          ? locationLabel === "Store"
+            ? "Edit Store"
+            : "Edit warehouse details"
+          : "Manage warehouse"}
       </Button>
       {open && (
         <form
@@ -71,7 +77,9 @@ export function WarehouseEdit({
         >
           {canEdit && (
             <>
-              <Label htmlFor={`warehouse-name-${id}`}>Warehouse name</Label>
+              <Label htmlFor={`warehouse-name-${id}`}>
+                {locationLabel} name
+              </Label>
               <Input
                 id={`warehouse-name-${id}`}
                 required
@@ -81,7 +89,7 @@ export function WarehouseEdit({
                 disabled={busy}
               />
               <Label htmlFor={`warehouse-code-${id}`}>
-                Warehouse code (optional)
+                {locationLabel} code (optional)
               </Label>
               <Input
                 id={`warehouse-code-${id}`}
@@ -99,7 +107,7 @@ export function WarehouseEdit({
                 type="submit"
                 disabled={!online || !newName.trim()}
               >
-                Save warehouse details
+                Save {locationLabel.toLowerCase()} details
               </Button>
             )}
             <Button
