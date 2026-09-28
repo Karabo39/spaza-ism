@@ -1,0 +1,84 @@
+
+do $$
+declare u uuid:=gen_random_uuid(); emp uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid();biz uuid;loc uuid;loc2 uuid;c uuid;p uuid;res jsonb;details jsonb;profile jsonb; sid uuid:=gen_random_uuid();iid uuid;oid uuid;qid uuid;rid uuid;line uuid;v bigint;stamp timestamptz;blocked boolean;outcome jsonb;ref text;mail jsonb;today date:=(now() at time zone 'Africa/Johannesburg')::date;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'recurring-owner@test.invalid','{}'),(emp,'recurring-emp@test.invalid','{}'),(outsider,'recurring-other@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ res:=public.create_business('Recurring test','Shop');biz:=(res->>'business_id')::uuid;loc:=(res->>'store_id')::uuid;
+ loc2:=public.create_location(biz,'Second shop','store','SECOND');
+ insert into public.customers(business_id,store_id,name,email) values(biz,loc,'Customer','buyer@example.test') returning id,updated_at into c,stamp;
+ p:=public.create_product(loc,'Water','REC-WATER',null,null,5,10);
+ perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',20)));
+ profile:=jsonb_build_object('name','Customer Ltd','phone','01234567','email','buyer@example.test','street','1 Test Road','suburb','Test','town','Town','province','Gauteng','postal_code','1234','country','South Africa','customer_type','BUSINESS','credit_enabled',true);
+ perform public.update_customer_profile(c,stamp,profile);
+ if (select address from public.customers where id=c) not like '1 Test Road%' then raise exception 'ASSERT address';end if;
+ blocked:=false;begin perform public.update_customer_profile(c,stamp,profile);exception when others then if sqlerrm<>'CUSTOMER_CHANGED' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT stale profile';end if;
+ perform public.set_credit_limit(c,1000);
+ details:=jsonb_build_object('title','Water subscription','customer_id',c,'frequency','MONTHLY','start_date',today,'next_date',today,'end_date',null,'due_days',30,'terms','CREDIT','tax_percent',15,'recipient','buyer@example.test','active',true,'auto_email',true,'items',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2,'unit_price',12)));
+ perform public.save_recurring_invoice(loc,sid,0,details);
+ reset role;
+ iid:=app_private.generate_recurring_invoice(sid);
+ if iid is null or (select total from public.sales_invoices where id=iid)<>27.60 then raise exception 'ASSERT agreed price and tax';end if;
+ if (select balance from public.credit_accounts where customer_id=c)<>27.60 or (select quantity from public.stock where product_id=p)<>20 then raise exception 'ASSERT receivable only, stock unchanged';end if;
+ if (select reference from public.sales_invoices where id=iid)<>('INV-'||to_char(today,'YYYYMMDD')||'-001') then raise exception 'ASSERT invoice reference';end if;
+ if app_private.generate_recurring_invoice(sid) is not null or (select count(*) from public.sales_invoices where recurring_schedule_id=sid)<>1 then raise exception 'ASSERT repeat same period';end if;
+ if app_private.next_recurring_date('2028-01-31','MONTHLY',31)<>'2028-02-29' or app_private.next_recurring_date('2028-02-29','MONTHLY',31)<>'2028-03-31' or app_private.next_recurring_date('2027-01-31','MONTHLY',31)<>'2027-02-28' then raise exception 'ASSERT month-end anchor';end if;
+ if app_private.next_recurring_date('2026-09-28','DAILY',28)<>'2026-09-29' or app_private.next_recurring_date('2026-09-28','WEEKLY',28)<>'2026-10-05' then raise exception 'ASSERT frequencies';end if;
+ set local role authenticated;
+ select updated_at into stamp from public.customers where id=c;perform public.update_customer_profile(c,stamp,profile||'{"street":"New Street"}');
+ if (select customer_snapshot->>'address' from public.sales_invoices where id=iid) not like '1 Test Road%' then raise exception 'ASSERT immutable customer snapshot';end if;
+ oid:=public.create_sales_order(loc,c,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),gen_random_uuid());
+ if (select reference from public.sales_orders where id=oid)<>('ORD-'||to_char(today,'YYYYMMDD')||'-002') then raise exception 'ASSERT shared order sequence';end if;
+ qid:=public.save_quote(loc,c,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),today+7,0,'Quote',gen_random_uuid());
+ if (select reference from public.sales_quotes where id=qid)<>('QUO-'||to_char(today,'YYYYMMDD')||'-001') then raise exception 'ASSERT quote sequence';end if;
+ perform public.issue_invoice_goods(iid);
+ select id into line from public.sales_invoice_items where invoice_id=iid;
+ rid:=public.submit_goods_return('invoice',iid,jsonb_build_array(jsonb_build_object('item_id',line,'quantity',1,'condition','GOOD','action','RETURN_TO_STOCK')),'Unwanted','Checked',gen_random_uuid());
+ if (select reference from public.goods_returns where id=rid)<>('RET-'||to_char(today,'YYYYMMDD')||'-001') then raise exception 'ASSERT return sequence';end if;
+ reset role;
+ update app_private.document_sequences set value=999 where business_id=biz and kind='ORD' and day=today;
+ set local role authenticated;
+ oid:=public.create_sales_order(loc,c,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),gen_random_uuid());
+ if (select reference from public.sales_orders where id=oid) not like '%-1000' then raise exception 'ASSERT beyond 999';end if;
+ reset role;blocked:=false;begin update public.sales_orders set reference='MANUAL' where id=oid;exception when others then if sqlerrm<>'DOCUMENT_REFERENCE_LOCKED' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT locked reference';end if;
+ -- Cash-only users retain their balance; new credit transactions are rejected.
+ set local role authenticated;select updated_at into stamp from public.customers where id=c;perform public.update_customer_profile(c,stamp,profile||'{"credit_enabled":false}');
+ blocked:=false;begin perform public.save_recurring_invoice(loc,gen_random_uuid(),0,details);exception when others then if sqlerrm<>'CUSTOMER_CREDIT_DISABLED' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT cash-only credit';end if;
+ reset role;update public.recurring_invoices set next_date=today,last_error=null where id=sid;
+ outcome:=app_private.run_recurring_invoices();
+ if (outcome->>'failed')::int<>1 or (select count(*) from public.sales_invoices where recurring_schedule_id=sid)<>1 then raise exception 'ASSERT fail without duplicate invoice';end if;
+ set local role authenticated;select updated_at into stamp from public.customers where id=c;perform public.update_customer_profile(c,stamp,profile);
+
+ reset role;
+ -- Changes to products, limits and permissions are rechecked at generation time.
+ update public.recurring_invoices set next_date=today+1,start_date=today-1,last_error=null where id=sid;
+ update public.recurring_invoices set next_date=today where id=sid;
+ -- A second schedule cannot bypass a credit limit, even if its saved price is valid.
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ perform public.set_credit_limit(c,1);
+ qid:=gen_random_uuid();perform public.save_recurring_invoice(loc,qid,0,details);
+ reset role;
+ blocked:=false;begin perform app_private.generate_recurring_invoice(qid);exception when others then if sqlerrm<>'RECURRING_CREDIT_LIMIT_EXCEEDED' then raise;end if;blocked:=true;end;
+ if not blocked or exists(select 1 from public.sales_invoices where recurring_schedule_id=qid) then raise exception 'ASSERT credit limit and atomic rollback';end if;
+ update public.memberships set role='employee' where business_id=biz and user_id=u;
+ blocked:=false;begin perform app_private.generate_recurring_invoice(qid);exception when others then if sqlerrm<>'SCHEDULE_ACCESS_REVOKED' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT revoked scheduler author';end if;
+ set local role authenticated;
+ if exists(select 1 from public.recurring_invoices) then raise exception 'ASSERT employee cannot list recurring schedules';end if;
+ blocked:=false;begin perform public.set_recurring_active(qid,1,false);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT employee cannot activate';end if;
+ reset role;update public.memberships set role='owner' where business_id=biz and user_id=u;
+ -- Delivery is claimed once and can only be completed using its reservation token.
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+ mail:=public.claim_recurring_deliveries(10);
+ if jsonb_array_length(mail)<>1 or jsonb_array_length(public.claim_recurring_deliveries(10))<>0 then raise exception 'ASSERT exclusive mail claim';end if;
+ perform public.complete_recurring_delivery(iid,(mail->0->>'token')::uuid,'test-provider');
+ reset role;
+ if (select state from public.recurring_invoice_deliveries where invoice_id=iid)<>'SENT' then raise exception 'ASSERT completion';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',outsider,'role','authenticated')::text,true);set local role authenticated;
+ if exists(select 1 from public.recurring_invoices) then raise exception 'ASSERT tenant isolation';end if;
+ blocked:=false;begin perform public.save_recurring_invoice(loc,gen_random_uuid(),0,details);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT foreign schedule denied';end if;
+ reset role;
+ if has_function_privilege('anon','public.save_recurring_invoice(uuid,uuid,bigint,jsonb)','execute') or has_function_privilege('authenticated','app_private.generate_recurring_invoice(uuid)','execute') or has_function_privilege('authenticated','public.claim_recurring_deliveries(int)','execute') then raise exception 'ASSERT protected scheduler';end if;
+ raise exception 'TESTS_PASSED';
+end $$;

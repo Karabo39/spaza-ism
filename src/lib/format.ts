@@ -40,6 +40,7 @@ export function dateOnly(value: string | Date | null | undefined): string {
 
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
+  if (message?.includes("CUSTOMER_CREDIT_DISABLED")) return "Credit is disabled for this customer. Use cash/card or ask a manager to enable credit.";
   const m = message ?? "";
   if (/TRACKING_CHANGE_HAS_HISTORY_OR_STOCK/.test(m))
     return "Stock tracking cannot change while this product has stock, sales, orders, transfers or an open stock count. Create a new product to preserve the existing history.";

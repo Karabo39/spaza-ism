@@ -10,6 +10,25 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" };
   public: {
     Tables: {
+      recurring_invoices: {
+        Row: RecurringInvoice;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      recurring_invoice_deliveries: {
+        Row: {
+          invoice_id: string;
+          store_id: string;
+          recipient: string;
+          state: string;
+          last_error: string | null;
+          sent_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       warehouse_sync_settings: {
         Row: {
           warehouse_id: string;
@@ -507,7 +526,7 @@ export type Database = {
         Relationships: [];
       };
       customers: {
-        Row: {
+        Row: CustomerProfileFields & {
           is_once_off: boolean;
           address: string | null;
           business_id: string;
@@ -521,7 +540,7 @@ export type Database = {
           store_id: string;
           updated_at: string;
         };
-        Insert: {
+        Insert: Partial<CustomerProfileFields> & {
           business_id: string;
           created_at?: string;
           email?: string | null;
@@ -1158,6 +1177,9 @@ export type Database = {
       v_product_stock: { Row: ProductStock; Relationships: [] };
       v_credit_customers: {
         Row: {
+          customer_type: "INDIVIDUAL" | "BUSINESS";
+          credit_enabled: boolean;
+          address: string | null;
           customer_id: string;
           business_id: string;
           store_id: string;
@@ -1175,6 +1197,23 @@ export type Database = {
       };
     };
     Functions: {
+      save_recurring_invoice: {
+        Args: {
+          p_store: string;
+          p_id: string;
+          p_expected: number;
+          p_details: Json;
+        };
+        Returns: string;
+      };
+      set_recurring_active: {
+        Args: { p_id: string; p_expected: number; p_active: boolean };
+        Returns: undefined;
+      };
+      update_customer_profile: {
+        Args: { p_customer: string; p_expected: string; p_details: Json };
+        Returns: undefined;
+      };
       activity_page: {
         Args: {
           p_kind: string;
@@ -1984,7 +2023,11 @@ export type Database = {
 export type MembershipRole = "owner" | "manager" | "employee";
 export type LocationType = "store" | "warehouse";
 export type TransferStatus =
-  "DRAFT" | "SUBMITTED" | "DISPATCHED" | "RECEIVED" | "CANCELLED";
+  | "DRAFT"
+  | "SUBMITTED"
+  | "DISPATCHED"
+  | "RECEIVED"
+  | "CANCELLED";
 export type MovementType =
   | "GOODS_IN"
   | "SALE_CASH"
@@ -2010,9 +2053,15 @@ export type AdjustmentReason =
   | "THEFT"
   | "OTHER";
 export type CreditTxnType =
-  "CREDIT_SALE" | "PAYMENT" | "ADJUSTMENT" | "OPENING_BALANCE";
+  | "CREDIT_SALE"
+  | "PAYMENT"
+  | "ADJUSTMENT"
+  | "OPENING_BALANCE";
 export type StockTakeStatus =
-  "IN_PROGRESS" | "PENDING_APPROVAL" | "COMPLETED" | "CANCELLED";
+  | "IN_PROGRESS"
+  | "PENDING_APPROVAL"
+  | "COMPLETED"
+  | "CANCELLED";
 
 type PublicSchema = Database["public"];
 export type ProductStock = {
@@ -2054,7 +2103,20 @@ export type ProductStock = {
   suggested_reorder: number;
 };
 
+export type CustomerProfileFields = {
+  customer_type: "INDIVIDUAL" | "BUSINESS";
+  credit_enabled: boolean;
+  street: string | null;
+  suburb: string | null;
+  town: string | null;
+  province: string | null;
+  postal_code: string | null;
+  country: string | null;
+};
 export type CreditCustomer = {
+  customer_type?: "INDIVIDUAL" | "BUSINESS";
+  credit_enabled?: boolean;
+  address?: string | null;
   customer_id: string;
   business_id: string;
   store_id: string;
@@ -2113,6 +2175,10 @@ export type SalesOrderItem = {
 };
 
 export type SalesInvoice = {
+  recurring_schedule_id?: string | null;
+  billing_period?: string | null;
+  invoice_date?: string | null;
+  customer_snapshot?: Json;
   ordered_by_name: string | null;
   invoiced_by_name: string | null;
   id: string;
@@ -2311,4 +2377,30 @@ export type EmployeeInvitation = {
   sent_at: string | null;
   request_id: string;
   request_payload: Json;
+};
+
+export type RecurringInvoice = {
+  id: string;
+  business_id: string;
+  store_id: string;
+  customer_id: string;
+  title: string;
+  frequency: "DAILY" | "WEEKLY" | "MONTHLY";
+  start_date: string;
+  next_date: string;
+  end_date: string | null;
+  anchor_day: number;
+  due_days: number;
+  terms: string;
+  tax_percent: number;
+  items: Json;
+  recipient: string;
+  auto_email: boolean;
+  active: boolean;
+  configured_by: string;
+  version: number;
+  last_error: string | null;
+  last_run_at: string | null;
+  created_at: string;
+  updated_at: string;
 };

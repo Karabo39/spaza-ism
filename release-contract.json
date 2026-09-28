@@ -24,6 +24,7 @@
     "product_stock_tracking_v1",
     "performance_v1",
     "employee_excel_v1",
-    "store_catalog_sync_v1"
+    "store_catalog_sync_v1",
+    "customer_recurring_v1"
   ]
 }
