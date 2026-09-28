@@ -1,4 +1,6 @@
 "use client";
+import { loadDocumentLogo } from "@/lib/document-logo";
+import { createClient } from "@/lib/supabase/client";
 import { BRAND_NAME } from "@/lib/brand";
 import { useId, useRef, useState } from "react";
 import { Download, Mail } from "lucide-react";
@@ -53,7 +55,9 @@ export function ExportButton({
   async function download() {
     setBusy(true);
     try {
-      const blob = await reportFile(await prepare(), format);
+      const data = await prepare();
+      const logo = format === "csv" ? null : await loadDocumentLogo(createClient(), store.businessId);
+      const blob = await reportFile({...data,logo}, format);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;

@@ -1,3 +1,4 @@
+import { logoSize,type DocumentLogo } from "@/lib/document-logo";
 import { BRAND_NAME } from "@/lib/brand";
 import type { CellValue } from "exceljs";
 export type ImportKind = "products" | "suppliers" | "customers";
@@ -109,6 +110,7 @@ export function importCell(
 export async function importTemplate(
   kind: ImportKind,
   rows: Record<string, unknown>[] = [],
+  logo?:DocumentLogo|null,
 ): Promise<Blob> {
   const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook(),
@@ -133,6 +135,7 @@ export async function importTemplate(
         importColumns[kind].map((key) => [key, row[key] ?? null]),
       ),
     );
+  if(logo){sheet.spliceRows(1,0,[]);sheet.getRow(1).height=80;const image=workbook.addImage({base64:logo.dataUrl,extension:"png"});sheet.addImage(image,{tl:{col:0,row:0},ext:logoSize(logo,170,90)});sheet.views=[{state:"frozen",ySplit:2}];}
   const help = workbook.addWorksheet("Instructions");
   help.getColumn(1).width = 120;
   [
@@ -166,16 +169,17 @@ export async function parseImport(
       "The workbook must contain the Data sheet from the template.",
     );
   const headers = importColumns[kind];
+  const headerRow=sheet.getRow(1).getCell(1).value == null && sheet.getRow(2).getCell(1).value === headers[0] ? 2 : 1;
   if (
     sheet.columnCount !== headers.length ||
-    headers.some((key, i) => sheet.getRow(1).getCell(i + 1).value !== key)
+    headers.some((key, i) => sheet.getRow(headerRow).getCell(i + 1).value !== key)
   )
     throw new Error(
       "Headers do not match this template. Download the correct template and keep its columns unchanged.",
     );
   const rows: ImportRow[] = [];
   sheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
+    if (rowNumber <= headerRow) return;
     const item: ImportRow = {};
     for (let i = 0; i < headers.length; i++) {
       try {

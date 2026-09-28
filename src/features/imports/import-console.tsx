@@ -1,4 +1,5 @@
 "use client";
+import { loadDocumentLogo } from "@/lib/document-logo";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -91,7 +92,7 @@ export function ImportConsole({
         }));
       }
       save(
-        await importTemplate(kind, rows),
+        await importTemplate(kind, rows, await loadDocumentLogo(createClient(),store.businessId)),
         `${kind}-${existing ? "existing" : "template"}.xlsx`,
       );
     } catch (error) {

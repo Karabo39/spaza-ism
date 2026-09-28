@@ -1,4 +1,5 @@
 "use client";
+import { loadDocumentLogo } from "@/lib/document-logo";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ export function StockTakeExcelActions({
       if (error) throw error;
       const template = data as unknown as StockTakeTemplate;
       const { createStockTakeWorkbook } = await import("./excel");
-      const bytes = await createStockTakeWorkbook(template);
+      const bytes = await createStockTakeWorkbook(template,await loadDocumentLogo(createClient(),store.businessId));
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes)], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

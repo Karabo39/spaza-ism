@@ -1,3 +1,4 @@
+import { logoSize,type DocumentLogo } from "@/lib/document-logo";
 import ExcelJS from "exceljs";
 
 export type StockTakeTemplate = {
@@ -30,7 +31,7 @@ const headers = [
   "Added stock expiry",
 ];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export async function createStockTakeWorkbook(template: StockTakeTemplate) {
+export async function createStockTakeWorkbook(template: StockTakeTemplate,logo?:DocumentLogo|null) {
   const book = new ExcelJS.Workbook();
   const help = book.addWorksheet("Instructions");
   [
@@ -96,6 +97,7 @@ export async function createStockTakeWorkbook(template: StockTakeTemplate) {
     fgColor: { argb: "FF991B1B" },
   };
   sheet.autoFilter = { from: "A1", to: "H1" };
+  if(logo){sheet.spliceRows(1,0,[]);sheet.getRow(1).height=80;const image=book.addImage({base64:logo.dataUrl,extension:"png"});sheet.addImage(image,{tl:{col:1,row:0},ext:logoSize(logo,170,90)});sheet.views=[{state:"frozen",ySplit:2}];sheet.autoFilter={from:"A2",to:"H2"};meta.addRow(["Header row",2]);}
   book.views = [
     {
       activeTab: 2,
@@ -156,17 +158,18 @@ export async function readStockTakeWorkbook(
     throw new Error("This template belongs to another location or stock take.");
   if (!uuid.test(take) || !uuid.test(exportId))
     throw new Error("The template metadata is invalid.");
-  if (sheet.rowCount > 10001)
+  const headerRow=meta.getCell("B5").value === 2 ? 2 : 1;
+  if (sheet.rowCount > 10000+headerRow)
     throw new Error("A template supports up to 10,000 products.");
   headers.forEach((label, i) => {
-    if (sheet.getRow(1).getCell(i + 1).value !== label)
+    if (sheet.getRow(headerRow).getCell(i + 1).value !== label)
       throw new Error(
         "The template columns have changed. Download a new template.",
       );
   });
   const rows: ImportedCount[] = [],
     seen = new Set<string>();
-  for (let i = 2; i <= sheet.rowCount; i++) {
+  for (let i = headerRow+1; i <= sheet.rowCount; i++) {
     const row = sheet.getRow(i);
     const count = scalar(row.getCell(6), i),
       flag = scalar(row.getCell(7), i);
