@@ -30,9 +30,9 @@ The Hostinger email worker runs every ten minutes, claims at most ten opted-in i
 - Full application suite: 235 tests passed; two additional worker-authentication tests also passed.
 - Full local database suite passed, including customer edits, balances, permissions, tenant isolation, schedules, snapshots, credit limits and month-end dates.
 - Separate concurrent-connection tests passed for five simultaneous document allocations and simultaneous generation of the same billing period.
-- Live migrations and worker deployment completed. Production page and cron checks are recorded at completion of the release.
+- Live migrations and worker deployment completed. All 18 authenticated page checks returned HTTP 200 from Dublin (`dub1`), including Customers, Recurring Invoice, store setup and View Stock. Both cron jobs ran successfully; the email worker returned HTTP 200 with zero queued deliveries.
 - Existing invoices have no newly invented address snapshot; their historical references remain unchanged.
 - No customer invoices or customer emails are created solely for deployment testing. Local automated tests cover generation/delivery behaviour; actual inbox delivery is only exercised when an opted-in schedule runs.
 - Supabase reports the expected guarded SECURITY DEFINER RPCs and the deliberately inaccessible private sequence table. Existing leaked-password protection and other legacy advisor findings are outside this change. The non-relocatable pg_net extension uses its own `net` schema but is registered under `public`, which the advisor flags.
 
-Implementation: five schema migrations dated 20260928; customer and billing features under `src/features`; store/product routes under `src/app/(app)`; scheduled email under `supabase/functions/recurring-invoices`; database tests in `supabase/tests/customer_recurring.sql` and `customer-recurring-race.mjs`.
+Implementation: six schema migrations dated 20260928; customer and billing features under `src/features`; store/product routes under `src/app/(app)`; scheduled email under `supabase/functions/recurring-invoices`; database tests in `supabase/tests/customer_recurring.sql` and `customer-recurring-race.mjs`. Employee-created customers are cash/card-only at the database boundary, including direct requests.

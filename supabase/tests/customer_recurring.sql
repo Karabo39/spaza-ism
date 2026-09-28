@@ -61,16 +61,22 @@ begin
  blocked:=false;begin perform app_private.generate_recurring_invoice(qid);exception when others then if sqlerrm<>'RECURRING_CREDIT_LIMIT_EXCEEDED' then raise;end if;blocked:=true;end;
  if not blocked or exists(select 1 from public.sales_invoices where recurring_schedule_id=qid) then raise exception 'ASSERT credit limit and atomic rollback';end if;
  update public.memberships set role='employee' where business_id=biz and user_id=u;
+ insert into public.store_memberships(membership_id,store_id,business_id) select id,loc,biz from public.memberships where business_id=biz and user_id=u on conflict do nothing;
  blocked:=false;begin perform app_private.generate_recurring_invoice(qid);exception when others then if sqlerrm<>'SCHEDULE_ACCESS_REVOKED' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT revoked scheduler author';end if;
  set local role authenticated;
  if exists(select 1 from public.recurring_invoices) then raise exception 'ASSERT employee cannot list recurring schedules';end if;
  blocked:=false;begin perform public.set_recurring_active(qid,1,false);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT employee cannot activate';end if;
+ insert into public.customers(business_id,store_id,name,credit_enabled) values(biz,loc,'Employee-created customer',true) returning id into oid;
+ if (select credit_enabled from public.customers where id=oid) then raise exception 'ASSERT employee creation cannot grant credit';end if;
+ blocked:=false;begin update public.customers set credit_enabled=true where id=oid;exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
+ if not blocked then raise exception 'ASSERT employee update cannot grant credit';end if;
  reset role;update public.memberships set role='owner' where business_id=biz and user_id=u;
  -- Delivery is claimed once and can only be completed using its reservation token.
  perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
  mail:=public.claim_recurring_deliveries(10);
+ if public.authenticate_recurring_worker('invalid') then raise exception 'ASSERT worker rejects invalid credential';end if;
  if jsonb_array_length(mail)<>1 or jsonb_array_length(public.claim_recurring_deliveries(10))<>0 then raise exception 'ASSERT exclusive mail claim';end if;
  perform public.complete_recurring_delivery(iid,(mail->0->>'token')::uuid,'test-provider');
  reset role;
@@ -79,6 +85,7 @@ begin
  if exists(select 1 from public.recurring_invoices) then raise exception 'ASSERT tenant isolation';end if;
  blocked:=false;begin perform public.save_recurring_invoice(loc,gen_random_uuid(),0,details);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT foreign schedule denied';end if;
  reset role;
+ if has_function_privilege('authenticated','public.authenticate_recurring_worker(text)','execute') or has_function_privilege('anon','public.authenticate_recurring_worker(text)','execute') then raise exception 'ASSERT private credential validation';end if;
  if has_function_privilege('anon','public.save_recurring_invoice(uuid,uuid,bigint,jsonb)','execute') or has_function_privilege('authenticated','app_private.generate_recurring_invoice(uuid)','execute') or has_function_privilege('authenticated','public.claim_recurring_deliveries(int)','execute') then raise exception 'ASSERT protected scheduler';end if;
  raise exception 'TESTS_PASSED';
 end $$;
