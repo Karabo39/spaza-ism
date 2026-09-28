@@ -1,4 +1,5 @@
 export type RecurringDelivery = {
+  logo_path?: string | null;
   id: string;
   token: string;
   recipient: string;

@@ -154,3 +154,4 @@ it("keeps the existing sender as a fallback for return receipts", async () => {
   expect((await POST(request({ type: "return" }))).status).toBe(200);
   expect(m.fetch.mock.calls[0][2].from).toBe("sender@example.test");
 });
+vi.mock("@/lib/document-logo", () => ({ loadDocumentLogo: async () => null }));

@@ -4,6 +4,7 @@ import { jsPDF } from "npm:jspdf@4.2.1";
 import { autoTable } from "npm:jspdf-autotable@5.0.8";
 import { smtpOptions, sendSmtp } from "../_shared/smtp.ts";
 import { recurringHandler } from "./handler.ts";
+import { decodeDocumentLogo,logoSize } from "../_shared/document-logo.ts";
 const smtp = smtpOptions((key) => Deno.env.get(key));
 const from =
   Deno.env.get("INVOICE_EMAIL_FROM")?.trim() ||
@@ -27,21 +28,26 @@ Deno.serve(
       }),
     send: async (job) => {
       const pdf = new jsPDF();
+      let top=20;
+      let logo: ReturnType<typeof decodeDocumentLogo>|null=null;
+      if(job.logo_path){const asset=await db.storage.from("document-logos").download(job.logo_path);if(asset.error)throw asset.error;logo=decodeDocumentLogo(new Uint8Array(await asset.data.arrayBuffer()));top=42;}
       const amount = (n: number) =>
         new Intl.NumberFormat("en-ZA", {
           style: "currency",
           currency: job.currency,
         }).format(Number(n));
       pdf.setFontSize(15);
-      pdf.text(`Invoice ${job.reference}`, 14, 20);
+      pdf.text(`Invoice ${job.reference}`, 14, top);
       pdf.setFontSize(10);
       const heading = pdf.splitTextToSize(
         `${job.business} - ${job.store}\nCustomer: ${job.customer.name}\nAddress: ${job.customer.address || "Not provided"}\nInvoice date: ${job.date} | Due: ${job.due}`,
         180,
       );
-      pdf.text(heading, 14, 30);
+      pdf.text(heading, 14, top+10);
       autoTable(pdf, {
-        startY: 35 + heading.length * 5,
+        startY: top+15 + heading.length * 5,
+        margin:{top:logo?40:18,bottom:18},
+        didDrawPage:()=>{if(logo){const size=logoSize(logo,45,24);pdf.addImage(logo.dataUrl,"PNG",14,8,size.width,size.height);}},
         head: [["Description", "Qty", "Unit price", "Amount"]],
         body: [
           ...job.lines.map((l) => [

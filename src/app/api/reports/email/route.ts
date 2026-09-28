@@ -1,3 +1,4 @@
+import { loadDocumentLogo } from "@/lib/document-logo";
 import { emailConfigured, sendEmail } from "@/lib/email";
 import { BRAND_NAME } from "@/lib/brand";
 import { createHash } from "node:crypto";
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
   if (job.sent) return Response.json({ sent: true });
   try {
     const attachment = await reportFile(
-      { ...body, createdAt: job.created_at, fileId: job.id },
+      { ...body, createdAt: job.created_at, fileId: job.id, logo: body.format === "csv" ? null : await loadDocumentLogo(db, session.activeStore.businessId) },
       body.format,
     );
     const result = await sendEmail(db, `report-${job.id}`, {

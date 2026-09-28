@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/reports/email/route";
+vi.mock("@/lib/document-logo", () => ({ loadDocumentLogo: async () => null }));
 const mock = vi.hoisted(() => ({
   session: vi.fn(),
   rpc: vi.fn(),
