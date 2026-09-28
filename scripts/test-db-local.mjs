@@ -130,6 +130,7 @@ try {
     "employee_excel.sql",
     "store_setup_catalog_sync.sql",
     "customer_recurring.sql",
+    "document_delivery.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

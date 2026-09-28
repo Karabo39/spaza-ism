@@ -434,6 +434,7 @@ export type Database = {
           slug: string | null;
           updated_at: string;
           logo_path: string | null;
+          document_logo_path: string | null;
         };
         Insert: {
           created_at?: string;
@@ -1179,6 +1180,7 @@ export type Database = {
         Row: {
           customer_type: "INDIVIDUAL" | "BUSINESS";
           credit_enabled: boolean;
+          auto_email_invoices: boolean;
           address: string | null;
           customer_id: string;
           business_id: string;
@@ -1634,6 +1636,8 @@ export type Database = {
         };
         Returns: string;
       };
+      set_document_logo: { Args: {p_business:string;p_path:string|null;p_expected:string|null}; Returns:undefined };
+      send_manual_recurring_invoice: {Args:{p_store:string;p_id:string;p_expected:number;p_details:Json;p_request:string};Returns:string};
       set_business_logo: {
         Args: { p_business: string; p_path: string | null };
         Returns: undefined;
@@ -2106,6 +2110,7 @@ export type ProductStock = {
 export type CustomerProfileFields = {
   customer_type: "INDIVIDUAL" | "BUSINESS";
   credit_enabled: boolean;
+          auto_email_invoices: boolean;
   street: string | null;
   suburb: string | null;
   town: string | null;
@@ -2116,6 +2121,7 @@ export type CustomerProfileFields = {
 export type CreditCustomer = {
   customer_type?: "INDIVIDUAL" | "BUSINESS";
   credit_enabled?: boolean;
+          auto_email_invoices?: boolean;
   address?: string | null;
   customer_id: string;
   business_id: string;
@@ -2380,6 +2386,7 @@ export type EmployeeInvitation = {
 };
 
 export type RecurringInvoice = {
+  send_time: string;
   id: string;
   business_id: string;
   store_id: string;
