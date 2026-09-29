@@ -135,6 +135,7 @@ try {
     "delivery_management.sql",
     "delivery_report.sql",
     "customer_notifications.sql",
+    "orders_delivery_collaboration.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

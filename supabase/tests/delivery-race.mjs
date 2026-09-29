@@ -158,6 +158,18 @@ export async function testDeliveryRace(url) {
       references.map((r) => r.reference.slice(-3)),
       ["001", "002", "003"],
     );
+    await a.query("select public.receive_stock($1,null,null,null,$2)", [store, JSON.stringify([{product_id:product.id,quantity:10}])]);
+    const correction=await Promise.allSettled([
+      a.query("select public.amend_invoice_items($1,0,$2,0,'Stock correction',$3)", [invoice.id, JSON.stringify([{product_id:product.id,quantity:0.5}]),randomUUID()]),
+      b.query("select public.issue_invoice_goods($1)", [invoice.id]),
+    ]);
+    assert.equal(correction[1].status,"fulfilled");
+    if(correction[0].status==="rejected") assert.equal(correction[0].reason.message,"INVOICE_AMENDMENT_CLOSED");
+    const {rows:[released]}=await a.query("select i.revision,i.total,l.quantity,s.quantity stock from public.sales_invoices i join public.sales_invoice_items l on l.invoice_id=i.id join public.stock s on s.product_id=l.product_id where i.id=$1",[invoice.id]);
+    assert.equal(Number(released.stock),10-Number(released.quantity));
+    assert.equal(Number(released.total),Number(released.quantity)*10);
+    assert.equal(Number(released.revision),correction[0].status==="fulfilled"?1:0);
+    console.log("Passed concurrent item correction and stock release");
     console.log(
       "Passed concurrent delivery creation, numbering and duplicate action retries",
     );

@@ -105,9 +105,7 @@ beforeEach(() => {
 });
 it("requires confirmation and recipient before completing delivery", async () => {
   render(<DeliveryPanel orderId="order" />);
-  fireEvent.click(
-    screen.getByRole("button", { name: "Confirm delivered / completed" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Confirm delivered" }));
   expect(m.rpc).not.toHaveBeenCalled();
   expect(screen.getByLabelText("Received by")).toBeRequired();
   fireEvent.change(screen.getByLabelText("Received by"), {
@@ -158,7 +156,9 @@ it("allows dispatch without optional driver and vehicle details", () => {
   m.detail.delivery!.driver_name = null;
   m.detail.delivery!.vehicle_registration = null;
   render(<DeliveryPanel orderId="order" />);
-  expect(screen.getByRole("button", {name:"Mark out for delivery"})).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Mark out for delivery" }),
+  ).toBeEnabled();
   expect(screen.getByLabelText("Driver name (optional)")).not.toBeRequired();
 });
 it("hides mutation controls for completed deliveries", () => {
