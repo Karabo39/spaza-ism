@@ -170,7 +170,7 @@ function CustomerPickerContent({
                 checked={autoEmail}
                 onChange={(e) => setAutoEmail(e.target.checked)}
               />
-              Email Notifications � automatically email customer documents
+              Email Notifications: automatically email customer documents
             </label>
             <div className="flex justify-between gap-2">
               <Button

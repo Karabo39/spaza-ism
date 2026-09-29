@@ -173,7 +173,7 @@ export function CustomerProfile({
                     })
                   }
                 />
-                Email Notifications � all customer documents
+                Email Notifications: all customer documents
               </label>
               <p className="text-xs text-muted sm:col-span-2">
                 Automatically email completed transactions and their documents

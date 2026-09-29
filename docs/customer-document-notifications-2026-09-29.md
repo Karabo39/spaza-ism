@@ -4,7 +4,7 @@ Customer transactions now share a professional HTML email with a plain-text alte
 
 ## Customer controls
 
-Customer Profile → **Email Notifications — all customer documents** enables future automatic notifications to the saved customer email. A valid email is required. New customers also have this option. Existing invoice-only preferences remain invoice-only until deliberately changed; the migration does not enroll customers or email historical transactions.
+Customer Profile → **Email Notifications: all customer documents** enables future automatic notifications to the saved customer email. A valid email is required. New customers also have this option. Existing invoice-only preferences remain invoice-only until deliberately changed; the migration does not enroll customers or email historical transactions.
 
 The customer page includes **Customer email notifications**. Expand it to see the latest 50 permitted deliveries, refresh their status, or generate and email a statement for a selected date range. Statement generation is explicit: browsing a customer or exporting the existing on-screen list never sends an email. A statement includes all account entries within the requested period, opening/closing balances, and an immutable snapshot. Periods are limited to 366 days and 10,000 entries, with an error rather than silent truncation.
 
@@ -54,7 +54,7 @@ Explicit recurring schedules and Manual Send retain their existing independent a
 
 ## Verification and rollout
 
-The full local database suite passed against a fresh schema, including delivery, recurring billing, checkout, returns, cash-up, stock, permissions and concurrency tests. New regression tests cover completed-document snapshots, return/credit deduplication, statement idempotency, opt-out/contact changes, revoked access, RLS isolation, worker authorization, safe preparation retries, uncertain SMTP outcomes, HTML escaping and multipage PDFs. The production build and live database release gate passed.
+All 272 application tests and 50 database test groups passed. The database suite ran against a fresh schema, including delivery, recurring billing, checkout, returns, cash-up, stock, permissions and concurrency tests. New regression tests cover completed-document snapshots, return/credit deduplication, statement idempotency, opt-out/contact changes, revoked access, RLS isolation, worker authorization, safe preparation retries, uncertain SMTP outcomes, HTML escaping and multipage PDFs. The production build, lint and live database release gate passed. The deployed customer profile, disabled-until-enabled statement controls, lazy email history, and optional Goods Out customer selector were verified in the authenticated browser without changing customer data.
 
 Both email functions were deployed, the migration applied, and minute schedules confirmed active. At 17:07 UTC the live invoice worker accepted one normal queued invoice with the shared template/PDF (`sent: 1`, `uncertain: 0`); the new worker returned HTTP 200 with an empty queue. No test email was sent to a customer and no customer was newly opted in for testing.
 
