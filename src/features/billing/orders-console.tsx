@@ -1,4 +1,5 @@
 "use client";
+import {DeliveryPanel} from "@/features/deliveries/delivery-panel";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { statusLabel } from "./status-label";
 import { PurchaseOrder } from "./purchase-order";
@@ -290,6 +291,7 @@ export function OrdersConsole({
             </Button>
           </div>
         )}
+      <DeliveryPanel key={current.id} orderId={current.id} compact />
       {current.can_cancel && (
         <div className="flex gap-2">
           <Input
@@ -322,6 +324,7 @@ export function OrdersConsole({
   ) : null;
   return (
     <div className="space-y-6">
+      {canModule("orders_deliveries")&&<Button asChild><Link href="/orders/deliveries">Delivery Management</Link></Button>}
       {!canModule("orders_new") && !canModule("orders_recent") && (
         <p className="rounded-lg border border-border p-5 text-sm text-muted">
           No Orders options are enabled at this store. Ask your owner to update

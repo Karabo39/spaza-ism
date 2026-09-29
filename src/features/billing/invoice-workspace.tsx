@@ -1,4 +1,5 @@
 "use client";
+import {DeliveryPanel} from "@/features/deliveries/delivery-panel";
 import { useQuery } from "@tanstack/react-query";
 import { invoiceStatusLabel } from "./status-label";
 import { statusLabel } from "./status-label";
@@ -109,6 +110,7 @@ export function InvoiceWorkspace({
   }
   return (
     <div className="space-y-5">
+      <DeliveryPanel orderId={i.order_id} compact />
       {!online && (
         <p className="text-warning">Invoice actions require a connection.</p>
       )}

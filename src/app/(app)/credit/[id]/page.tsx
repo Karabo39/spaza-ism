@@ -1,3 +1,4 @@
+import {DeliveryQueue} from "@/features/deliveries/delivery-queue";
 import { CustomerProfile } from "@/features/credit/customer-profile";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -270,6 +271,7 @@ export default async function CustomerCreditPage({
         total={count ?? 0}
         params={{ from: sp.from, to: sp.to, type: sp.type, sort: sp.sort }}
       />
+      <DeliveryQueue customerId={id}/>
     </>
   );
 }
