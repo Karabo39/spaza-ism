@@ -29,6 +29,7 @@
     "document_delivery_v1",
     "delivery_management_v1",
     "delivery_reporting_v1",
-    "customer_notifications_v1"
+    "customer_notifications_v1",
+    "orders_delivery_collaboration_v1"
   ]
 }
