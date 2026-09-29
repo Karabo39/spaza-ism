@@ -4,6 +4,8 @@ export type OrderWorkflow = SalesOrder & {
   quoted_tax_percent?: number | null;
   quoted_discount?: number | null;
   can_cancel: boolean;
+  delivery_id?: string|null;
+  delivery_status?: string|null;
   invoice: null | {
     invoiced_by_name?: string | null;
     id: string;

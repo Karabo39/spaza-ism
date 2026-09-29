@@ -10,6 +10,8 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" };
   public: {
     Tables: {
+      delivery_events: {Row:{id:number;delivery_id:string;store_id:string;action:string;actor_id:string|null;actor_name:string;created_at:string;before_data:Json;after_data:Json;notes:string|null};Insert:never;Update:never;Relationships:[]};
+
       recurring_invoices: {
         Row: RecurringInvoice;
         Insert: never;
@@ -435,6 +437,9 @@ export type Database = {
           updated_at: string;
           logo_path: string | null;
           document_logo_path: string | null;
+          document_address:string|null;
+          document_phone:string|null;
+          document_email:string|null;
         };
         Insert: {
           created_at?: string;
@@ -1199,6 +1204,12 @@ export type Database = {
       };
     };
     Functions: {
+      configure_order_delivery: {Args:{p_order:string;p_expected:number;p_required:boolean;p_details:Json};Returns:string|null};
+      delivery_detail: {Args:{p_order:string};Returns:Json};
+      delivery_page: {Args:{p_store:string;p_queue?:string;p_date?:string;p_after?:number;p_customer?:string};Returns:Json};
+      process_delivery: {Args:{p_id:string;p_expected:number;p_action:string;p_details:Json;p_request:string};Returns:string};
+      set_document_contact: {Args:{p_business:string;p_address:string;p_phone:string;p_email:string};Returns:undefined};
+
       save_recurring_invoice: {
         Args: {
           p_store: string;
@@ -2152,6 +2163,9 @@ export type BillingSettings = {
 };
 
 export type SalesOrder = {
+  delivery_required?: boolean;
+  delivery_details?: Json;
+  delivery_version?: number;
   ordered_by_name: string | null;
   id: string;
   business_id: string;

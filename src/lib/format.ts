@@ -234,7 +234,21 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("NO_ITEMS")) return "Add at least one item first.";
   if (m.includes("duplicate key") && m.includes("barcode"))
     return "That barcode is already used by another product.";
-  return m || "Something went wrong. Please try again.";
+  const deliveryErrors:Record<string,string> = {
+ DELIVERY_CHANGED:'This delivery changed elsewhere. Refresh and review it before trying again.',
+ DELIVERY_ALREADY_GENERATED:'A delivery note already exists. Refresh to manage it.',
+ DELIVERY_RELEASE_GOODS_FIRST:'Release the goods from the invoice before dispatching.',
+ DELIVERY_PAYMENT_REQUIRED:'The invoice must be fully paid without credit notes before delivery.',
+ DELIVERY_DRIVER_REQUIRED:'Save the driver name and vehicle registration before dispatching.',
+ DELIVERY_DATE_IN_PAST:'Choose today or a future delivery date.',
+ DELIVERY_CLOSED:'This delivery is already completed or cancelled.',
+ INVALID_DELIVERY_STATE:'The delivery status has changed. Refresh and review it.',
+ DELIVERY_RECIPIENT_REQUIRED:'Enter the name of the person who received the goods.',
+ DELIVERY_CANCELLATION_REASON_REQUIRED:'Choose a cancellation reason and explain Other.',
+ DELIVERY_FAILURE_REASON_REQUIRED:'Enter why the delivery could not be completed.',
+ DELIVERY_ADDRESS_CONTACT_DATE_REQUIRED:'Enter the delivery address, contact number and scheduled date.'
+ };for(const [code,message] of Object.entries(deliveryErrors))if(m.includes(code))return message;
+ return m || 'Something went wrong. Please try again.';
 }
 
 export function stockQuantity(product: {

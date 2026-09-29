@@ -1,5 +1,6 @@
 // Per-store child permissions. Parents and dependencies must also be enabled.
 export const MODULE_FEATURES = [
+  {key:"orders_deliveries",label:"Manage deliveries",parent:"orders",role:"employee",requires:["orders_recent"]},
   {
     key: "goods_out_change_price",
     label: "Change selling price / discount",
