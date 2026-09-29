@@ -153,6 +153,14 @@ it("blocks dispatch until goods are released", () => {
     screen.getByRole("button", { name: "Mark out for delivery" }),
   ).toBeDisabled();
 });
+it("allows dispatch without optional driver and vehicle details", () => {
+  m.detail.delivery!.status = "PENDING";
+  m.detail.delivery!.driver_name = null;
+  m.detail.delivery!.vehicle_registration = null;
+  render(<DeliveryPanel orderId="order" />);
+  expect(screen.getByRole("button", {name:"Mark out for delivery"})).toBeEnabled();
+  expect(screen.getByLabelText("Driver name (optional)")).not.toBeRequired();
+});
 it("hides mutation controls for completed deliveries", () => {
   m.detail.delivery!.status = "DELIVERED";
   m.detail.delivery!.delivered_at = "2026-09-29T10:00:00Z";

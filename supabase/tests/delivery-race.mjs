@@ -114,8 +114,52 @@ export async function testDeliveryRace(url) {
     );
     assert.equal(end.status, "RESCHEDULED");
     assert.equal(Number(end.version), Number(delivery.version) + 1);
+    const invoices = [];
+    for (let j = 0; j < 2; j++) {
+      const {
+        rows: [nextOrder],
+      } = await a.query("select public.create_sales_order($1,$2,$3,$4) id", [
+        store,
+        customer.id,
+        JSON.stringify([{ product_id: product.id, quantity: 1 }]),
+        randomUUID(),
+      ]);
+      await a.query(
+        "select public.configure_order_delivery($1,0,true,jsonb_build_object('date',current_date+1,'address','Road','phone','123'))",
+        [nextOrder.id],
+      );
+      await a.query("select public.process_sales_order($1,'confirm')", [
+        nextOrder.id,
+      ]);
+      const {
+        rows: [nextInvoice],
+      } = await a.query(
+        "select public.create_sales_invoice($1,current_date+2,'CASH',0,null) id",
+        [nextOrder.id],
+      );
+      await a.query("select public.issue_sales_invoice($1)", [nextInvoice.id]);
+      invoices.push(nextInvoice.id);
+    }
+    await Promise.all(
+      connections.map((client, j) =>
+        client.query(
+          "select public.post_invoice_entry($1,'PAYMENT',10,$2,'CASH')",
+          [invoices[j], randomUUID()],
+        ),
+      ),
+    );
+    const { rows: references } = await a.query(
+      "select reference from public.order_deliveries where business_id=$1 order by reference",
+      [business],
+    );
+    assert.equal(new Set(references.map((r) => r.reference)).size, 3);
+    assert(references.every((r) => /^DNN-\d{8}-\d{3}$/.test(r.reference)));
+    assert.deepEqual(
+      references.map((r) => r.reference.slice(-3)),
+      ["001", "002", "003"],
+    );
     console.log(
-      "Passed concurrent delivery creation and duplicate action retries",
+      "Passed concurrent delivery creation, numbering and duplicate action retries",
     );
   } finally {
     await Promise.all(connections.map((c) => c.end()));
