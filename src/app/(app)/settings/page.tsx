@@ -1,3 +1,4 @@
+import {DocumentContactSettings} from '@/features/settings/document-contact';
 import { DocumentLogoSettings } from "@/features/settings/document-logo";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -73,6 +74,7 @@ export default async function SettingsPage() {
       {store.role === "owner" && <p className="mt-5 rounded-lg border border-border bg-surface p-5 text-sm">Adding another store? <Link href="/stores" className="text-primary-hover underline">Open My Stores</Link> to add locations and set up staff and products.</p>}
       <BusinessLogoSettings />
       <DocumentLogoSettings />
+      <DocumentContactSettings />
       <OverrideCodeSettings />
       <BillingPreferences
         key={store.businessId}
