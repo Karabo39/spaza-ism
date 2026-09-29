@@ -1,3 +1,4 @@
+vi.mock("@/features/deliveries/delivery-panel",()=>({DeliveryPanel:()=>null}));
 import { beforeEach, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";

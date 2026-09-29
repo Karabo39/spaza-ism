@@ -1,3 +1,4 @@
+vi.mock("@/features/deliveries/delivery-panel",()=>({DeliveryPanel:()=>null}));
 vi.mock("@tanstack/react-query", () => ({useQuery: () => ({data:null})}));
 import {beforeEach,expect,it,vi} from "vitest";
 import {cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react";

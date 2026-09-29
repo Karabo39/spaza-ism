@@ -1,3 +1,4 @@
+import {testDeliveryRace} from "../supabase/tests/delivery-race.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import pg from "pg";
 import { testWarehouseDisableRace } from "../supabase/tests/warehouse-disable-race.mjs";
@@ -131,6 +132,7 @@ try {
     "store_setup_catalog_sync.sql",
     "customer_recurring.sql",
     "document_delivery.sql",
+    "delivery_management.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
@@ -142,6 +144,7 @@ try {
   }
   await testWarehouseDisableRace(url);
   await testRecurringRace(url);
+  await testDeliveryRace(url);
 } finally {
   await client.end();
 }
