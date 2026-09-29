@@ -1205,6 +1205,7 @@ export type Database = {
     };
     Functions: {
       configure_order_delivery: {Args:{p_order:string;p_expected:number;p_required:boolean;p_details:Json};Returns:string|null};
+      delivery_report: {Args:{p_stores:string[];p_filters?:Json;p_after?:number|null;p_until?:number|null;p_limit?:number;p_mode?:string};Returns:Json};
       delivery_detail: {Args:{p_order:string};Returns:Json};
       delivery_page: {Args:{p_store:string;p_queue?:string;p_date?:string;p_after?:number;p_customer?:string};Returns:Json};
       process_delivery: {Args:{p_id:string;p_expected:number;p_action:string;p_details:Json;p_request:string};Returns:string};

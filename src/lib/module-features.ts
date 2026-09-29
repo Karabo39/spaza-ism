@@ -1,5 +1,9 @@
 // Per-store child permissions. Parents and dependencies must also be enabled.
 export const MODULE_FEATURES = [
+  {key:"reports_delivery",label:"View Delivery Report",parent:"reports",role:"employee",requires:[]},
+  {key:"reports_delivery_print",label:"Print Delivery Report",parent:"reports",role:"employee",requires:["reports_delivery"]},
+  {key:"reports_delivery_excel",label:"Export Delivery Report to Excel",parent:"reports",role:"employee",requires:["reports_delivery"]},
+  {key:"reports_delivery_pdf",label:"Export Delivery Report to PDF",parent:"reports",role:"employee",requires:["reports_delivery"]},
   {key:"orders_deliveries",label:"Manage deliveries",parent:"orders",role:"employee",requires:["orders_recent"]},
   {
     key: "goods_out_change_price",
