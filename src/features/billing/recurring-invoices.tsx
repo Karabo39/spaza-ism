@@ -279,7 +279,7 @@ function RecurringEditor({
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("customers")
-        .select("name,email,credit_enabled,auto_email_invoices")
+        .select("name,email,credit_enabled,auto_email_invoices,email_notifications")
         .eq("id", draft.customer_id)
         .eq("store_id", store.id)
         .single();
@@ -357,7 +357,7 @@ function RecurringEditor({
           </span>
         </div>
         {contact.error && <p role="alert">Could not load customer details.</p>}
-        {contact.data?.auto_email_invoices && (
+        {(contact.data?.auto_email_invoices || contact.data?.email_notifications) && (
           <p className="text-xs text-muted">
             This customer has automatic invoice emails enabled. Their profile
             email is used unless the schedule specifies an automatic recipient.

@@ -10,7 +10,23 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.5" };
   public: {
     Tables: {
-      delivery_events: {Row:{id:number;delivery_id:string;store_id:string;action:string;actor_id:string|null;actor_name:string;created_at:string;before_data:Json;after_data:Json;notes:string|null};Insert:never;Update:never;Relationships:[]};
+      delivery_events: {
+        Row: {
+          id: number;
+          delivery_id: string;
+          store_id: string;
+          action: string;
+          actor_id: string | null;
+          actor_name: string;
+          created_at: string;
+          before_data: Json;
+          after_data: Json;
+          notes: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
 
       recurring_invoices: {
         Row: RecurringInvoice;
@@ -437,9 +453,9 @@ export type Database = {
           updated_at: string;
           logo_path: string | null;
           document_logo_path: string | null;
-          document_address:string|null;
-          document_phone:string|null;
-          document_email:string|null;
+          document_address: string | null;
+          document_phone: string | null;
+          document_email: string | null;
         };
         Insert: {
           created_at?: string;
@@ -529,6 +545,21 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["credit_transactions"]["Insert"]
         >;
+        Relationships: [];
+      };
+      customer_document_notifications: {
+        Row: {
+          id: string;
+          customer_id: string;
+          store_id: string;
+          document: Json;
+          state: string;
+          last_error: string | null;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       customers: {
@@ -1186,6 +1217,7 @@ export type Database = {
           customer_type: "INDIVIDUAL" | "BUSINESS";
           credit_enabled: boolean;
           auto_email_invoices: boolean;
+          email_notifications: boolean;
           address: string | null;
           customer_id: string;
           business_id: string;
@@ -1204,12 +1236,67 @@ export type Database = {
       };
     };
     Functions: {
-      configure_order_delivery: {Args:{p_order:string;p_expected:number;p_required:boolean;p_details:Json};Returns:string|null};
-      delivery_report: {Args:{p_stores:string[];p_filters?:Json;p_after?:number|null;p_until?:number|null;p_limit?:number;p_mode?:string};Returns:Json};
-      delivery_detail: {Args:{p_order:string};Returns:Json};
-      delivery_page: {Args:{p_store:string;p_queue?:string;p_date?:string;p_after?:number;p_customer?:string};Returns:Json};
-      process_delivery: {Args:{p_id:string;p_expected:number;p_action:string;p_details:Json;p_request:string};Returns:string};
-      set_document_contact: {Args:{p_business:string;p_address:string;p_phone:string;p_email:string};Returns:undefined};
+      customer_email_history: { Args: { p_customer: string }; Returns: Json };
+      queue_customer_statement: {
+        Args: {
+          p_customer: string;
+          p_request: string;
+          p_from: string;
+          p_to: string;
+        };
+        Returns: string;
+      };
+
+      configure_order_delivery: {
+        Args: {
+          p_order: string;
+          p_expected: number;
+          p_required: boolean;
+          p_details: Json;
+        };
+        Returns: string | null;
+      };
+      delivery_report: {
+        Args: {
+          p_stores: string[];
+          p_filters?: Json;
+          p_after?: number | null;
+          p_until?: number | null;
+          p_limit?: number;
+          p_mode?: string;
+        };
+        Returns: Json;
+      };
+      delivery_detail: { Args: { p_order: string }; Returns: Json };
+      delivery_page: {
+        Args: {
+          p_store: string;
+          p_queue?: string;
+          p_date?: string;
+          p_after?: number;
+          p_customer?: string;
+        };
+        Returns: Json;
+      };
+      process_delivery: {
+        Args: {
+          p_id: string;
+          p_expected: number;
+          p_action: string;
+          p_details: Json;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      set_document_contact: {
+        Args: {
+          p_business: string;
+          p_address: string;
+          p_phone: string;
+          p_email: string;
+        };
+        Returns: undefined;
+      };
 
       save_recurring_invoice: {
         Args: {
@@ -1648,8 +1735,24 @@ export type Database = {
         };
         Returns: string;
       };
-      set_document_logo: { Args: {p_business:string;p_path:string|null;p_expected:string|null}; Returns:undefined };
-      send_manual_recurring_invoice: {Args:{p_store:string;p_id:string;p_expected:number;p_details:Json;p_request:string};Returns:string};
+      set_document_logo: {
+        Args: {
+          p_business: string;
+          p_path: string | null;
+          p_expected: string | null;
+        };
+        Returns: undefined;
+      };
+      send_manual_recurring_invoice: {
+        Args: {
+          p_store: string;
+          p_id: string;
+          p_expected: number;
+          p_details: Json;
+          p_request: string;
+        };
+        Returns: string;
+      };
       set_business_logo: {
         Args: { p_business: string; p_path: string | null };
         Returns: undefined;
@@ -2122,7 +2225,8 @@ export type ProductStock = {
 export type CustomerProfileFields = {
   customer_type: "INDIVIDUAL" | "BUSINESS";
   credit_enabled: boolean;
-          auto_email_invoices: boolean;
+  auto_email_invoices: boolean;
+  email_notifications: boolean;
   street: string | null;
   suburb: string | null;
   town: string | null;
@@ -2133,7 +2237,8 @@ export type CustomerProfileFields = {
 export type CreditCustomer = {
   customer_type?: "INDIVIDUAL" | "BUSINESS";
   credit_enabled?: boolean;
-          auto_email_invoices?: boolean;
+  auto_email_invoices?: boolean;
+  email_notifications?: boolean;
   address?: string | null;
   customer_id: string;
   business_id: string;

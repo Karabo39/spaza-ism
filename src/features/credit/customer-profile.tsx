@@ -77,6 +77,7 @@ export function CustomerProfile({
                       ["customer_type", draft.customer_type],
                       ["credit_enabled", draft.credit_enabled],
                       ["auto_email_invoices", !!draft.auto_email_invoices],
+                      ["email_notifications", !!draft.email_notifications],
                     ]),
                   },
                 );
@@ -116,7 +117,16 @@ export function CustomerProfile({
                     }
                     value={draft[key] ?? ""}
                     onChange={(e) =>
-                      setDraft({ ...draft, [key]: e.target.value, ...(key === "email" && !e.target.value.trim() ? {auto_email_invoices:false} : {}) })
+                      setDraft({
+                        ...draft,
+                        [key]: e.target.value,
+                        ...(key === "email" && !e.target.value.trim()
+                          ? {
+                              auto_email_invoices: false,
+                              email_notifications: false,
+                            }
+                          : {}),
+                      })
                     }
                   />
                 </label>
@@ -150,8 +160,45 @@ export function CustomerProfile({
                 />
                 Allow credit purchases
               </label>
-              <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={!!draft.auto_email_invoices} disabled={!draft.email?.trim()} onChange={e=>setDraft({...draft,auto_email_invoices:e.target.checked})}/>Automatically email each issued invoice to this customer</label>
-              <p className="text-xs text-muted sm:col-span-2">Requires a valid email address. Applies to future issued invoices; drafts and existing invoices are not sent.</p>
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={!!draft.email_notifications}
+                  disabled={!draft.email?.trim()}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      email_notifications: e.target.checked,
+                      auto_email_invoices: false,
+                    })
+                  }
+                />
+                Email Notifications � all customer documents
+              </label>
+              <p className="text-xs text-muted sm:col-span-2">
+                Automatically email completed transactions and their documents
+                to this address. Includes invoices, orders, receipts, payments,
+                returns and delivery updates. Applies to future transactions
+                only.
+              </p>
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={!!draft.auto_email_invoices}
+                  disabled={!draft.email?.trim() || draft.email_notifications}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      auto_email_invoices: e.target.checked,
+                    })
+                  }
+                />
+                Invoices only (legacy preference)
+              </label>
+              <p className="text-xs text-muted sm:col-span-2">
+                Requires a valid email address. Applies to future issued
+                invoices; drafts and existing invoices are not sent.
+              </p>
             </fieldset>
             {customer.address && !customer.street && (
               <p className="text-xs text-muted">

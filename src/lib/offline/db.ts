@@ -12,6 +12,7 @@ import type { ProductStock } from "@/lib/db/database.types";
  */
 
 export type QueuedSale = {
+  customerId?: string;
   actorId?: string;
   payments?: import("@/features/goods-out/payments").Payment[];
   till?: string;
@@ -248,12 +249,10 @@ export async function mergeProductMirror(
   for (const id of Object.keys(committedVersions)) {
     if (!changed.has(id) && !currentVersions[id]) delete committedVersions[id];
   }
-  await tx
-    .objectStore("meta")
-    .put({
-      key: `versions:${storeId}`,
-      value: JSON.stringify(committedVersions),
-    });
+  await tx.objectStore("meta").put({
+    key: `versions:${storeId}`,
+    value: JSON.stringify(committedVersions),
+  });
   await tx
     .objectStore("meta")
     .put({ key: `sync:${storeId}`, value: Date.now() });

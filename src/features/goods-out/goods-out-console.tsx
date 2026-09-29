@@ -183,7 +183,10 @@ export function GoodsOutConsole() {
     } else {
       setUnknownCode(code);
       toast.error(`No product for "${code}"`, {
-        action: can("manager") && canModule("products") ? { label: "Register", onClick: () => setRegisterOpen(true) } : undefined,
+        action:
+          can("manager") && canModule("products")
+            ? { label: "Register", onClick: () => setRegisterOpen(true) }
+            : undefined,
       });
     }
   }
@@ -231,6 +234,7 @@ export function GoodsOutConsole() {
       id: attempt.current?.id ?? crypto.randomUUID(),
       storeId: store.id,
       actorId: user.id,
+      customerId: customer?.customer_id,
       payments: payment.payments,
       till,
       items: lines.map((l) => ({
@@ -374,7 +378,7 @@ export function GoodsOutConsole() {
         p_credit: saleType === "CREDIT",
         p_payments: payment.payments,
         p_till: till,
-        p_customer: saleType === "CREDIT" ? customer!.customer_id : null,
+        p_customer: customer?.customer_id ?? null,
         p_items: lines.map((l) => ({
           product_id: l.productId,
           quantity: l.quantity,
@@ -644,9 +648,12 @@ export function GoodsOutConsole() {
             />
           </label>
 
-          {saleType === "CREDIT" ? (
+          {
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted">Customer</p>
+              <p className="text-xs font-medium text-muted">
+                Customer{" "}
+                {saleType !== "CREDIT" ? "(optional — for email receipts)" : ""}
+              </p>
               {customer ? (
                 <div className="rounded-md border border-border bg-surface-2 p-3">
                   <div className="flex items-center justify-between">
@@ -658,27 +665,38 @@ export function GoodsOutConsole() {
                       Change
                     </button>
                   </div>
-                  <div className="mt-1 flex justify-between text-xs text-muted">
-                    <span>Balance {money(customer.balance, currency)}</span>
-                    <span>
-                      Limit{" "}
-                      {customer.credit_limit > 0
-                        ? money(customer.credit_limit, currency)
-                        : "—"}
-                    </span>
-                  </div>
+                  {saleType === "CREDIT" && (
+                    <div className="mt-1 flex justify-between text-xs text-muted">
+                      <span>Balance {money(customer.balance, currency)}</span>
+                      <span>
+                        Limit{" "}
+                        {customer.credit_limit > 0
+                          ? money(customer.credit_limit, currency)
+                          : "—"}
+                      </span>
+                    </div>
+                  )}
+                  {saleType !== "CREDIT" && (
+                    <button
+                      className="mt-2 text-xs text-muted underline"
+                      onClick={() => setCustomer(null)}
+                    >
+                      Use walk-in customer
+                    </button>
+                  )}
                 </div>
               ) : (
                 <Button
                   variant="secondary"
                   className="w-full"
+                  disabled={!online}
                   onClick={() => setPickerOpen(true)}
                 >
                   <UserPlus className="size-4" /> Select customer
                 </Button>
               )}
 
-              {wouldExceed ? (
+              {saleType === "CREDIT" && wouldExceed ? (
                 <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-xs">
                   <p className="flex items-center gap-1.5 font-medium text-danger">
                     <ShieldAlert className="size-4" /> Over credit limit
@@ -716,7 +734,7 @@ export function GoodsOutConsole() {
                 </div>
               ) : null}
             </div>
-          ) : null}
+          }
 
           <div className="border-t border-border pt-3">
             <div className="flex items-end justify-between">

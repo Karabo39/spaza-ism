@@ -88,7 +88,7 @@ export async function flushSaleQueue(storeId: string): Promise<FlushResult> {
           p_items: sale.items,
           p_payments: sale.payments,
           p_request: sale.id,
-          p_customer: null,
+          p_customer: sale.customerId ?? null,
           p_credit: false,
           p_override: false,
           p_till: sale.till ?? "",
@@ -96,7 +96,7 @@ export async function flushSaleQueue(storeId: string): Promise<FlushResult> {
       : await supabase.rpc("complete_sale", {
           p_store: sale.storeId,
           p_sale_type: "CASH",
-          p_customer: null,
+          p_customer: sale.customerId ?? null,
           p_items: sale.items,
           p_override: false,
           p_request: sale.id,
