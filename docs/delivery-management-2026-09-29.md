@@ -36,4 +36,8 @@ Store-level **Manage deliveries** permission follows the existing Orders permiss
 
 250 application tests passed. A fresh local database passed the full migration/regression runner (47 reported groups, including delivery cases), plus the new delivery concurrency suite. The delivery suite separately passed immediate module revocation and tenant isolation checks. Production build, type validation and lint passed. The printable template was inspected in the browser using sample data. Physical printer output was not tested.
 
-Live migration policies and release capability were verified. Application deployment and authenticated route verification are recorded below after release.
+Live migration policies and release capability were verified. The follow-up migration `20260929155542_delivery_active_queue_dates.sql` ensures early-dispatched or failed deliveries remain in the current queue; its regression test passed.
+
+The five implementation commits (`cb69e75` through `e91aefd`) were pushed to main and Vercel reported successful deployment. Authenticated checks passed on 14 routes, including the delivery queue, an existing order's delivery detail, Dashboard, Products, Goods Out, Orders, Audit, Customers, Invoices, recurring invoices, Cash Up, Check Stock, Stores and Settings. All responses ran in Dublin (`dub1`). All five delivery queue API filters, the history projection and delivery-detail API passed. The live browser also displayed the new navigation, delivery filters and empty state correctly.
+
+No customer orders, payments or stock were altered for live verification. Full lifecycle mutations were tested in the disposable local database; no existing live order was marked delivered or cancelled as a test. Supabase advisory review found no missing delivery RLS or foreign-key indexes; its authenticated security-definer advisory applies to the deliberately guarded RPCs, which enforce current membership/module access internally.
