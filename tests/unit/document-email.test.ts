@@ -53,6 +53,7 @@ beforeEach(() => {
   m.load.mockResolvedValue({
     recipient: "saved@example.test",
     reference: "INV-123",
+    email: { type: "Invoice", customer: "Saved customer", business: "Company", store: "Shop", reference: "INV-123", date: "2026-09-29", currency: "USD", summary: "Customer invoice", total: 100, payment_status: "Unpaid", outstanding: 100, lines: [] },
     data: {
       title: "Invoice INV-123",
       columns: [{ key: "amount", label: "Amount" }],
@@ -118,6 +119,8 @@ it("uses authoritative document data and stable provider retries", async () => {
   expect((await POST(request({ rows: [{ amount: 1 }] }))).status).toBe(502);
   expect((await POST(request({ rows: [{ amount: 1 }] }))).status).toBe(200);
   expect(m.file.mock.calls[0][0].rows).toEqual([{ amount: 100 }]);
+  expect(m.fetch.mock.calls[0][2].html).toContain("Saved customer");
+  expect(m.fetch.mock.calls[0][2].text).toContain("Outstanding amount");
   expect(m.fetch.mock.calls.map((c) => c[1])).toEqual([
     "document-job",
     "document-job",
