@@ -3,6 +3,7 @@ export type Mail = {
   to: string[];
   subject: string;
   text: string;
+  html?: string;
   attachments?: { filename: string; content: string; encoding?: string }[];
 };
 export type SmtpLedger = {

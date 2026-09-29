@@ -3,9 +3,10 @@ import { createClient } from "npm:@supabase/supabase-js@2.112.4";
 import { jsPDF } from "npm:jspdf@4.2.1";
 import { autoTable } from "npm:jspdf-autotable@5.0.8";
 import { smtpOptions, sendSmtp } from "../_shared/smtp.ts";
-import { recurringHandler } from "./handler.ts";
-import { decodeDocumentLogo } from "../_shared/document-logo.ts";
 import { customerEmail, customerPdf } from "../_shared/customer-document.ts";
+import { decodeDocumentLogo } from "../_shared/document-logo.ts";
+import { customerNotificationHandler } from "./handler.ts";
+
 const smtp = smtpOptions((key) => Deno.env.get(key));
 const from =
   Deno.env.get("INVOICE_EMAIL_FROM")?.trim() ||
@@ -16,77 +17,60 @@ const db = createClient(url, key, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 Deno.serve(
-  recurringHandler({
+  customerNotificationHandler({
+    configured: !!(smtp && from && url && key),
     authenticate: (p_secret) =>
       db.rpc("authenticate_recurring_worker", { p_secret }),
-    configured: !!(smtp && from && url && key),
-    claim: () => db.rpc("claim_recurring_deliveries", { p_limit: 10 }),
-    complete: (job, provider) =>
-      db.rpc("complete_recurring_delivery", {
-        p_invoice: job.id,
+    claim: () => db.rpc("claim_customer_documents", { p_limit: 5 }),
+    complete: (job, p_outcome, provider) =>
+      db.rpc("complete_customer_document", {
+        p_id: job.id,
         p_token: job.token,
+        p_outcome,
         p_provider: provider ?? null,
       }),
-    send: async (job) => {
-      const pdf = new jsPDF();
-      let logo: ReturnType<typeof decodeDocumentLogo> | null = null;
-      if (job.logo_path) {
+    prepare: async (job) => {
+      let logo = null;
+      if (job.document.logo_path) {
         const asset = await db.storage
           .from("document-logos")
-          .download(job.logo_path);
+          .download(job.document.logo_path);
         if (asset.error) throw asset.error;
         logo = decodeDocumentLogo(
           new Uint8Array(await asset.data.arrayBuffer()),
         );
       }
-      const document = job.document ?? {
-        type: "Invoice",
-        customer: job.customer.name,
-        business: job.business,
-        store: job.store,
-        reference: job.reference,
-        date: job.date,
-        due: job.due,
-        currency: job.currency,
-        summary: "Customer invoice",
-        total: job.total,
-        payment_status: "See attached invoice",
-        lines: job.lines.map((l) => ({
-          description: l.name,
-          quantity: l.quantity,
-          price: l.price,
-          amount: l.total,
-        })),
-      };
-      const attachment = customerPdf(document, pdf, autoTable, logo);
+      return customerPdf(job.document, new jsPDF(), autoTable, logo);
+    },
+    send: async (job, attachment) => {
       const transport = nodemailer.createTransport(smtp!);
       try {
         return await sendSmtp(
-          `recurring-${job.id}`,
+          `customer-${job.id}`,
           {
             from: from!,
             to: [job.recipient],
-            ...customerEmail(document),
+            ...customerEmail(job.document),
             attachments: [
               {
-                filename: `${job.reference}.pdf`,
+                filename: `${job.document.reference.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`,
                 content: attachment,
               },
             ],
           },
           {
             begin: async (p_key) => {
-              const { data, error } = await db.rpc("smtp_delivery", { p_key });
-              if (error) throw new Error("SMTP_RESERVATION_FAILED");
-              return data;
+              const result = await db.rpc("smtp_delivery", { p_key });
+              if (result.error) throw new Error("SMTP_RESERVATION_FAILED");
+              return result.data;
             },
             finish: async (p_key, p_token, p_provider) => {
-              const { error } = await db.rpc("smtp_delivery", {
+              const result = await db.rpc("smtp_delivery", {
                 p_key,
                 p_token,
                 p_provider,
               });
-              if (error) throw new Error("SMTP_RECORD_FAILED");
+              if (result.error) throw new Error("SMTP_RECORD_FAILED");
             },
           },
           (message) => transport.sendMail(message),

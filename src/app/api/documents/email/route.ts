@@ -1,4 +1,5 @@
 import { loadDocumentLogo } from "@/lib/document-logo";
+import { customerEmail } from "../../../../../supabase/functions/_shared/customer-document";
 import { emailConfigured, sendEmail } from "@/lib/email";
 import { createHash } from "node:crypto";
 import { z } from "zod";
@@ -63,7 +64,7 @@ async function authorized(type: "invoice" | "return" | "sale", id: string) {
         { status: 404 },
       ),
     };
-  return { db, document, businessId:store.businessId };
+  return { db, document, businessId: store.businessId };
 }
 export async function GET(request: Request) {
   const parsed = documentSchema.safeParse(
@@ -151,14 +152,18 @@ export async function POST(request: Request) {
     };
     if (job.sent) return Response.json({ sent: true });
     const file = await reportFile(
-      { ...document.data, createdAt: job.created_at, fileId: job.id, logo:await loadDocumentLogo(db,result.businessId) },
+      {
+        ...document.data,
+        createdAt: job.created_at,
+        fileId: job.id,
+        logo: await loadDocumentLogo(db, result.businessId),
+      },
       "pdf",
     );
     const provider = await sendEmail(db, `document-${job.id}`, {
       from: sender,
       to: [body.recipient],
-      subject: document.data.title,
-      text: `Please find your ${body.type === "invoice" ? "invoice" : body.type === "sale" ? "sales receipt" : "return receipt"} attached. Reference: ${document.reference}`,
+      ...customerEmail(document.email),
       attachments: [
         {
           filename: `${document.reference.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`,

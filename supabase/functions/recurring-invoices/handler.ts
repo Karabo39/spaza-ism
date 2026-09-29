@@ -1,4 +1,6 @@
+import type { CustomerDocument } from "../_shared/customer-document.ts";
 export type RecurringDelivery = {
+  document?: CustomerDocument;
   logo_path?: string | null;
   id: string;
   token: string;

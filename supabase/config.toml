@@ -9,3 +9,7 @@ verify_jwt = false
 [functions.recurring-invoices]
 # Custom worker authentication checks a dedicated recurring invoice secret.
 verify_jwt = false
+
+[functions.customer-notifications]
+# The worker checks the existing Vault credential through a service-only RPC.
+verify_jwt = false

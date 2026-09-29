@@ -3,6 +3,7 @@ import type { Database } from "@/lib/db/database.types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { dateTime, dateOnly } from "@/lib/format";
 import type { ExportData } from "@/features/reports/export-data";
+import type { CustomerDocument } from "../../../supabase/functions/_shared/customer-document";
 export async function loadEmailDocument(
   db: SupabaseClient<Database>,
   type: "invoice" | "return" | "sale",
@@ -11,7 +12,12 @@ export async function loadEmailDocument(
   storeName: string,
   businessName: string,
   currency: string,
-): Promise<{ recipient: string; reference: string; data: ExportData } | null> {
+): Promise<{
+  recipient: string;
+  reference: string;
+  data: ExportData;
+  email: CustomerDocument;
+} | null> {
   const columns = [
     { key: "description", label: "Description" },
     { key: "quantity", label: "Quantity" },
@@ -34,6 +40,25 @@ export async function loadEmailDocument(
     return {
       recipient: "",
       reference: r.reference,
+      email: {
+        type: "Sales receipt",
+        customer: customerName || "Customer",
+        business: r.business,
+        store: r.store,
+        reference: r.reference,
+        date: r.created_at,
+        currency: r.currency,
+        summary: "Sale completed",
+        total: r.total,
+        payment_status: r.status,
+        outstanding: r.status === "CREDIT" ? r.total : 0,
+        lines: r.items.map((l) => ({
+          description: l.name,
+          quantity: l.quantity,
+          price: l.unit_price,
+          amount: l.total,
+        })),
+      },
       data: {
         title: `Sales receipt ${r.reference}`,
         subtitle: `${r.business} · ${r.store} · ${dateTime(r.created_at)}
@@ -115,13 +140,36 @@ Transaction: ${r.id}`,
         });
     if (i.note) rows.push({ description: i.note });
     return {
-      recipient: (i.customer_snapshot as {email?: string}|null)?.email ?? contact.data?.email ?? "",
+      recipient:
+        (i.customer_snapshot as { email?: string } | null)?.email ??
+        contact.data?.email ??
+        "",
       reference: i.reference,
+      email: {
+        type: i.state === "DRAFT" ? "Draft invoice" : "Invoice",
+        customer: i.customer_name,
+        business: i.business_name,
+        store: i.store_name,
+        reference: i.reference,
+        date: i.invoice_date || i.created_at,
+        due: i.due_date,
+        currency: i.currency,
+        summary: i.note || "Customer invoice",
+        total: i.total,
+        payment_status: i.status,
+        outstanding: i.outstanding,
+        lines: (lines.data ?? []).map((l) => ({
+          description: l.product_name,
+          quantity: l.quantity,
+          price: l.unit_price,
+          amount: l.line_total,
+        })),
+      },
       data: {
         title: `${i.state === "DRAFT" ? "Draft invoice" : "Invoice / receipt"} ${i.reference}`,
         subtitle: `${i.business_name} · ${i.store_name}
 Customer: ${i.customer_name}
-Address: ${(i.customer_snapshot as {address?: string}|null)?.address || "Not recorded"}
+Address: ${(i.customer_snapshot as { address?: string } | null)?.address || "Not recorded"}
 Invoice date: ${dateOnly(i.invoice_date || i.created_at)} · ${i.currency} · Due ${dateOnly(i.due_date)} · ${i.status}
 Ordered By: ${i.ordered_by_name || "Not recorded"} · Invoiced By: ${i.invoiced_by_name || "Not recorded"}
 Salesperson: ${i.salesperson} · Goods: ${i.goods_issued_at ? dateTime(i.goods_issued_at) : "Awaiting delivery"}`,
@@ -199,6 +247,24 @@ Inspection: ${r.inspection}`,
   return {
     recipient: contact.data?.email ?? "",
     reference: r.reference,
+    email: {
+      type: "Return / credit note",
+      customer: contact.data?.name || "Customer",
+      business: businessName,
+      store: storeName,
+      reference: r.reference,
+      related_reference: invoice.data?.reference,
+      date: r.processed_at || r.created_at,
+      currency: invoice.data?.currency ?? currency,
+      summary: r.reason,
+      total: r.amount,
+      payment_status: "Credit approved",
+      lines: (lines.data ?? []).map((l) => ({
+        description: l.product_name,
+        quantity: l.quantity,
+        amount: l.amount,
+      })),
+    },
     data: {
       title: `Credit note / return receipt ${r.reference}`,
       subtitle: `${businessName} · ${storeName}
