@@ -40,8 +40,29 @@ export function dateOnly(value: string | Date | null | undefined): string {
 
 /** Maps raw Postgres RPC error messages to friendly, actionable text. */
 export function friendlyError(message: string | undefined | null): string {
-  if (message?.includes("CUSTOMER_CREDIT_DISABLED")) return "Credit is disabled for this customer. Use cash/card or ask a manager to enable credit.";
+  if (message?.includes("CUSTOMER_CREDIT_DISABLED"))
+    return "Credit is disabled for this customer. Use cash/card or ask a manager to enable credit.";
   const m = message ?? "";
+  if (/INVOICE_CHANGED/.test(m))
+    return "This invoice was revised by someone else. Refresh before editing its items.";
+  if (/INVOICE_AMENDMENT_CLOSED/.test(m))
+    return "Items cannot be changed after goods release or cancellation. Use the returns process for released goods.";
+  if (/INVOICE_ADJUSTMENTS_EXIST/.test(m))
+    return "This invoice already has credit or debit notes. Review those adjustments before correcting goods.";
+  if (/DELIVERY_SCHEDULE_REQUIRED/.test(m))
+    return "Schedule this delivery before dispatching it.";
+  if (/INVOICE_PRICE_CHANGED/.test(m))
+    return "A product price changed. Refresh and review the new total before saving.";
+  if (/INVOICE_CHANGED/.test(m))
+    return "This invoice was revised by someone else. Refresh before editing its items.";
+  if (/INVOICE_AMENDMENT_CLOSED/.test(m))
+    return "Items cannot be changed after goods release or cancellation. Use the returns process for released goods.";
+  if (/INVOICE_ADJUSTMENTS_EXIST/.test(m))
+    return "This invoice already has credit or debit notes. Review those adjustments before correcting goods.";
+  if (/DELIVERY_SCHEDULE_REQUIRED/.test(m))
+    return "Schedule this delivery before dispatching it.";
+  if (/INVOICE_PRICE_CHANGED/.test(m))
+    return "A product price changed. Refresh and review the new total before saving.";
   if (/TRACKING_CHANGE_HAS_HISTORY_OR_STOCK/.test(m))
     return "Stock tracking cannot change while this product has stock, sales, orders, transfers or an open stock count. Create a new product to preserve the existing history.";
   if (/SALES_ONLY_NO_STOCK/.test(m))
@@ -208,14 +229,22 @@ export function friendlyError(message: string | undefined | null): string {
     return "Enter a whole number of bulk packs.";
   if (m.includes("UNPACK_COUNT_OVERRIDE_DISABLED"))
     return "Receive the packs first, or correct a verified count through Adjust Stock before unpacking.";
-  if (m.includes("PRICE_CHANGE_NOT_ALLOWED")) return "Your store permissions do not allow a different selling price. Refresh the product price or ask an owner to grant access.";
-  if (m.includes("UNIT_COST_CHANGE_NOT_ALLOWED")) return "Only a manager can change unit cost. Reload the product to use its current cost.";
-  if (m.includes("TEMPLATE_STOCK_CHANGED")) return "Stock or product details changed after this template was exported. Export a new template and recount before importing.";
-  if (m.includes("TEMPLATE_COUNT_CHANGED")) return "A count was saved after this template was exported. Export a new template to avoid overwriting it.";
-  if (m.includes("TEMPLATE_ALREADY_IMPORTED")) return "This template has already been imported. Export a new template before changing counts.";
-  if (m.includes("TEMPLATE_NOT_FOUND") || m.includes("TEMPLATE_ITEM_MISMATCH")) return "The template does not match this location or stock take. Download a fresh template.";
-  if (m.includes("TEMPLATE_TOO_LARGE")) return "Excel stock takes support up to 10,000 products. Use the stock-take screen for this location.";
-  if (m.includes("INVALID_COUNTS") || m.includes("DUPLICATE_COUNT")) return "Check for invalid quantities or duplicate products in the workbook. No counts were saved.";
+  if (m.includes("PRICE_CHANGE_NOT_ALLOWED"))
+    return "Your store permissions do not allow a different selling price. Refresh the product price or ask an owner to grant access.";
+  if (m.includes("UNIT_COST_CHANGE_NOT_ALLOWED"))
+    return "Only a manager can change unit cost. Reload the product to use its current cost.";
+  if (m.includes("TEMPLATE_STOCK_CHANGED"))
+    return "Stock or product details changed after this template was exported. Export a new template and recount before importing.";
+  if (m.includes("TEMPLATE_COUNT_CHANGED"))
+    return "A count was saved after this template was exported. Export a new template to avoid overwriting it.";
+  if (m.includes("TEMPLATE_ALREADY_IMPORTED"))
+    return "This template has already been imported. Export a new template before changing counts.";
+  if (m.includes("TEMPLATE_NOT_FOUND") || m.includes("TEMPLATE_ITEM_MISMATCH"))
+    return "The template does not match this location or stock take. Download a fresh template.";
+  if (m.includes("TEMPLATE_TOO_LARGE"))
+    return "Excel stock takes support up to 10,000 products. Use the stock-take screen for this location.";
+  if (m.includes("INVALID_COUNTS") || m.includes("DUPLICATE_COUNT"))
+    return "Check for invalid quantities or duplicate products in the workbook. No counts were saved.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
   if (m.includes("PAYMENT_UNDERPAID"))
     return "Collect the remaining balance before completing this sale.";
@@ -234,21 +263,33 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("NO_ITEMS")) return "Add at least one item first.";
   if (m.includes("duplicate key") && m.includes("barcode"))
     return "That barcode is already used by another product.";
-  const deliveryErrors:Record<string,string> = {
- DELIVERY_CHANGED:'This delivery changed elsewhere. Refresh and review it before trying again.',
- DELIVERY_ALREADY_GENERATED:'A delivery note already exists. Refresh to manage it.',
- DELIVERY_RELEASE_GOODS_FIRST:'Release the goods from the invoice before dispatching.',
- DELIVERY_PAYMENT_REQUIRED:'The invoice must be fully paid without credit notes before delivery.',
- DELIVERY_DRIVER_REQUIRED:'Save the driver name and vehicle registration before dispatching.',
- DELIVERY_DATE_IN_PAST:'Choose today or a future delivery date.',
- DELIVERY_CLOSED:'This delivery is already completed or cancelled.',
- INVALID_DELIVERY_STATE:'The delivery status has changed. Refresh and review it.',
- DELIVERY_RECIPIENT_REQUIRED:'Enter the name of the person who received the goods.',
- DELIVERY_CANCELLATION_REASON_REQUIRED:'Choose a cancellation reason and explain Other.',
- DELIVERY_FAILURE_REASON_REQUIRED:'Enter why the delivery could not be completed.',
- DELIVERY_ADDRESS_CONTACT_DATE_REQUIRED:'Enter the delivery address, contact number and scheduled date.'
- };for(const [code,message] of Object.entries(deliveryErrors))if(m.includes(code))return message;
- return m || 'Something went wrong. Please try again.';
+  const deliveryErrors: Record<string, string> = {
+    DELIVERY_CHANGED:
+      "This delivery changed elsewhere. Refresh and review it before trying again.",
+    DELIVERY_ALREADY_GENERATED:
+      "A delivery note already exists. Refresh to manage it.",
+    DELIVERY_RELEASE_GOODS_FIRST:
+      "Release the goods from the invoice before dispatching.",
+    DELIVERY_PAYMENT_REQUIRED:
+      "The invoice must be fully paid without credit notes before delivery.",
+    DELIVERY_DRIVER_REQUIRED:
+      "Save the driver name and vehicle registration before dispatching.",
+    DELIVERY_DATE_IN_PAST: "Choose today or a future delivery date.",
+    DELIVERY_CLOSED: "This delivery is already completed or cancelled.",
+    INVALID_DELIVERY_STATE:
+      "The delivery status has changed. Refresh and review it.",
+    DELIVERY_RECIPIENT_REQUIRED:
+      "Enter the name of the person who received the goods.",
+    DELIVERY_CANCELLATION_REASON_REQUIRED:
+      "Choose a cancellation reason and explain Other.",
+    DELIVERY_FAILURE_REASON_REQUIRED:
+      "Enter why the delivery could not be completed.",
+    DELIVERY_ADDRESS_CONTACT_DATE_REQUIRED:
+      "Enter the delivery address, contact number and scheduled date.",
+  };
+  for (const [code, message] of Object.entries(deliveryErrors))
+    if (m.includes(code)) return message;
+  return m || "Something went wrong. Please try again.";
 }
 
 export function stockQuantity(product: {

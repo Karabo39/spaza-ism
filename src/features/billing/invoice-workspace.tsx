@@ -1,5 +1,6 @@
 "use client";
-import {DeliveryPanel} from "@/features/deliveries/delivery-panel";
+import { InvoiceAmendments } from "./invoice-amendments";
+import { DeliveryPanel } from "@/features/deliveries/delivery-panel";
 import { useQuery } from "@tanstack/react-query";
 import { invoiceStatusLabel } from "./status-label";
 import { statusLabel } from "./status-label";
@@ -58,7 +59,10 @@ export function InvoiceWorkspace({
   });
   const useCredit = kind === "PAYMENT" && method === "CREDIT";
   const creditAllowed =
-    !!creditCustomer && creditCustomer.credit_enabled !== false && !i.goods_issued_at && Number(i.outstanding) > 0;
+    !!creditCustomer &&
+    creditCustomer.credit_enabled !== false &&
+    !i.goods_issued_at &&
+    Number(i.outstanding) > 0;
   const settled = i.state === "ISSUED" && Number(i.outstanding) <= 0;
   const cents = amountCents(amount);
   const invalidEntry =
@@ -115,16 +119,16 @@ export function InvoiceWorkspace({
         <p className="text-warning">Invoice actions require a connection.</p>
       )}
       <div className="flex flex-wrap gap-3">
-        <Button asChild><Link href={`/invoices/${i.id}/receipt`}>
-          Open invoice / receipt
-        </Link></Button>
-        <Button asChild><Link href={`/credit/${i.customer_id}`}>
-          Customer statement
-        </Link></Button>
+        <Button asChild>
+          <Link href={`/invoices/${i.id}/receipt`}>Open invoice / receipt</Link>
+        </Button>
+        <Button asChild>
+          <Link href={`/credit/${i.customer_id}`}>Customer statement</Link>
+        </Button>
         {i.goods_issued_at && (
-          <Button asChild><Link href={`/returns?invoice=${i.id}`}>
-            Return goods
-          </Link></Button>
+          <Button asChild>
+            <Link href={`/returns?invoice=${i.id}`}>Return goods</Link>
+          </Button>
         )}
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
@@ -148,7 +152,8 @@ export function InvoiceWorkspace({
       <p className="text-sm text-muted">
         {i.customer_name} · {i.terms.replace("_", "/")} · Due{" "}
         {dateOnly(i.due_date)} · {invoiceStatusLabel(i)} · Salesperson:{" "}
-        {i.salesperson} · Ordered By: {i.ordered_by_name || "Not recorded"} · Invoiced By: {i.invoiced_by_name || "Not recorded"}
+        {i.salesperson} · Ordered By: {i.ordered_by_name || "Not recorded"} ·
+        Invoiced By: {i.invoiced_by_name || "Not recorded"}
       </p>
       <Table>
         <THead>
@@ -367,6 +372,11 @@ export function InvoiceWorkspace({
             </Button>
           </section>
         )}
+      <InvoiceAmendments
+        key={`${i.id}:${i.revision ?? 0}`}
+        invoice={i}
+        items={items}
+      />
       {i.state === "ISSUED" && !i.goods_issued_at && (
         <section className="rounded-lg border border-border bg-surface p-5 space-y-3">
           <h2 className="font-semibold">Release goods</h2>
@@ -438,7 +448,7 @@ export function InvoiceWorkspace({
               onChange={(e) => setReason(e.target.value)}
             />
             <Button
-              variant="secondary"
+              variant="danger"
               disabled={!online || busy || !reason.trim()}
               onClick={() =>
                 run(

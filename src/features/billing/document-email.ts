@@ -138,6 +138,10 @@ Transaction: ${r.id}`,
           description: `${dateTime(e.created_at)} ${e.reference} ${e.kind} ${e.method ?? ""} ${e.payment_reference ?? ""} ${e.reason ?? ""}`,
           amount: m(e.amount),
         });
+    if (i.revision)
+      rows.push({
+        description: `Revision ${i.revision}: updated items and totals`,
+      });
     if (i.note) rows.push({ description: i.note });
     return {
       recipient:

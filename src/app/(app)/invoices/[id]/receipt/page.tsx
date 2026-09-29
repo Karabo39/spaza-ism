@@ -39,9 +39,9 @@ export default async function ReceiptPage({
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Button asChild><Link href={`/invoices/${id}`}>
-          Back to invoice
-        </Link></Button>
+        <Button asChild>
+          <Link href={`/invoices/${id}`}>Back to invoice</Link>
+        </Button>
         <PrintReceipt type="invoice" id={id} />
       </div>
       <article
@@ -63,12 +63,23 @@ export default async function ReceiptPage({
                   : "Invoice"}
             </h2>
             <p className="text-xs break-all">{i.reference}</p>
+            {!!i.revision && (
+              <p>Revision {i.revision} · Updated items and totals</p>
+            )}
           </div>
         </header>
         <div className="grid gap-2 sm:grid-cols-2">
           <p>Customer: {i.customer_name}</p>
-          <p>Address: {(i.customer_snapshot as {address?: string}|null)?.address || "Not recorded"}</p>
-          <p>Email: {(i.customer_snapshot as {email?: string}|null)?.email || "Not recorded"}</p>
+          <p>
+            Address:{" "}
+            {(i.customer_snapshot as { address?: string } | null)?.address ||
+              "Not recorded"}
+          </p>
+          <p>
+            Email:{" "}
+            {(i.customer_snapshot as { email?: string } | null)?.email ||
+              "Not recorded"}
+          </p>
           <p>Invoice date: {dateOnly(i.invoice_date || i.created_at)}</p>
           <p>Salesperson: {i.salesperson}</p>
           <p>Ordered By: {i.ordered_by_name || "Not recorded"}</p>

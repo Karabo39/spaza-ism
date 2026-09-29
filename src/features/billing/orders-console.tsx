@@ -1,5 +1,4 @@
 "use client";
-import {DeliveryPanel} from "@/features/deliveries/delivery-panel";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { statusLabel } from "./status-label";
 import { PurchaseOrder } from "./purchase-order";
@@ -67,10 +66,9 @@ export function OrdersConsole({
     queryKey: ["billing", "order-items", current?.id],
     enabled: !!current && canModule("orders_recent"),
     queryFn: async () => {
-      const { data, error } = await createClient()
-        .from("sales_order_items")
-        .select("*")
-        .eq("order_id", current!.id);
+      const { data, error } = await createClient().rpc("order_current_items", {
+        p_order: current!.id,
+      });
       if (error) throw error;
       return data;
     },
@@ -134,12 +132,17 @@ export function OrdersConsole({
     )
       return;
     await run(async () => {
-      const res = await createClient().rpc("create_sales_invoice", {
-        p_order: current.id,
-        p_due: due,
-        p_terms: terms === "PAY_DELIVER" ? "CASH" : terms,
-        p_discount: discount,
-      });
+      const res = await createClient().rpc(
+        terms === "PAY_DELIVER"
+          ? "create_delivery_invoice"
+          : "create_sales_invoice",
+        {
+          p_order: current.id,
+          p_due: due,
+          ...(terms === "PAY_DELIVER" ? {} : { p_terms: terms }),
+          p_discount: discount,
+        },
+      );
       if (res.data && canModule("invoices_view_invoices"))
         router.push(`/invoices/${res.data}`);
       return res;
@@ -291,7 +294,6 @@ export function OrdersConsole({
             </Button>
           </div>
         )}
-      <DeliveryPanel key={current.id} orderId={current.id} compact />
       {current.can_cancel && (
         <div className="flex gap-2">
           <Input
@@ -324,7 +326,6 @@ export function OrdersConsole({
   ) : null;
   return (
     <div className="space-y-6">
-      {canModule("orders_deliveries")&&<Button asChild><Link href="/orders/deliveries">Delivery Management</Link></Button>}
       {!canModule("orders_new") && !canModule("orders_recent") && (
         <p className="rounded-lg border border-border p-5 text-sm text-muted">
           No Orders options are enabled at this store. Ask your owner to update
