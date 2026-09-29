@@ -302,7 +302,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <label>
-                Driver name
+                  Driver name (optional)
                 <Input
                   maxLength={150}
                   value={driver}
@@ -310,7 +310,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                 />
               </label>
               <label>
-                Vehicle registration
+                  Vehicle registration (optional)
                 <Input
                   maxLength={50}
                   value={vehicle}
@@ -374,7 +374,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
         <section className="rounded-lg border border-border p-5 space-y-3">
           <h3 className="font-semibold">Update delivery</h3>
           <p className="text-sm">
-            Save driver details before dispatching. Completing delivery confirms
+            Driver and vehicle details are optional. Completing delivery confirms
             receipt of all items on the note.
           </p>
           {!data.goods_issued_at && (
@@ -407,8 +407,6 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                   !action.online ||
                   (op === "dispatch" &&
                     (!data.goods_issued_at ||
-                      !d.driver_name ||
-                      !d.vehicle_registration ||
                       data.payment_status !== "PAID"))
                 }
                 onClick={() => {

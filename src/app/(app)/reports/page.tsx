@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {getSession} from "@/lib/session";
 import { PageHeader } from "@/components/shell/page-header";
 import {
   Boxes,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 const REPORTS = [
+  {href:"/reports/deliveries",label:"Delivery Report",desc:"Delivery statuses, attempts, schedules and totals",icon:ClipboardList},
   {
     href: "/reports/quantity-vs-sales",
     label: "Quantity vs Sales Report",
@@ -159,7 +161,8 @@ const REPORTS = [
   },
 ];
 
-export default function ReportsPage() {
+export default async function ReportsPage() {
+  const session=await getSession('reports');
   return (
     <>
       <PageHeader
@@ -168,7 +171,7 @@ export default function ReportsPage() {
         description="Understand your stock, sales and credit without spreadsheets."
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {[...REPORTS]
+        {REPORTS.filter(r=>r.href!=="/reports/deliveries"||session?.activeStore?.modules.reports_delivery)
           .sort((a, b) => a.label.localeCompare(b.label))
           .map((r) => {
             const Icon = r.icon;
