@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DocumentLogo } from "@/components/document-logo";
 import { DeliveryPrint } from "@/features/deliveries/delivery-print";
 import { dateOnly, dateTime } from "@/lib/format";
-import { statusLabel } from "@/features/billing/status-label";
+import { deliveryLabel } from "@/features/deliveries/delivery-status";
 import type { DeliveryDetail } from "@/features/deliveries/types";
 export default async function DeliveryNote({
   params,
@@ -47,7 +47,7 @@ export default async function DeliveryNote({
             {s.business_email}
           </p>
           <h2 className="text-xl font-semibold">
-            Delivery Note — {statusLabel(d.status)}
+            Delivery Note — {deliveryLabel(d.status)}
           </h2>
           <p className="break-all">{d.reference}</p>
         </header>

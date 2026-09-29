@@ -33,8 +33,8 @@ export type Delivery = {
   store_id: string;
   reference: string;
   status: string;
-  original_date: string;
-  scheduled_date: string;
+  original_date: string | null;
+  scheduled_date: string | null;
   snapshot: DeliverySnapshot;
   driver_name: string | null;
   vehicle_registration: string | null;
@@ -76,8 +76,8 @@ export type DeliveryRow = {
   sequence: number;
   reference: string;
   status: string;
-  scheduled_date: string;
-  original_date: string;
+  scheduled_date: string | null;
+  original_date: string | null;
   version: number;
   driver_name: string | null;
   cancellation_reason: string | null;

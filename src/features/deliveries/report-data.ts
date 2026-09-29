@@ -1,9 +1,10 @@
 import type { Json } from "@/lib/db/database.types";
 export const DELIVERY_STATUSES = {
+  CREATED: "Created",
   PENDING: "Pending Delivery",
   SCHEDULED: "Scheduled",
   OUT_FOR_DELIVERY: "Out for Delivery",
-  DELIVERED: "Delivered / Completed",
+  DELIVERED: "Delivered",
   RESCHEDULED: "Rescheduled",
   FAILED: "Failed Delivery",
   CANCELLED: "Cancelled",
@@ -40,6 +41,7 @@ export type DeliveryReportRow = {
 };
 export type DeliverySummary = {
   total: number;
+  created?: number;
   delivered: number;
   pending: number;
   scheduled: number;
@@ -87,6 +89,7 @@ export const reportColumns = [
 export const summaryLabels = {
   total: "Total Deliveries",
   delivered: "Delivered",
+  created: "Created",
   pending: "Pending",
   scheduled: "Scheduled",
   out_for_delivery: "Out for Delivery",

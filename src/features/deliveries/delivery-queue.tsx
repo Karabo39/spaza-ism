@@ -6,12 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { statusLabel } from "@/features/billing/status-label";
+import { DeliveryStatus } from "./delivery-status";
 import { dateOnly } from "@/lib/format";
 import type { DeliveryRow } from "./types";
 export function DeliveryQueue({ customerId }: { customerId?: string }) {
   const { store, canModule } = useStore();
-  const [queue, setQueue] = useState(customerId ? "all" : "current"),
+  const [queue, setQueue] = useState("all"),
     [date, setDate] = useState(""),
     [cursors, setCursors] = useState<(number | undefined)[]>([undefined]);
   const cursor = cursors[cursors.length - 1];
@@ -58,11 +58,12 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
             }}
             aria-label="Delivery queue"
           >
+            <option value="created">Created</option>
             <option value="current">Current delivery queue</option>
-            <option value="scheduled">Scheduled / rescheduled</option>
-            <option value="completed">Delivered / completed</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Delivered</option>
             <option value="cancelled">Cancelled</option>
-            <option value="all">All delivery history</option>
+            <option value="all">All Deliveries</option>
           </select>
         </label>
         <label>
@@ -82,7 +83,8 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
       </div>
       <p className="text-sm text-muted">
         Rescheduled deliveries stay in Scheduled until dispatched. Cancelled and
-        completed deliveries appear only in history.
+        delivered records remain available under All Deliveries and their status
+        filters.
       </p>
       {query.isLoading && <p role="status">Loading deliveries…</p>}
       {query.error && (
@@ -100,13 +102,16 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
             <div className="flex flex-wrap justify-between gap-3">
               <div>
                 <p className="font-semibold">
-                  {row.customer_name} · {statusLabel(row.status)}
+                  {row.customer_name} · <DeliveryStatus status={row.status} />
                 </p>
                 <p className="text-sm break-all">
                   {row.reference} · Order {row.order_reference}
                 </p>
                 <p>
-                  Scheduled: {dateOnly(row.scheduled_date)}
+                  Scheduled:{" "}
+                  {row.scheduled_date
+                    ? dateOnly(row.scheduled_date)
+                    : "Not scheduled"}
                   {row.driver_name && ` · Driver: ${row.driver_name}`}
                 </p>
                 <p className="whitespace-pre-wrap text-sm">

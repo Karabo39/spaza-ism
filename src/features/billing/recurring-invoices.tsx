@@ -35,6 +35,7 @@ export function RecurringInvoices() {
     action = useBillingAction();
   const [page, setPage] = useState(0),
     [filter, setFilter] = useState("all"),
+    [draftFilter, setDraftFilter] = useState("all"),
     [editing, setEditing] = useState<RecurringInvoice | "new" | null>(null),
     [history, setHistory] = useState<string | null>(null);
   const rows = useQuery({
@@ -60,13 +61,13 @@ export function RecurringInvoices() {
           Create recurring invoice
         </Button>
         <label>
-          Show
+          <span className="sr-only">Schedule status</span>
           <select
+            aria-label="Schedule status"
             className={selectClass}
-            value={filter}
+            value={draftFilter}
             onChange={(e) => {
-              setFilter(e.target.value);
-              setPage(0);
+              setDraftFilter(e.target.value);
             }}
           >
             <option value="all">All schedules</option>
@@ -74,6 +75,15 @@ export function RecurringInvoices() {
             <option value="inactive">Inactive</option>
           </select>
         </label>
+        <Button
+          onClick={() => {
+            setFilter(draftFilter);
+            setPage(0);
+            if (draftFilter === filter && page === 0) void rows.refetch();
+          }}
+        >
+          Show
+        </Button>
       </div>
       {editing && (
         <RecurringEditor
@@ -279,7 +289,9 @@ function RecurringEditor({
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("customers")
-        .select("name,email,credit_enabled,auto_email_invoices,email_notifications")
+        .select(
+          "name,email,credit_enabled,auto_email_invoices,email_notifications",
+        )
         .eq("id", draft.customer_id)
         .eq("store_id", store.id)
         .single();
@@ -357,7 +369,8 @@ function RecurringEditor({
           </span>
         </div>
         {contact.error && <p role="alert">Could not load customer details.</p>}
-        {(contact.data?.auto_email_invoices || contact.data?.email_notifications) && (
+        {(contact.data?.auto_email_invoices ||
+          contact.data?.email_notifications) && (
           <p className="text-xs text-muted">
             This customer has automatic invoice emails enabled. Their profile
             email is used unless the schedule specifies an automatic recipient.

@@ -1,4 +1,5 @@
 "use client";
+import { DeliveryStatus } from "./delivery-status";
 /* eslint-disable @next/next/no-img-element -- Inline report logo must print without a remote image proxy. */
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -417,7 +418,7 @@ function Report() {
                     <p>{row.store_name}</p>
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
-                    <p>{DELIVERY_STATUSES[row.delivery_status]}</p>
+                    <DeliveryStatus status={row.delivery_status} />
                     <p>{row.scheduled_date}</p>
                   </td>
                   <td className="px-3 py-3">

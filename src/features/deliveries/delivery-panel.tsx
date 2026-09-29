@@ -1,4 +1,5 @@
 "use client";
+import { DeliveryStatus, deliveryLabel } from "./delivery-status";
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -56,7 +57,7 @@ export function DeliveryPanel({
         <p>
           Delivery:{" "}
           {query.data.delivery
-            ? statusLabel(query.data.delivery.status)
+            ? deliveryLabel(query.data.delivery.status)
             : query.data.order.required
               ? "Required — awaiting full payment"
               : "Collection / not required"}
@@ -113,7 +114,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
     [actionNotes, setActionNotes] = useState("");
   const closed = !!d && DELIVERY_TERMINAL.includes(d.status);
   const editAllowed =
-    !!d && ["PENDING", "FAILED", "RESCHEDULED"].includes(d.status);
+    !!d && ["CREATED", "PENDING", "FAILED", "RESCHEDULED"].includes(d.status);
   function send(operation: string, details: Record<string, Json>) {
     if (!d) return;
     const payload = {
@@ -134,7 +135,8 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
   }
   const labels: Record<string, string> = {
     dispatch: "Mark out for delivery",
-    complete: "Confirm delivered / completed",
+    complete: "Confirm delivered",
+    schedule: "Schedule delivery",
     fail: "Record failed attempt",
     reschedule: "Reschedule delivery",
     cancel: "Cancel delivery",
@@ -153,19 +155,24 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
         <p>
           Delivery:{" "}
           <strong>
-            {d
-              ? statusLabel(d.status)
-              : data.order.required
-                ? "Awaiting full payment"
-                : "Not required"}
+            {d ? (
+              <DeliveryStatus status={d.status} />
+            ) : data.order.required ? (
+              "Awaiting full payment"
+            ) : (
+              "Not required"
+            )}
           </strong>
         </p>
         {d && (
           <>
             <p className="break-all">Delivery note: {d.reference}</p>
             <p>
-              Original date: {dateOnly(d.original_date)} · Scheduled:{" "}
-              {dateOnly(d.scheduled_date)} ({data.timezone})
+              Original date:{" "}
+              {d.original_date ? dateOnly(d.original_date) : "Not scheduled"} ·
+              Scheduled:{" "}
+              {d.scheduled_date ? dateOnly(d.scheduled_date) : "Not scheduled"}{" "}
+              ({data.timezone})
             </p>
             <Button asChild>
               <Link href={`/orders/deliveries/${data.order.id}/note`}>
@@ -302,7 +309,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <label>
-                  Driver name (optional)
+                Driver name (optional)
                 <Input
                   maxLength={150}
                   value={driver}
@@ -310,7 +317,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                 />
               </label>
               <label>
-                  Vehicle registration (optional)
+                Vehicle registration (optional)
                 <Input
                   maxLength={50}
                   value={vehicle}
@@ -374,8 +381,8 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
         <section className="rounded-lg border border-border p-5 space-y-3">
           <h3 className="font-semibold">Update delivery</h3>
           <p className="text-sm">
-            Driver and vehicle details are optional. Completing delivery confirms
-            receipt of all items on the note.
+            Driver and vehicle details are optional. Completing delivery
+            confirms receipt of all items on the note.
           </p>
           {!data.goods_issued_at && (
             <p className="text-warning">
@@ -383,6 +390,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
               dispatch.
             </p>
           )}
+          {!d.scheduled_date && <p className="text-warning">Schedule this delivery before dispatching it.</p>}
           <div className="flex flex-wrap gap-2">
             {(d.status === "OUT_FOR_DELIVERY"
               ? [
@@ -394,7 +402,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                 ]
               : [
                   "dispatch",
-                  "reschedule",
+                  d.status === "CREATED" ? "schedule" : "reschedule",
                   "cancel",
                   ...(can("manager") ? ["cancel_order"] : []),
                 ]
@@ -406,8 +414,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                   action.busy ||
                   !action.online ||
                   (op === "dispatch" &&
-                    (!data.goods_issued_at ||
-                      data.payment_status !== "PAID"))
+                    (!data.goods_issued_at || !d.scheduled_date || data.payment_status !== "PAID"))
                 }
                 onClick={() => {
                   setOperation(op);
@@ -453,7 +460,7 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
               disabled={action.busy || !action.online}
               className="space-y-3"
             >
-              {operation === "reschedule" && (
+              {(operation === "reschedule" || operation === "schedule") && (
                 <label className="block">
                   New delivery date
                   <Input
