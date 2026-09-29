@@ -28,6 +28,7 @@
     "customer_recurring_v1",
     "document_delivery_v1",
     "delivery_management_v1",
-    "delivery_reporting_v1"
+    "delivery_reporting_v1",
+    "customer_notifications_v1"
   ]
 }
