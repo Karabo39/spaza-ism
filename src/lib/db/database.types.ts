@@ -1278,6 +1278,26 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_delivery_invoice: {
+        Args: { p_order: string; p_due: string; p_discount?: number };
+        Returns: string;
+      };
+      amend_invoice_items: {
+        Args: {
+          p_invoice: string;
+          p_expected: number;
+          p_items: Json;
+          p_discount: number;
+          p_reason: string;
+          p_request: string;
+        };
+        Returns: string;
+      };
+      invoice_revision_history: { Args: { p_invoice: string }; Returns: Json };
+      order_current_items: {
+        Args: { p_order: string };
+        Returns: SalesOrderItem[];
+      };
       process_delivery: {
         Args: {
           p_id: string;
@@ -2301,6 +2321,7 @@ export type SalesOrderItem = {
 };
 
 export type SalesInvoice = {
+  revision?: number;
   recurring_schedule_id?: string | null;
   billing_period?: string | null;
   invoice_date?: string | null;
