@@ -1615,7 +1615,7 @@ export type Database = {
           p_order: string | null;
           p_received: boolean;
           p_approved: boolean;
-          p_reference: string;
+          p_reference: string | null;
           p_filename: string | null;
           p_mime: string | null;
           p_content: string | null;
