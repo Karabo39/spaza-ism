@@ -46,11 +46,11 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
       <h2 className="font-semibold">
         {customerId ? "Delivery history" : "Deliveries"}
       </h2>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-end gap-3">
         <label>
           Queue
           <select
-            className="block rounded border border-border bg-input p-2"
+            className="block h-11 rounded border border-border bg-input p-2 sm:h-10"
             value={queue}
             onChange={(e) => {
               setQueue(e.target.value);
@@ -69,6 +69,7 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
         <label>
           Scheduled date
           <Input
+            className="h-11 sm:h-10"
             type="date"
             value={date}
             onChange={(e) => {
@@ -77,7 +78,7 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
             }}
           />
         </label>
-        <Button variant="secondary" onClick={() => query.refetch()}>
+        <Button onClick={() => query.refetch()} disabled={query.isFetching}>
           Refresh
         </Button>
       </div>

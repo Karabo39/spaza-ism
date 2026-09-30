@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -25,10 +27,13 @@ export default async function DeliveryNote({
   const s = d.snapshot;
   return (
     <>
-      <div className="mb-4 flex flex-wrap gap-3 print:hidden">
-        <Link href={`/orders/deliveries/${orderId}`} className="underline">
-          Back to delivery
-        </Link>
+      <div className="mb-4 flex flex-wrap items-start gap-3 print:hidden">
+        <Button asChild>
+          <Link href="/orders/deliveries">
+            <ArrowLeft />
+            Back to Deliveries
+          </Link>
+        </Button>
         <DeliveryPrint />
       </div>
       <article
