@@ -89,7 +89,7 @@ function POEditor({
           p_order: order ?? null,
           p_received: received,
           p_approved: approved,
-          p_reference: reference,
+          p_reference: locked ? (initial?.reference ?? null) : reference,
           p_filename: file?.name ?? null,
           p_mime: file?.type ?? null,
           p_content: content,
@@ -132,11 +132,7 @@ function POEditor({
           <input
             type="checkbox"
             checked={received}
-            disabled={locked}
-            onChange={(e) => {
-              setReceived(e.target.checked);
-              if (!e.target.checked) setApproved(false);
-            }}
+            onChange={(e) => setReceived(e.target.checked)}
           />{" "}
           PO received
         </label>
@@ -144,7 +140,7 @@ function POEditor({
           <input
             type="checkbox"
             checked={approved}
-            disabled={!received || !can("manager")}
+            disabled={!can("manager")}
             onChange={(e) => setApproved(e.target.checked)}
           />{" "}
           PO approved by manager/owner
@@ -175,7 +171,7 @@ function POEditor({
           Download {initial.filename}
         </Button>
       )}
-      <Button loading={busy} disabled={!online || locked} onClick={save}>
+      <Button loading={busy} disabled={!online} onClick={save}>
         {saved ? "Save purchase order and accept quote" : "Save purchase order"}
       </Button>
     </fieldset>
