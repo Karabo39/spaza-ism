@@ -13,10 +13,12 @@ export function PrintReceipt({
   type,
   id,
   onPrint,
+  beforeActions,
 }: {
   type: "invoice" | "return" | "sale";
   id: string;
   onPrint?: () => void;
+  beforeActions?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -83,6 +85,7 @@ export function PrintReceipt({
   }
   return (
     <div className="flex flex-wrap gap-2 print:hidden">
+      {beforeActions}
       <Button onClick={onPrint ?? (() => window.print())}>
         Print / save PDF
       </Button>

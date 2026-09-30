@@ -1,6 +1,5 @@
 import { DocumentLogo } from "@/components/document-logo";
 import { receiptCustomer } from "@/features/goods-out/receipt-customer";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -52,9 +51,6 @@ export default async function ReceiptPage({
     <div className="space-y-4">
       <style>{`@media print { @page { size: ${thermal ? "auto" : "A4"}; margin: ${thermal ? "0" : "10mm"}; } #receipt { width: ${thermal ? paper : "100%"}; max-width: 100%; padding: ${thermal ? "3mm" : "0"}; font-size: ${paper === "58mm" ? "10px" : "12px"}; border-radius: 0; } #receipt table { font-size: inherit; table-layout: fixed; } #receipt td, #receipt th, #receipt p { overflow-wrap: anywhere; } #receipt h1, #receipt h2 { font-size: ${thermal ? "16px" : "24px"}; } }`}</style>
       <div className="print:hidden">
-        <Link href="/goods-out" className="text-accent">
-          Back to Goods Out
-        </Link>
         <SalePrintActions
           autoPrint={(await searchParams).autoprint === "1"}
           id={id}

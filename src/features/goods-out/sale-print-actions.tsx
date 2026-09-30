@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { PrintReceipt } from "@/features/billing/print-receipt";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 export function SalePrintActions({
   id,
   secondCopy,
@@ -41,7 +43,11 @@ export function SalePrintActions({
           );
           return;
         }
-        await Promise.all(Array.from(document.querySelectorAll<HTMLImageElement>("#receipt img")).map(img=>img.decode()));
+        await Promise.all(
+          Array.from(
+            document.querySelectorAll<HTMLImageElement>("#receipt img"),
+          ).map((img) => img.decode()),
+        );
         if (document.fonts) await document.fonts.ready;
         window.print();
         if (!copy && secondCopy) {
@@ -72,7 +78,19 @@ export function SalePrintActions({
   }, [autoPrint, print]);
   return (
     <div className="space-y-2 print:hidden">
-      <PrintReceipt type="sale" id={id} onPrint={() => print()} />
+      <PrintReceipt
+        type="sale"
+        id={id}
+        onPrint={() => print()}
+        beforeActions={
+          <Button asChild>
+            <Link href="/goods-out">
+              <ArrowLeft />
+              Back to Goods Out
+            </Link>
+          </Button>
+        }
+      />
       {ready && (
         <Button disabled={busy} onClick={() => print(true)}>
           Print second copy again
