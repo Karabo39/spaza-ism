@@ -1,4 +1,6 @@
 "use client";
+import { AmountSummary } from "@/components/ui/amount-summary";
+import { PrintDocumentButton } from "@/components/print-document-button";
 import { InvoiceAmendments } from "./invoice-amendments";
 import { DeliveryPanel } from "@/features/deliveries/delivery-panel";
 import { useQuery } from "@tanstack/react-query";
@@ -69,7 +71,8 @@ export function InvoiceWorkspace({
     !cents ||
     (kind === "PAYMENT" &&
       (settled || cents > Math.round(Number(i.outstanding) * 100))) ||
-    (kind !== "PAYMENT" && (!can("manager") || !reason.trim()));
+    (kind !== "PAYMENT" &&
+      (!can("manager", "invoices_manage") || !reason.trim()));
   const needsApproval =
     i.terms === "CREDIT" &&
     Number(i.outstanding) > 0 &&
@@ -122,6 +125,7 @@ export function InvoiceWorkspace({
         <Button asChild>
           <Link href={`/invoices/${i.id}/receipt`}>Open invoice / receipt</Link>
         </Button>
+        <PrintDocumentButton href={`/invoices/${i.id}/receipt`} />
         <Button asChild>
           <Link href={`/credit/${i.customer_id}`}>Customer statement</Link>
         </Button>
@@ -150,9 +154,9 @@ export function InvoiceWorkspace({
         ))}
       </div>
       <p className="text-sm text-muted">
-        {i.customer_name} · {i.terms.replace("_", "/")} · Due{" "}
-        {dateOnly(i.due_date)} · {invoiceStatusLabel(i)} · Salesperson:{" "}
-        {i.salesperson} · Ordered By: {i.ordered_by_name || "Not recorded"} ·
+        {i.customer_name} Â· {i.terms.replace("_", "/")} Â· Due{" "}
+        {dateOnly(i.due_date)} Â· {invoiceStatusLabel(i)} Â· Salesperson:{" "}
+        {i.salesperson} Â· Ordered By: {i.ordered_by_name || "Not recorded"} Â·
         Invoiced By: {i.invoiced_by_name || "Not recorded"}
       </p>
       <Table>
@@ -177,16 +181,22 @@ export function InvoiceWorkspace({
           ))}
         </TBody>
       </Table>
-      <p className="text-right text-sm">
-        Subtotal {money(i.subtotal, i.currency)} − Discount{" "}
+      <AmountSummary>
+        {Number(i.delivery_fee) > 0 && (
+          <>
+            Delivery fee {money(i.delivery_fee!, i.currency)} (included in
+            subtotal) ·{" "}
+          </>
+        )}
+        Subtotal {money(i.subtotal, i.currency)} âˆ’ Discount{" "}
         {money(i.discount, i.currency)} + Tax ({i.tax_percent}%){" "}
         {money(i.tax_amount, i.currency)}
-      </p>
+      </AmountSummary>
       {i.note && <p>{i.note}</p>}
       {i.state === "DRAFT" && (
         <div className="rounded-lg border border-border bg-surface p-5 space-y-3">
           <p className="text-sm">
-            Issuing records the customer receivable and fixes this invoice’s
+            Issuing records the customer receivable and fixes this invoiceâ€™s
             prices, discounts and tax.
           </p>
           <Button
@@ -222,7 +232,7 @@ export function InvoiceWorkspace({
               ? "Goods have been released."
               : "Goods have not been released."}
           </p>
-          {can("manager") && (
+          {can("manager", "invoices_manage") && (
             <Button
               variant="secondary"
               onClick={() => {
@@ -238,10 +248,11 @@ export function InvoiceWorkspace({
         </section>
       )}
       {i.state === "ISSUED" &&
-        (!settled || (can("manager") && showAdjustments)) && (
+        (!settled ||
+          (can("manager", "invoices_manage") && showAdjustments)) && (
           <section className="rounded-lg border border-border bg-surface p-5 space-y-3">
             <h2 className="font-semibold">
-              {settled ? "Manager adjustment" : "Payment or adjustment"}
+              {settled ? "Authorised adjustment" : "Payment or adjustment"}
             </h2>
             <div className="grid gap-3 sm:grid-cols-3">
               <div>
@@ -255,7 +266,7 @@ export function InvoiceWorkspace({
                   <option value="PAYMENT" disabled={settled}>
                     Payment received
                   </option>
-                  {can("manager") && (
+                  {can("manager", "invoices_manage") && (
                     <>
                       <option value="CREDIT_NOTE">Credit note</option>
                       <option value="DEBIT_NOTE">Debit note</option>
@@ -315,7 +326,7 @@ export function InvoiceWorkspace({
                   </option>
                 </select>
                 <p className="text-sm text-muted">
-                  Use this invoice’s customer account without recording a
+                  Use this invoiceâ€™s customer account without recording a
                   payment. The balance remains due. Credit limits and approval
                   checks apply when releasing goods.
                 </p>
@@ -382,10 +393,10 @@ export function InvoiceWorkspace({
           <h2 className="font-semibold">Release goods</h2>
           <p className="text-sm">
             Cash and Card/EFT invoices must be paid before collection. Credit
-            invoices use the customer’s current account limit.
+            invoices use the customerâ€™s current account limit.
           </p>
           {needsApproval &&
-            (can("manager") ? (
+            (can("manager", "credit_override") ? (
               <label className="flex gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -433,11 +444,11 @@ export function InvoiceWorkspace({
         <AllocateCredit invoiceId={i.id} customerId={i.customer_id} />
       )}
       {i.goods_issued_at && (
-        <p className="text-success">
+        <AmountSummary>
           Goods released on {dateTime(i.goods_issued_at)}.
-        </p>
+        </AmountSummary>
       )}
-      {can("manager") &&
+      {can("manager", "invoices_manage") &&
         (i.state === "DRAFT" || i.state === "ISSUED") &&
         !i.goods_issued_at && (
           <div className="flex gap-3">
@@ -506,7 +517,7 @@ export function InvoiceWorkspace({
               <TD>{statusLabel(e.kind)}</TD>
               <TD>{money(e.amount, i.currency)}</TD>
               <TD>
-                {[e.payment_reference, e.reason].filter(Boolean).join(" · ")}
+                {[e.payment_reference, e.reason].filter(Boolean).join(" Â· ")}
               </TD>
             </TR>
           ))}

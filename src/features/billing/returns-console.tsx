@@ -566,7 +566,7 @@ function StoreReturnsConsole({ initialInvoice }: { initialInvoice?: string }) {
                     Resolved: {statusLabel(d.action)} · {d.reason}
                   </p>
                 ))}
-              {can("manager") &&
+              {can("manager", "returns_manage") &&
                 current.status === "APPROVED" &&
                 l.inventory_action === "QUARANTINE" &&
                 !detail.data?.dispositions.some(

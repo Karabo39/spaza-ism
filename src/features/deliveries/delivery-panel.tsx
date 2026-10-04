@@ -1,4 +1,5 @@
 "use client";
+import { PrintDocumentButton } from "@/components/print-document-button";
 import { DeliveryStatus, deliveryLabel } from "./delivery-status";
 import { useState } from "react";
 import Link from "next/link";
@@ -174,11 +175,11 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
               {d.scheduled_date ? dateOnly(d.scheduled_date) : "Not scheduled"}{" "}
               ({data.timezone})
             </p>
-            <Button asChild>
-              <Link href={`/orders/deliveries/${data.order.id}/note`}>
-                Print delivery note
-              </Link>
-            </Button>
+            <PrintDocumentButton
+              href={`/orders/deliveries/${data.order.id}/note`}
+            >
+              Print delivery note
+            </PrintDocumentButton>
           </>
         )}
         <div className="flex flex-wrap gap-2">
@@ -390,7 +391,11 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
               dispatch.
             </p>
           )}
-          {!d.scheduled_date && <p className="text-warning">Schedule this delivery before dispatching it.</p>}
+          {!d.scheduled_date && (
+            <p className="text-warning">
+              Schedule this delivery before dispatching it.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {(d.status === "OUT_FOR_DELIVERY"
               ? [
@@ -398,13 +403,13 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                   "fail",
                   "reschedule",
                   "cancel",
-                  ...(can("manager") ? ["cancel_order"] : []),
+                  ...(can("manager", "orders_approve") ? ["cancel_order"] : []),
                 ]
               : [
                   "dispatch",
                   d.status === "CREATED" ? "schedule" : "reschedule",
                   "cancel",
-                  ...(can("manager") ? ["cancel_order"] : []),
+                  ...(can("manager", "orders_approve") ? ["cancel_order"] : []),
                 ]
             ).map((op) => (
               <Button
@@ -414,7 +419,9 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
                   action.busy ||
                   !action.online ||
                   (op === "dispatch" &&
-                    (!data.goods_issued_at || !d.scheduled_date || data.payment_status !== "PAID"))
+                    (!data.goods_issued_at ||
+                      !d.scheduled_date ||
+                      data.payment_status !== "PAID"))
                 }
                 onClick={() => {
                   setOperation(op);

@@ -122,6 +122,7 @@ Transaction: ${r.id}`,
       amount: m(l.line_total),
     }));
     for (const [description, amount] of [
+      ["Delivery fee (included in subtotal)", i.delivery_fee ?? 0],
       ["Subtotal", i.subtotal],
       ["Discount", i.discount],
       [`Tax (${i.tax_percent}%)`, i.tax_amount],

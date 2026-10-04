@@ -66,7 +66,7 @@ function POEditor({
   const [approved, setApproved] = useState(initial?.approved ?? false);
   const [reference, setReference] = useState(initial?.reference ?? "");
   const [file, setFile] = useState<File | null>(null);
-  const locked = !!initial?.approved && !can("manager");
+  const locked = !!initial?.approved && !can("manager", "orders_approve");
   async function save() {
     let content: string | null = null;
     if (file) {
@@ -140,10 +140,10 @@ function POEditor({
           <input
             type="checkbox"
             checked={approved}
-            disabled={!can("manager")}
+            disabled={!can("manager", "orders_approve")}
             onChange={(e) => setApproved(e.target.checked)}
           />{" "}
-          PO approved by manager/owner
+          PO approved by authorised user
         </label>
       </div>
       <Input

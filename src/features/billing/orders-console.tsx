@@ -1,4 +1,5 @@
 "use client";
+import { AmountSummary } from "@/components/ui/amount-summary";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { statusLabel } from "./status-label";
 import { PurchaseOrder } from "./purchase-order";
@@ -31,7 +32,7 @@ type Line = {
 export function OrdersConsole({
   initialOrder,
 }: { initialOrder?: string } = {}) {
-  const { store, currency, canModule, role } = useStore();
+  const { store, currency, canModule } = useStore();
   const router = useRouter();
   const { online, busy, request, run } = useBillingAction();
   const [customer, setCustomer] = useState<CreditCustomer | null>(null);
@@ -48,6 +49,7 @@ export function OrdersConsole({
   const [due, setDue] = useState(businessDate());
   const [terms, setTerms] = useState("CASH");
   const [discount, setDiscount] = useState(0);
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const [reason, setReason] = useState("");
   const { data: orders, error } = useQuery({
     queryKey: ["billing", "orders", store.id],
@@ -93,6 +95,7 @@ export function OrdersConsole({
     })),
     Number(current?.quoted_discount ?? discount),
     Number(current?.quoted_tax_percent ?? billing.data ?? 0),
+    terms === "PAY_DELIVER" ? deliveryFee : 0,
   );
   function add() {
     if (
@@ -139,7 +142,9 @@ export function OrdersConsole({
         {
           p_order: current.id,
           p_due: due,
-          ...(terms === "PAY_DELIVER" ? {} : { p_terms: terms }),
+          ...(terms === "PAY_DELIVER"
+            ? { p_delivery_fee: deliveryFee }
+            : { p_terms: terms }),
           p_discount: discount,
         },
       );
@@ -151,15 +156,15 @@ export function OrdersConsole({
   const orderDetails = current ? (
     <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
       <h2 className="font-semibold">
-        {current.reference} · {statusLabel(current.status)}
+        {current.reference} Â· {statusLabel(current.status)}
       </h2>
       <p>
-        {current.customer_name} · Ordered By:{" "}
-        {current.ordered_by_name || "Not recorded"} · {current.note}
+        {current.customer_name} Â· Ordered By:{" "}
+        {current.ordered_by_name || "Not recorded"} Â· {current.note}
       </p>
       {items?.map((l) => (
         <p key={l.id} className="text-sm">
-          {l.quantity} × {l.product_name} — {money(l.line_total, currency)}
+          {l.quantity} Ã— {l.product_name} â€” {money(l.line_total, currency)}
         </p>
       ))}
       {current.invoice ? (
@@ -169,11 +174,11 @@ export function OrdersConsole({
         >
           <h3 className="font-semibold">Order summary</h3>
           <p className="break-all">
-            Invoice {current.invoice.reference} · Invoiced By:{" "}
+            Invoice {current.invoice.reference} Â· Invoiced By:{" "}
             {current.invoice.invoiced_by_name || "Not recorded"}
           </p>
           <p>
-            Payment: {statusLabel(current.invoice.status)} ·{" "}
+            Payment: {statusLabel(current.invoice.status)} Â·{" "}
             {current.invoice.goods_issued_at
               ? `Goods released ${dateTime(current.invoice.goods_issued_at)}`
               : "Awaiting goods release"}
@@ -202,42 +207,25 @@ export function OrdersConsole({
           )}
         </section>
       ) : (
-        <p className="text-sm">
-          Subtotal: {money(invoiceTotals.subtotal, currency)} · Discount:{" "}
-          {money(invoiceTotals.discount, currency)} · Tax (
+        <div className="flex flex-wrap items-center gap-3"><AmountSummary>
+          Subtotal: {money(invoiceTotals.subtotal, currency)} Â· Discount:{" "}
+          {money(invoiceTotals.discount, currency)} Â· Tax (
           {current.quoted_tax_percent ?? billing.data ?? 0}
-          %): {money(invoiceTotals.tax, currency)} · Estimated invoice total:{" "}
-          {money(invoiceTotals.total, currency)}. Final amounts are shown on the
-          generated invoice.
-        </p>
+          %): {money(invoiceTotals.tax, currency)} Â· Estimated invoice total:{" "}
+          {money(invoiceTotals.total, currency)}
+        </AmountSummary>
+        {current.status === "DRAFT" && <Button loading={busy} disabled={!online} onClick={() => run(() => createClient().rpc("process_sales_order", {p_order:current.id,p_action:"confirm"}), "Order confirmed")}>Confirm order</Button>}
+        </div>
       )}
       {!current.invoice && !invoiceTotals.valid && (
         <p role="alert" className="text-danger">
           The discount must be between zero and the subtotal.
         </p>
       )}
-      {current.status === "DRAFT" && (
-        <Button
-          loading={busy}
-          disabled={!online}
-          onClick={() =>
-            run(
-              () =>
-                createClient().rpc("process_sales_order", {
-                  p_order: current.id,
-                  p_action: "confirm",
-                }),
-              "Order confirmed",
-            )
-          }
-        >
-          Confirm order
-        </Button>
-      )}
       {canModule("invoices_create_from_order") &&
         current.status === "CONFIRMED" &&
         !current.invoice && (
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label htmlFor="invoice-due">Payment due</Label>
               <Input
@@ -258,7 +246,7 @@ export function OrdersConsole({
                 <option value="CASH">Cash before collection</option>
                 <option value="CARD_EFT">Card/EFT before collection</option>
                 <option value="CREDIT">Customer credit account</option>
-                <option value="PAY_DELIVER">Pay – To be Delivered</option>
+                <option value="PAY_DELIVER">Pay â€“ To be Delivered</option>
               </select>
             </div>
             <div>
@@ -273,10 +261,11 @@ export function OrdersConsole({
                 onChange={(e) => setDiscount(Number(e.target.value))}
               />
             </div>
+            {terms === "PAY_DELIVER" && <div><Label htmlFor="delivery-fee">Delivery fee (before tax)</Label><Input id="delivery-fee" type="number" min="0" step="0.01" value={deliveryFee} onChange={e=>setDeliveryFee(Number(e.target.value))} /></div>}
             {terms === "PAY_DELIVER" && (
               <p className="text-sm text-muted">
-                Create the invoice and record payment next. It becomes Paid – To
-                be Delivered only after full payment; release goods when
+                Create the invoice and record payment next. It becomes Paid â€“
+                To be Delivered only after full payment; release goods when
                 delivered.
               </p>
             )}
@@ -430,8 +419,8 @@ export function OrdersConsole({
               className="flex items-center justify-between border-b border-border py-2 text-sm"
             >
               <span>
-                {l.quantity} × {l.name}
-                {l.sku ? ` · SKU: ${l.sku}` : ""} ·{" "}
+                {l.quantity} Ã— {l.name}
+                {l.sku ? ` Â· SKU: ${l.sku}` : ""} Â·{" "}
                 {money(l.quantity * l.unit_price, currency)}
               </span>
               <Button
@@ -452,12 +441,11 @@ export function OrdersConsole({
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
-          <p className="text-sm">
-            Subtotal: {money(draftTotals.subtotal, currency)} · Tax (
-            {billing.data ?? 0}%): {money(draftTotals.tax, currency)} ·
-            Estimated total: {money(draftTotals.total, currency)}. Choose any
-            invoice discount after confirming the order.
-          </p>
+          <div className="flex flex-wrap items-center gap-3"><AmountSummary>
+            Subtotal: {money(draftTotals.subtotal, currency)} Â· Tax (
+            {billing.data ?? 0}%): {money(draftTotals.tax, currency)} Â·
+            Estimated total: {money(draftTotals.total, currency)}
+          </AmountSummary>
           {billing.error && (
             <p role="alert" className="text-danger">
               Tax settings could not be loaded. Refresh to confirm the estimate.
@@ -508,7 +496,7 @@ export function OrdersConsole({
             }}
           >
             Save order draft
-          </Button>
+          </Button></div>
         </section>
       )}
       {canModule("orders_recent") && (
@@ -516,7 +504,7 @@ export function OrdersConsole({
           <CollapsibleSection
             title="Recent Orders"
             actions={
-              role !== "employee" && canModule("invoices_view_invoices") ? (
+              canModule("invoices_view_invoices") ? (
                 <Button asChild>
                   <Link href="/invoices">View invoices</Link>
                 </Button>
@@ -553,6 +541,8 @@ export function OrdersConsole({
                           onClick={() => {
                             setSelected(current?.id === o.id ? null : o.id);
                             setDiscount(Number(o.quoted_discount ?? 0));
+                            setDeliveryFee(0);
+                            setTerms("CASH");
                             setReason("");
                           }}
                         >

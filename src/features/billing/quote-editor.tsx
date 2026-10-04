@@ -1,4 +1,5 @@
 "use client";
+import { AmountSummary } from "@/components/ui/amount-summary";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
@@ -336,12 +337,12 @@ function QuoteEditorForm({
         Notes
         <Input value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
-      <p>
-        Subtotal {money(totals.subtotal, currency)} · Discount{" "}
-        {money(totals.discount, currency)} · Tax {tax}%:{" "}
-        {money(totals.tax, currency)} · Total{" "}
+      <AmountSummary>
+        Subtotal {money(totals.subtotal, currency)} Â· Discount{" "}
+        {money(totals.discount, currency)} Â· Tax {tax}%:{" "}
+        {money(totals.tax, currency)} Â· Total{" "}
         <strong>{money(totals.total, currency)}</strong>
-      </p>
+      </AmountSummary>
       {settings.error && <p role="alert">Could not load tax settings.</p>}
       <div className="flex gap-3">
         <Button

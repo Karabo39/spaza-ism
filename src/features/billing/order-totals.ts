@@ -13,10 +13,12 @@ export function orderTotals(
   lines: { quantity: number; unit_price: number }[],
   discount: number,
   taxPercent: number,
+  deliveryFee = 0,
 ) {
   // Accepted quantities use thousandths and prices cents. Integer arithmetic
   // matches PostgreSQL's half-up decimal rounding (e.g. 1.005 × R3 = R3.02).
   if (
+    !validPrecision(deliveryFee, 100) ||
     lines.some(
       (l) =>
         !validPrecision(l.quantity, 1000) ||
@@ -26,7 +28,7 @@ export function orderTotals(
     )
   )
     return { subtotal: 0, discount: 0, tax: 0, total: 0, valid: false };
-  const cents = lines.reduce(
+  const productCents = lines.reduce(
     (sum, l) =>
       sum +
       (BigInt(Math.round(l.quantity * 1000)) *
@@ -35,11 +37,12 @@ export function orderTotals(
         BigInt(1000),
     BigInt(0),
   );
+  const cents = productCents + BigInt(Math.round(deliveryFee * 100));
   const subtotal = Number(cents) / 100;
   const valid =
     validPrecision(discount, 100) &&
     discount >= 0 &&
-    discount <= subtotal &&
+    discount <= Number(productCents) / 100 &&
     validPrecision(taxPercent, 100) &&
     taxPercent >= 0 &&
     taxPercent <= 100;

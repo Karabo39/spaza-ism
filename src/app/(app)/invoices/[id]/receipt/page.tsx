@@ -119,6 +119,12 @@ export default async function ReceiptPage({
           </tbody>
         </table>
         <div className="text-right space-y-1">
+          {Number(i.delivery_fee) > 0 && (
+            <p>
+              Delivery fee: {money(i.delivery_fee!, i.currency)} (included in
+              subtotal)
+            </p>
+          )}
           <p>Subtotal: {money(i.subtotal, i.currency)}</p>
           <p>Discount: {money(i.discount, i.currency)}</p>
           <p>

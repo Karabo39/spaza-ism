@@ -1,5 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { printDocument } from "@/lib/print-document";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,25 @@ export function SaleReceiptPrompt({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const locked = useRef(false);
+  const receipt = useQuery({
+    queryKey: ["receipt-print", id],
+    queryFn: async () => {
+      const db = createClient();
+      const { data, error } = await db
+        .from("sale_receipts")
+        .select("reference,store_id")
+        .eq("sale_id", id)
+        .single();
+      if (error) throw error;
+      const prefs = await db
+        .from("receipt_preferences")
+        .select("second_copy,delay_seconds")
+        .eq("store_id", data.store_id)
+        .maybeSingle();
+      if (prefs.error) throw prefs.error;
+      return { ...data, preferences: prefs.data };
+    },
+  });
   return (
     <Dialog open>
       <DialogContent
@@ -36,25 +57,46 @@ export function SaleReceiptPrompt({
           receipt?
         </DialogDescription>
         <p className="break-all text-xs text-muted">
-          POS-{id.replaceAll("-", "").toUpperCase()}
+          {receipt.data?.reference ?? "Receipt saved"}
         </p>
         <div className="flex flex-wrap gap-3">
           <Button
             className="bg-success text-black hover:bg-success/90"
-            disabled={busy}
-            onClick={() => {
-              const receipt = window.open(
-                `/goods-out/${id}/receipt?autoprint=1`,
-                "_blank",
-              );
-              if (!receipt) {
+            disabled={busy || !receipt.data}
+            onClick={async () => {
+              if (locked.current || !receipt.data) return;
+              locked.current = true;
+              setBusy(true);
+              setError("");
+              try {
+                const copies = receipt.data.preferences?.second_copy ? 2 : 1;
+                for (let copy = 0; copy < copies; copy++) {
+                  if (copy)
+                    await new Promise((resolve) =>
+                      setTimeout(
+                        resolve,
+                        (receipt.data!.preferences?.delay_seconds ?? 3) * 1000,
+                      ),
+                    );
+                  const { error } = await createClient().rpc(
+                    "record_receipt_print",
+                    {
+                      p_sale: id,
+                      p_action: copy ? "COPY_REQUESTED" : "REQUESTED",
+                    },
+                  );
+                  if (error) throw error;
+                  await printDocument(`/goods-out/${id}/receipt`);
+                }
+                onDone();
+              } catch {
                 setError(
-                  "Allow the receipt tab to open, then try Print Receipt again. Your sale is saved.",
+                  "Printing could not finish. Your sale is saved; retry or choose Don't Print.",
                 );
-                return;
+              } finally {
+                locked.current = false;
+                setBusy(false);
               }
-              receipt.opener = null;
-              onDone();
             }}
           >
             Print Receipt
@@ -87,6 +129,12 @@ export function SaleReceiptPrompt({
             Don’t Print
           </Button>
         </div>
+        {receipt.error && (
+          <p role="alert">
+            Could not load receipt settings.{" "}
+            <Button onClick={() => receipt.refetch()}>Retry</Button>
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-danger">
             {error}

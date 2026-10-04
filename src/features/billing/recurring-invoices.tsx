@@ -38,6 +38,7 @@ export function RecurringInvoices() {
     [draftFilter, setDraftFilter] = useState("all"),
     [editing, setEditing] = useState<RecurringInvoice | "new" | null>(null),
     [history, setHistory] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<RecurringInvoice | null>(null);
   const rows = useQuery({
     queryKey: ["billing", "recurring", store.id, page, filter],
     queryFn: async () => {
@@ -149,10 +150,68 @@ export function RecurringInvoices() {
             >
               Generated invoices
             </Button>
+            <Button
+              className="ml-auto"
+              disabled={r.active || !action.online || action.busy}
+              title={
+                r.active
+                  ? "Deactivate before deleting"
+                  : "Delete inactive schedule"
+              }
+              onClick={() => setDeleting(r)}
+            >
+              Delete
+            </Button>
           </div>
           {history === r.id && <RecurringHistory id={r.id} />}
         </section>
       ))}
+      <Dialog
+        open={!!deleting}
+        onOpenChange={(open) => {
+          if (!open && !action.busy) setDeleting(null);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>Delete recurring invoice?</DialogTitle>
+          <DialogDescription>
+            Permanently delete the inactive schedule “{deleting?.title}”?
+            Previously generated invoices and their payment history will be
+            retained.
+          </DialogDescription>
+          <div className="flex gap-2">
+            <Button
+              disabled={!action.online}
+              loading={action.busy}
+              onClick={() =>
+                deleting &&
+                action.run(
+                  () =>
+                    createClient().rpc("delete_recurring_invoice", {
+                      p_id: deleting.id,
+                      p_expected: deleting.version,
+                    }),
+                  "Recurring schedule deleted",
+                  () => {
+                    setDeleting(null);
+                    setEditing(null);
+                    setPage(0);
+                  },
+                )
+              }
+            >
+              Delete permanently
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={action.busy}
+              onClick={() => setDeleting(null)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="flex items-center gap-3">
         <Button
           disabled={!page || rows.isFetching}

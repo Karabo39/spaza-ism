@@ -53,10 +53,15 @@ export function InvoiceAmendments({
   const [product, setProduct] = useState<ProductStock | null>(null),
     [reason, setReason] = useState("");
   const [discount, setDiscount] = useState(Number(i.discount));
-  const totals = orderTotals(lines, discount, Number(i.tax_percent));
+  const totals = orderTotals(
+    lines,
+    discount,
+    Number(i.tax_percent),
+    Number(i.delivery_fee ?? 0),
+  );
   const outstanding = totals.total - Number(i.paid);
   const editable =
-    can("manager") &&
+    can("manager", "invoices_manage") &&
     !i.goods_issued_at &&
     ["DRAFT", "ISSUED"].includes(i.state) &&
     Number(i.credits) === 0 &&
@@ -78,7 +83,7 @@ export function InvoiceAmendments({
       <h2 className="font-semibold">Order item corrections</h2>
       {!i.goods_issued_at && (
         <p className="text-sm">
-          Stock unavailable? A manager can edit quantities, remove or replace
+          Stock unavailable? An authorised user can edit quantities, remove or replace
           products, or add items here. The order and invoice numbers stay the
           same. Payments and previous document versions remain recorded.
         </p>
