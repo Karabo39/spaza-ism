@@ -143,7 +143,7 @@ export function OverrideCodeSettings() {
       <h2 className="font-semibold">Credit approval code</h2>
       <p className="text-sm text-muted">
         Set your personal 6–12 digit code to approve a cashier’s sale above a
-        customer’s credit limit. Each approval records you as the manager.
+        customer’s credit limit. Each approval records you as the approver.
       </p>
       <Label htmlFor="new-override-code">New personal code</Label>
       <Input

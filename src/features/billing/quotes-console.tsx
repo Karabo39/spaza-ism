@@ -120,11 +120,11 @@ export function QuotesConsole() {
                     {q.reference}
                   </button>
                   <p>
-                    {q.customer_name} Â· {money(q.total, currency)}
+                    {q.customer_name} · {money(q.total, currency)}
                   </p>
                   <AmountSummary>{money(q.total, currency)}</AmountSummary>
                   <p className="text-sm text-muted-foreground">
-                    {statusLabel(quoteStatus(q))} Â· Valid until {q.valid_until}
+                    {statusLabel(quoteStatus(q))} · Valid until {q.valid_until}
                   </p>
                 </section>
               ))}
@@ -244,10 +244,10 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
   return (
     <section className="min-w-0 break-words space-y-4 rounded-xl border border-primary/30 bg-surface p-5">
       <h2 className="font-semibold break-all">
-        {q.reference} Â· {statusLabel(status)}
+        {q.reference} · {statusLabel(status)}
       </h2>
       <p>
-        {q.customer_name} Â· Valid until {q.valid_until}
+        {q.customer_name} · Valid until {q.valid_until}
       </p>
       <p className="text-sm text-muted-foreground">
         Quotation only. No payment is due until an invoice is issued.
@@ -255,14 +255,14 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
       <div className="space-y-2">
         {q.items.map((l) => (
           <p key={l.product_id}>
-            {l.quantity} {l.unit} Ã— {l.name} @ {money(l.unit_price, currency)}{" "}
+            {l.quantity} {l.unit} × {l.name} @ {money(l.unit_price, currency)}{" "}
             = {money(l.line_total, currency)}
           </p>
         ))}
       </div>
       <AmountSummary>
-        Discount {money(q.discount, currency)} Â· Tax{" "}
-        {money(q.tax_amount, currency)} Â· Total{" "}
+        Discount {money(q.discount, currency)} · Tax{" "}
+        {money(q.tax_amount, currency)} · Total{" "}
         <strong>{money(q.total, currency)}</strong>
       </AmountSummary>
       {q.note && <p>{q.note}</p>}
@@ -327,7 +327,7 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
         {q.order_id && canModule("orders_recent") && (
           <Button asChild>
             <Link href={`/orders?order=${q.order_id}`}>
-              Open Orders â€” converted quotation
+              Open Orders — converted quotation
             </Link>
           </Button>
         )}
@@ -348,7 +348,7 @@ function QuoteDetail({ quote: q }: { quote: SalesQuote }) {
                 key={l.product_id}
               >
                 <span className="grow">
-                  {l.name} Â· Available {p?.is_active ? p.quantity : 0} Â·
+                  {l.name} · Available {p?.is_active ? p.quantity : 0} ·
                   Quoted {l.quantity}
                 </span>
                 <Input

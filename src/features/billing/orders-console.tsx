@@ -156,15 +156,15 @@ export function OrdersConsole({
   const orderDetails = current ? (
     <section className="space-y-4 rounded-lg border border-border bg-surface p-5">
       <h2 className="font-semibold">
-        {current.reference} Â· {statusLabel(current.status)}
+        {current.reference} · {statusLabel(current.status)}
       </h2>
       <p>
-        {current.customer_name} Â· Ordered By:{" "}
-        {current.ordered_by_name || "Not recorded"} Â· {current.note}
+        {current.customer_name} · Ordered By:{" "}
+        {current.ordered_by_name || "Not recorded"} · {current.note}
       </p>
       {items?.map((l) => (
         <p key={l.id} className="text-sm">
-          {l.quantity} Ã— {l.product_name} â€” {money(l.line_total, currency)}
+          {l.quantity} × {l.product_name} — {money(l.line_total, currency)}
         </p>
       ))}
       {current.invoice ? (
@@ -174,11 +174,11 @@ export function OrdersConsole({
         >
           <h3 className="font-semibold">Order summary</h3>
           <p className="break-all">
-            Invoice {current.invoice.reference} Â· Invoiced By:{" "}
+            Invoice {current.invoice.reference} · Invoiced By:{" "}
             {current.invoice.invoiced_by_name || "Not recorded"}
           </p>
           <p>
-            Payment: {statusLabel(current.invoice.status)} Â·{" "}
+            Payment: {statusLabel(current.invoice.status)} ·{" "}
             {current.invoice.goods_issued_at
               ? `Goods released ${dateTime(current.invoice.goods_issued_at)}`
               : "Awaiting goods release"}
@@ -208,10 +208,10 @@ export function OrdersConsole({
         </section>
       ) : (
         <div className="flex flex-wrap items-center gap-3"><AmountSummary>
-          Subtotal: {money(invoiceTotals.subtotal, currency)} Â· Discount:{" "}
-          {money(invoiceTotals.discount, currency)} Â· Tax (
+          Subtotal: {money(invoiceTotals.subtotal, currency)} · Discount:{" "}
+          {money(invoiceTotals.discount, currency)} · Tax (
           {current.quoted_tax_percent ?? billing.data ?? 0}
-          %): {money(invoiceTotals.tax, currency)} Â· Estimated invoice total:{" "}
+          %): {money(invoiceTotals.tax, currency)} · Estimated invoice total:{" "}
           {money(invoiceTotals.total, currency)}
         </AmountSummary>
         {current.status === "DRAFT" && <Button loading={busy} disabled={!online} onClick={() => run(() => createClient().rpc("process_sales_order", {p_order:current.id,p_action:"confirm"}), "Order confirmed")}>Confirm order</Button>}
@@ -246,7 +246,7 @@ export function OrdersConsole({
                 <option value="CASH">Cash before collection</option>
                 <option value="CARD_EFT">Card/EFT before collection</option>
                 <option value="CREDIT">Customer credit account</option>
-                <option value="PAY_DELIVER">Pay â€“ To be Delivered</option>
+                <option value="PAY_DELIVER">Pay – To be Delivered</option>
               </select>
             </div>
             <div>
@@ -264,7 +264,7 @@ export function OrdersConsole({
             {terms === "PAY_DELIVER" && <div><Label htmlFor="delivery-fee">Delivery fee (before tax)</Label><Input id="delivery-fee" type="number" min="0" step="0.01" value={deliveryFee} onChange={e=>setDeliveryFee(Number(e.target.value))} /></div>}
             {terms === "PAY_DELIVER" && (
               <p className="text-sm text-muted">
-                Create the invoice and record payment next. It becomes Paid â€“
+                Create the invoice and record payment next. It becomes Paid –
                 To be Delivered only after full payment; release goods when
                 delivered.
               </p>
@@ -419,8 +419,8 @@ export function OrdersConsole({
               className="flex items-center justify-between border-b border-border py-2 text-sm"
             >
               <span>
-                {l.quantity} Ã— {l.name}
-                {l.sku ? ` Â· SKU: ${l.sku}` : ""} Â·{" "}
+                {l.quantity} × {l.name}
+                {l.sku ? ` · SKU: ${l.sku}` : ""} ·{" "}
                 {money(l.quantity * l.unit_price, currency)}
               </span>
               <Button
@@ -442,8 +442,8 @@ export function OrdersConsole({
             onChange={(e) => setNote(e.target.value)}
           />
           <div className="flex flex-wrap items-center gap-3"><AmountSummary>
-            Subtotal: {money(draftTotals.subtotal, currency)} Â· Tax (
-            {billing.data ?? 0}%): {money(draftTotals.tax, currency)} Â·
+            Subtotal: {money(draftTotals.subtotal, currency)} · Tax (
+            {billing.data ?? 0}%): {money(draftTotals.tax, currency)} ·
             Estimated total: {money(draftTotals.total, currency)}
           </AmountSummary>
           {billing.error && (

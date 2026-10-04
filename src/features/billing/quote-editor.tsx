@@ -338,9 +338,9 @@ function QuoteEditorForm({
         <Input value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
       <AmountSummary>
-        Subtotal {money(totals.subtotal, currency)} Â· Discount{" "}
-        {money(totals.discount, currency)} Â· Tax {tax}%:{" "}
-        {money(totals.tax, currency)} Â· Total{" "}
+        Subtotal {money(totals.subtotal, currency)} · Discount{" "}
+        {money(totals.discount, currency)} · Tax {tax}%:{" "}
+        {money(totals.tax, currency)} · Total{" "}
         <strong>{money(totals.total, currency)}</strong>
       </AmountSummary>
       {settings.error && <p role="alert">Could not load tax settings.</p>}

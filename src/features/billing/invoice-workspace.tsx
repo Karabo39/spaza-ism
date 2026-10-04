@@ -154,9 +154,9 @@ export function InvoiceWorkspace({
         ))}
       </div>
       <p className="text-sm text-muted">
-        {i.customer_name} Â· {i.terms.replace("_", "/")} Â· Due{" "}
-        {dateOnly(i.due_date)} Â· {invoiceStatusLabel(i)} Â· Salesperson:{" "}
-        {i.salesperson} Â· Ordered By: {i.ordered_by_name || "Not recorded"} Â·
+        {i.customer_name} · {i.terms.replace("_", "/")} · Due{" "}
+        {dateOnly(i.due_date)} · {invoiceStatusLabel(i)} · Salesperson:{" "}
+        {i.salesperson} · Ordered By: {i.ordered_by_name || "Not recorded"} ·
         Invoiced By: {i.invoiced_by_name || "Not recorded"}
       </p>
       <Table>
@@ -188,7 +188,7 @@ export function InvoiceWorkspace({
             subtotal) ·{" "}
           </>
         )}
-        Subtotal {money(i.subtotal, i.currency)} âˆ’ Discount{" "}
+        Subtotal {money(i.subtotal, i.currency)} − Discount{" "}
         {money(i.discount, i.currency)} + Tax ({i.tax_percent}%){" "}
         {money(i.tax_amount, i.currency)}
       </AmountSummary>
@@ -196,7 +196,7 @@ export function InvoiceWorkspace({
       {i.state === "DRAFT" && (
         <div className="rounded-lg border border-border bg-surface p-5 space-y-3">
           <p className="text-sm">
-            Issuing records the customer receivable and fixes this invoiceâ€™s
+            Issuing records the customer receivable and fixes this invoice’s
             prices, discounts and tax.
           </p>
           <Button
@@ -326,7 +326,7 @@ export function InvoiceWorkspace({
                   </option>
                 </select>
                 <p className="text-sm text-muted">
-                  Use this invoiceâ€™s customer account without recording a
+                  Use this invoice’s customer account without recording a
                   payment. The balance remains due. Credit limits and approval
                   checks apply when releasing goods.
                 </p>
@@ -393,7 +393,7 @@ export function InvoiceWorkspace({
           <h2 className="font-semibold">Release goods</h2>
           <p className="text-sm">
             Cash and Card/EFT invoices must be paid before collection. Credit
-            invoices use the customerâ€™s current account limit.
+            invoices use the customer’s current account limit.
           </p>
           {needsApproval &&
             (can("manager", "credit_override") ? (
@@ -517,7 +517,7 @@ export function InvoiceWorkspace({
               <TD>{statusLabel(e.kind)}</TD>
               <TD>{money(e.amount, i.currency)}</TD>
               <TD>
-                {[e.payment_reference, e.reason].filter(Boolean).join(" Â· ")}
+                {[e.payment_reference, e.reason].filter(Boolean).join(" · ")}
               </TD>
             </TR>
           ))}
