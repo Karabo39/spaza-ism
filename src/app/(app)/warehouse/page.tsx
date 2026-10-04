@@ -1,3 +1,4 @@
+import type { ManagedWarehouse } from "@/lib/warehouse-session";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -8,28 +9,11 @@ export default async function WarehousePage() {
   const session = await getSession();
   if (!session?.activeStore) redirect("/onboarding");
   const db = await createClient();
-  const ids = session.stores
-    .filter(
-      (s) =>
-        s.businessId === session.activeStore!.businessId &&
-        s.locationType === "warehouse" &&
-        s.modules.warehouse,
-    )
-    .map((s) => s.id);
-  const [summary, metadata] = await Promise.all([
-    db.rpc("warehouse_summary", { p_business: session.activeStore.businessId }),
-    ids.length
-      ? db.from("stores").select("id,code").in("id", ids)
-      : Promise.resolve({ data: [], error: null }),
-  ]);
-  if (summary.error) throw summary.error;
-  if (metadata.error) throw metadata.error;
-  const rows = (summary.data ?? [])
-    .filter((row) => ids.includes(row.location_id))
-    .map((row) => ({
-      ...row,
-      code: metadata.data?.find((s) => s.id === row.location_id)?.code,
-    }));
+  const { data, error } = await db.rpc("warehouse_management", {
+    p_business: session.activeStore.businessId,
+  });
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as ManagedWarehouse[];
   return (
     <>
       <PageHeader

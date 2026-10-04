@@ -23,6 +23,7 @@ type Item = {
   counted: boolean;
   variance: number | null;
   counted_expiry: string | null;
+  counted_at: string | null;
   products: { sku: string | null; name: string; track_expiry: boolean } | null;
 };
 export function StockTakeCounter({
@@ -56,7 +57,7 @@ export function StockTakeCounter({
         let query = createClient()
           .from("stock_take_items")
           .select(
-            "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,products(name,sku,track_expiry)",
+            "id,product_id,system_qty,counted_qty,counted,variance,counted_expiry,counted_at,products(name,sku,track_expiry)",
           )
           .eq("stock_take_id", stockTakeId)
           .order("id")
@@ -87,6 +88,53 @@ export function StockTakeCounter({
   );
   const visibleItems = items.slice(currentPage * 50, (currentPage + 1) * 50);
   const counted = (data ?? []).filter((i) => i.counted).length;
+  async function saveAll() {
+    if (!online || busy || pending.current || closed) return;
+    const changed = (data ?? []).filter(
+      (i) => Object.hasOwn(local, i.id) || Object.hasOwn(expiry, i.id),
+    );
+    if (!changed.length) {
+      toast.success("All displayed counts are already saved.");
+      return;
+    }
+    const counts = changed.map((i) => ({
+      id: i.id,
+      quantity:
+        (local[i.id] ?? String(i.counted_qty ?? "")).trim() === ""
+          ? null
+          : Number(local[i.id] ?? i.counted_qty),
+      expiry: (expiry[i.id] ?? i.counted_expiry) || null,
+      expected_at: i.counted_at,
+    }));
+    if (
+      counts.some(
+        (c) =>
+          c.quantity !== null &&
+          (!Number.isFinite(c.quantity) || c.quantity < 0),
+      )
+    ) {
+      toast.error("Enter non-negative counts.");
+      return;
+    }
+    pending.current++;
+    setBusy(true);
+    try {
+      const { error } = await createClient().rpc("save_all_stock_take_counts", {
+        p_stock_take: stockTakeId,
+        p_counts: counts,
+      });
+      if (error) throw error;
+      setLocal({});
+      setExpiry({});
+      await refetch();
+      toast.success("All counts saved. Review before approving.");
+    } catch (e) {
+      toast.error(friendlyError((e as Error).message));
+    } finally {
+      pending.current--;
+      setBusy(false);
+    }
+  }
   async function save(item: Item) {
     const value = local[item.id] ?? String(item.counted_qty ?? ""),
       n = value.trim() === "" ? null : Number(value),
@@ -110,6 +158,7 @@ export function StockTakeCounter({
         delete next[item.id];
         return next;
       });
+      setExpiry(old => { const next={...old};delete next[item.id];return next; });
       toast.success("Count saved.");
     } catch (error) {
       toast.error(friendlyError((error as Error).message));
@@ -120,8 +169,10 @@ export function StockTakeCounter({
   }
   async function finish(cancel = false) {
     if (!online || busy || pending.current) return;
-    if (!cancel && Object.keys(local).length) {
-      toast.error("Save each edited count before approving the stock take.");
+    if (!cancel && (Object.keys(local).length || Object.keys(expiry).length)) {
+      toast.error(
+        "Use Save All Count or save each edited count before approving.",
+      );
       return;
     }
     setBusy(true);
@@ -156,9 +207,9 @@ export function StockTakeCounter({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted">
-        Count and save one product at a time. Pause movements while counting.
-        Stock changes after a saved count require a fresh count before approval.
-        Added tracked stock needs an expiry date.
+        Save counts individually or use Save All Count. Pause movements while
+        counting. Stock changes after a saved count require a fresh count before
+        approval. Added tracked stock needs an expiry date.
       </p>
       {!online && (
         <p className="text-warning">
@@ -342,7 +393,14 @@ export function StockTakeCounter({
       )}
       {!closed && (
         <div className="flex flex-wrap items-center gap-3">
-          {can("manager") && (
+          <Button
+            loading={busy}
+            disabled={!online || saving > 0 || !data?.length}
+            onClick={saveAll}
+          >
+            Save All Count
+          </Button>
+          {can("manager", "stock_take_approve") && (
             <Button
               loading={busy}
               disabled={!online || saving > 0 || !counted}

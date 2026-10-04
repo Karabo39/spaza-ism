@@ -46,7 +46,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   }, [store.id]);
 
   const syncNow = React.useCallback(async () => {
-    if (busy.current || (typeof navigator !== "undefined" && !navigator.onLine))
+    if (store.isActive === false || busy.current || (typeof navigator !== "undefined" && !navigator.onLine))
       return;
     busy.current = true;
     setSyncing(true);
@@ -70,7 +70,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       setSyncing(false);
       busy.current = false;
     }
-  }, [store.id, refresh]);
+  }, [store.id, store.isActive, refresh]);
 
   // Initial: know connectivity, count queue, sync + mirror.
   React.useEffect(() => {
@@ -110,13 +110,13 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   // Keep the mirror warm while online.
   React.useEffect(() => {
     const t = setInterval(() => {
-      if (navigator.onLine && document.visibilityState === "visible")
+      if (store.isActive !== false && navigator.onLine && document.visibilityState === "visible")
         void syncProductMirror(store.id).catch(() => {
           /* Retain the last usable offline catalogue; retry next interval. */
         });
     }, 5 * 60_000);
     return () => clearInterval(t);
-  }, [store.id]);
+  }, [store.id, store.isActive]);
 
   const value = React.useMemo<OfflineValue>(
     () => ({ online, pending, failed, syncing, syncNow, refresh }),

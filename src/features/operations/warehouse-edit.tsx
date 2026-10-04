@@ -34,7 +34,7 @@ export function WarehouseEdit({
     <div>
       <Button
         variant="primary"
-        size="sm"
+        size={locationLabel === "Store" ? "md" : "sm"}
         disabled={!online || busy}
         onClick={() => {
           setName(name);

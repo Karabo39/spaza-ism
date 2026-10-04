@@ -58,41 +58,53 @@ export function ImportConsole({
     [filename, setFilename] = useState("");
   const request = useRef<string | null>(null),
     fileInput = useRef<HTMLInputElement>(null);
-  if (!can("manager"))
-    return <p>Imports are available to owners and managers.</p>;
+  if (!can("manager", "imports"))
+    return <p>Imports require permission for this store.</p>;
   async function download(existing: boolean) {
     setBusy(true);
     try {
       const db = createClient();
-      let rows: Record<string, unknown>[] = [];
+      const rows: Record<string, unknown>[] = [];
       if (existing) {
-        let query =
-          kind === "products"
-            ? db.from("v_product_stock").select("*").eq("store_id", store.id)
-            : kind === "suppliers"
-              ? db
-                  .from("suppliers")
-                  .select("*")
-                  .eq("business_id", store.businessId)
-              : db
-                  .from("v_credit_customers")
-                  .select("*")
-                  .eq("store_id", store.id);
-        if (search.trim()) query = query.ilike("name", `%${search.trim()}%`);
-        const { data, error } = await query.order("name").limit(201);
-        if (error) throw error;
-        if (!data?.length) throw new Error("No matching records to download.");
-        if (data.length > 200)
-          throw new Error(
-            "More than 200 records match. Narrow the name search and download again.",
-          );
-        rows = data.map((row) => ({
-          ...row,
-          id: "customer_id" in row ? row.customer_id : row.id,
-        }));
+        let after: string | undefined;
+        const idColumn = kind === "customers" ? "customer_id" : "id";
+        for (;;) {
+          let query =
+            kind === "products"
+              ? db.from("v_product_stock").select("*").eq("store_id", store.id)
+              : kind === "suppliers"
+                ? db
+                    .from("suppliers")
+                    .select("*")
+                    .eq("business_id", store.businessId)
+                : db
+                    .from("v_credit_customers")
+                    .select("*")
+                    .eq("store_id", store.id);
+          if (search.trim()) query = query.ilike("name", `%${search.trim()}%`);
+          if (after) query = query.gt(idColumn, after);
+          const { data, error } = await query.order(idColumn).limit(500);
+          if (error) throw error;
+          const page = (data ?? []).map((row) => ({
+            ...row,
+            id: "customer_id" in row ? row.customer_id : row.id,
+          }));
+          rows.push(...page);
+          if (page.length < 500) break;
+          const next = String(page[page.length - 1].id);
+          if (next === after)
+            throw new Error("Download could not advance. Please retry.");
+          after = next;
+        }
+        if (!rows.length) throw new Error("No matching records to download.");
+        rows.sort((a, b) => String(a.name).localeCompare(String(b.name)));
       }
       save(
-        await importTemplate(kind, rows, await loadDocumentLogo(createClient(),store.businessId)),
+        await importTemplate(
+          kind,
+          rows,
+          await loadDocumentLogo(createClient(), store.businessId),
+        ),
         `${kind}-${existing ? "existing" : "template"}.xlsx`,
       );
     } catch (error) {
@@ -167,7 +179,7 @@ export function ImportConsole({
           <div>
             <h2 className="font-semibold">Import into {store.name}</h2>
             <p className="text-sm text-muted">
-              Online only · Owners and managers · Up to 200 records per file
+              Online only · Authorised employees and owners · Up to 200 records per file
             </p>
           </div>
         </div>
@@ -186,9 +198,7 @@ export function ImportConsole({
           >
             <option value="products">Products and stock quantity</option>
             {!productsOnly && <option value="suppliers">Suppliers</option>}
-            {!productsOnly && (
-              <option value="customers">Customers</option>
-            )}
+            {!productsOnly && <option value="customers">Customers</option>}
           </select>
         </label>
         <div className="mt-4 flex flex-wrap items-end gap-3">
@@ -219,12 +229,24 @@ export function ImportConsole({
         <p className="mt-4 text-sm text-muted">
           Keep the template columns unchanged. Blank cells preserve existing
           values. Products match their ID or barcode.
-          {!productsOnly && <> Suppliers and customers match their ID. Suppliers are shared across {store.businessName}.</>}
+          {!productsOnly && (
+            <>
+              {" "}
+              Suppliers and customers match their ID. Suppliers are shared
+              across {store.businessName}.
+            </>
+          )}
         </p>
         <p className="mt-2 text-sm text-muted">
           Product quantity sets the total on hand. Expiry-tracked increases need
           an expiry date.
-          {!productsOnly && <> Customer imports change contact details and credit limits; balances are maintained by transactions.</>}
+          {!productsOnly && (
+            <>
+              {" "}
+              Customer imports change contact details and credit limits;
+              balances are maintained by transactions.
+            </>
+          )}
         </p>
         <label className="mt-5 block text-sm font-medium">
           Choose completed Excel template

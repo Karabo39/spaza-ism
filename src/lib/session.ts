@@ -4,6 +4,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import {
   modulePermissions,
+  PERMISSIONS,
   firstModulePath,
   type ModuleKey,
   type ModulePermissions,
@@ -15,6 +16,7 @@ import { ACTIVE_STORE_COOKIE } from "@/lib/constants";
 export { ACTIVE_STORE_COOKIE };
 
 export type SessionStore = {
+  isActive?: boolean;
   id: string;
   name: string;
   businessId: string;
@@ -48,6 +50,7 @@ type SessionBootstrap = {
     role: MembershipRole;
     currency: string;
     location_type: LocationType;
+    is_active?: boolean;
     permissions: unknown;
   }[];
 };
@@ -70,13 +73,14 @@ const loadSession = cache(async (): Promise<Session | null> => {
   const sessionStores: SessionStore[] = bootstrap.stores
     .map((s) => ({
       id: s.id,
+      isActive: s.is_active !== false,
       name: s.name,
       businessId: s.business_id,
       businessName: s.business_name,
       role: s.role,
       currency: s.currency,
       locationType: s.location_type,
-      modules: modulePermissions(s.role, s.permissions ?? undefined),
+      modules: s.is_active === false ? Object.fromEntries(PERMISSIONS.map(p => [p.key, p.key === "warehouse" || p.key === "warehouse_disable"])) as ModulePermissions : modulePermissions(s.role, s.permissions ?? undefined),
     }))
     .filter((s) => s.locationType !== "warehouse" || s.modules.warehouse);
 

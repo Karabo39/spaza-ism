@@ -122,7 +122,7 @@ export function StockTakeExcelActions({
       await cache.invalidateQueries({ queryKey: ["stock-take-items", data] });
       setPreview(null);
       toast.success(
-        "Counts saved. A manager can review and approve the stock take.",
+        "Counts saved. An authorised user can review and approve the stock take.",
       );
       router.push(path(data));
       router.refresh();
@@ -168,7 +168,7 @@ export function StockTakeExcelActions({
               Save {preview?.rows.length ?? 0} product counts for {store.name}.{" "}
               {preview?.rows.filter((r) => r.same).length ?? 0} use Still the
               Same. Blank counts are skipped. Stock will only change after
-              manager approval.
+              authorised approval.
             </DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted">

@@ -14,17 +14,21 @@ export default async function WarehouseLayout({
   const session = await warehouseSession(warehouseId);
   return (
     <StoreProvider key={warehouseId} session={session}>
-      <OfflineProvider>
-        <div className="mb-4 flex flex-wrap gap-2">
-          <Button asChild size="sm">
-            <Link href="/warehouse">Exit Warehouse</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/warehouse/${warehouseId}`}>Warehouse overview</Link>
-          </Button>
-        </div>
-        {children}
-      </OfflineProvider>
+      {session.activeStore.isActive === false ? (
+        children
+      ) : (
+        <OfflineProvider>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link href="/warehouse">Exit Warehouse</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/warehouse/${warehouseId}`}>Warehouse overview</Link>
+            </Button>
+          </div>
+          {children}
+        </OfflineProvider>
+      )}
     </StoreProvider>
   );
 }

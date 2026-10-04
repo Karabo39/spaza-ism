@@ -1,5 +1,4 @@
 "use client";
-import { WarehouseEdit } from "@/features/operations/warehouse-edit";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Store, Warehouse, ArrowRight } from "lucide-react";
@@ -107,19 +106,21 @@ export function MyStores() {
                   <div>
                     <dt className="text-xs text-muted">Products</dt>
                     <dd className="mt-1 font-medium">
-                      {totals?.product_count ?? "—"}
+                      {totals?.product_count ?? "â€”"}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Staff</dt>
-                    <dd className="mt-1 font-medium">{totals?.staff ?? "—"}</dd>
+                    <dd className="mt-1 font-medium">
+                      {totals?.staff ?? "â€”"}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Stock value</dt>
                     <dd
                       className={`mt-1 inline-flex rounded-md border px-2 py-1 font-medium ${totals && totals.stock_value > 0 ? "border-success/30 bg-success/10 text-success" : "border-danger/30 bg-danger/10 text-danger"}`}
                     >
-                      {totals ? money(totals.stock_value, s.currency) : "—"}
+                      {totals ? money(totals.stock_value, s.currency) : "â€”"}
                     </dd>
                   </div>
                 </dl>
@@ -128,16 +129,6 @@ export function MyStores() {
                     Open Store <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-                {totals && s.role === "owner" && s.modules.stores && (
-                  <div className="mt-3">
-                    <WarehouseEdit
-                      id={s.id}
-                      name={s.name}
-                      code={totals?.code ?? ""}
-                      locationLabel="Store"
-                    />
-                  </div>
-                )}
               </section>
             );
           })}

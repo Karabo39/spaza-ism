@@ -42,7 +42,7 @@ export async function createStockTakeWorkbook(template: StockTakeTemplate,logo?:
     "For additional expiry-tracked stock, enter Added stock expiry as YYYY-MM-DD.",
     "Do not change Item IDs, system quantities or the Metadata sheet. Do not enter formulas.",
     "Pause stock movements while counting. Changed products require a new template and recount.",
-    "Import saves counts only. A manager must review and approve before stock changes.",
+    "Import saves counts only. An authorised user must review and approve before stock changes.",
   ].forEach((line) => help.addRow([line]));
   help.getColumn(1).width = 110;
   help.getRow(1).font = { bold: true, size: 16 };

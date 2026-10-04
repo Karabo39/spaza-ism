@@ -20,6 +20,7 @@ export function WarehouseLocations({
     product_count: number;
     stock_quantity: number;
     stock_value: number;
+    is_active?: boolean;
   }[];
 }) {
   const { stores } = useStore();
@@ -65,34 +66,35 @@ export function WarehouseLocations({
             className="space-y-3 rounded-lg border border-border bg-surface p-4"
           >
             <h2 className="text-lg font-semibold">{row.name}</h2>
+            <p className="text-sm">
+              {row.is_active === false ? "Disabled" : "Enabled"}
+            </p>
             {opened && (
               <p className="text-xs text-muted">
                 Code: {row.code || "Not set"}
               </p>
             )}
-            {stores.some(
-              (s) =>
-                s.id === row.location_id &&
-                s.role !== "employee" &&
-                (s.modules.settings ||
-                  s.modules.stores ||
-                  s.modules.warehouse_disable),
-            ) && (
-              <WarehouseEdit
-                id={row.location_id}
-                name={row.name}
-                code={row.code || ""}
-                canEdit={stores.some(
-                  (s) =>
-                    s.id === row.location_id &&
-                    (s.modules.settings || s.modules.stores),
-                )}
-                canDisable={
-                  !!stores.find((s) => s.id === row.location_id)?.modules
-                    .warehouse_disable
-                }
-              />
-            )}
+            {opened &&
+              row.is_active !== false &&
+              stores.some(
+                (s) =>
+                  s.id === row.location_id &&
+                  s.modules.settings_manage &&
+                  (s.modules.settings ||
+                    s.modules.stores ||
+                    s.modules.warehouse_disable),
+              ) && (
+                <WarehouseEdit
+                  id={row.location_id}
+                  name={row.name}
+                  code={row.code || ""}
+                  canEdit={stores.some(
+                    (s) =>
+                      s.id === row.location_id &&
+                      (s.modules.settings || s.modules.stores),
+                  )}
+                />
+              )}
             <p>
               {row.product_count} products ·{" "}
               {opened && <>{qty(row.stock_quantity)} units · </>}
@@ -108,7 +110,7 @@ export function WarehouseLocations({
                   Open Warehouse
                 </Button>
               ) : (
-                actions
+                (row.is_active === false ? [] : actions)
                   .filter(
                     (a) =>
                       stores.find((s) => s.id === row.location_id)?.modules[

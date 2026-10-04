@@ -1,4 +1,5 @@
 import { CatalogExport } from "@/features/reports/paged-export";
+import { WarehouseSearch } from "@/features/operations/warehouse-search";
 import { readCursor, dataPage, type CatalogProduct } from "@/lib/data-pages";
 import { CursorPagination } from "@/components/ui/cursor-pagination";
 import { ProductEditDialog } from "@/features/products/product-edit-dialog";
@@ -15,7 +16,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ warehouseId: string }>;
-  searchParams: Promise<{ cursor?: string }>;
+  searchParams: Promise<{ cursor?: string; q?: string }>;
 }) {
   const { warehouseId } = await params;
   const sp = await searchParams;
@@ -23,6 +24,7 @@ export default async function Page({
   const db = await createClient();
   const result = await db.rpc("catalog_page", {
     p_stores: [warehouseId],
+    p_search: sp.q,
     p_active: true,
     p_after: readCursor(sp.cursor),
     p_limit: 50,
@@ -35,8 +37,9 @@ export default async function Page({
         title="Warehouse Stock View"
         actions={
           <>
+            <WarehouseSearch />
             {session.activeStore.modules.products &&
-              session.activeStore.role !== "employee" && <AddProductButton />}
+              session.activeStore.modules.products_edit && <AddProductButton />}
             <CatalogExport
               stores={[warehouseId]}
               locations={[session.activeStore]}
@@ -122,7 +125,7 @@ export default async function Page({
               </TD>
               <TD>
                 {session.activeStore.modules.products &&
-                  session.activeStore.role !== "employee" && (
+                  session.activeStore.modules.products_edit && (
                     <ProductEditDialog
                       product={p}
                       barcode={p.barcodes?.split(", ")[0] ?? ""}
