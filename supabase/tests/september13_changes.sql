@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); r jsonb; biz uuid; loc uuid; wh uuid; otherloc uuid; m uuid; p uuid; target uuid; t uuid; req uuid:=gen_random_uuid(); sale uuid; c uuid; line uuid; ret uuid; b uuid; before_qty numeric; blocked boolean; payload jsonb;
 begin
@@ -5,8 +6,8 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
  r:=public.create_business('September 13','Shop');biz:=(r->>'business_id')::uuid;loc:=(r->>'store_id')::uuid;
  wh:=public.create_location(biz,'Warehouse','warehouse');otherloc:=public.create_location(biz,'Other store','store');
- reset role;m:=public.add_member_by_email(biz,'sep13-staff@test.invalid','employee');set local role authenticated;
- perform public.set_member_locations(m,array[loc]);
+ reset role;m:=app_test.add_member_by_email(biz,'sep13-staff@test.invalid','employee');set local role authenticated;
+ perform app_test.set_member_locations(m,array[loc]);
  p:=public.create_product_catalog(wh,'Warehouse milk','{"sku":"WH-SKU","cost":5,"selling":10,"track_expiry":true}');
  target:=public.create_product_catalog(loc,'Shop milk','{"sku":"SHOP-SKU","cost":5,"selling":10,"track_expiry":true}');
  if not exists(select 1 from public.v_product_catalog where id=target and search_text ilike '%SHOP-SKU%') then raise exception 'ASSERT SKU searchable';end if;
@@ -19,7 +20,7 @@ begin
  blocked:=false;begin perform public.process_stock_transfer(t,'receive');exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT receive grant required';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
- perform public.set_store_module_access(m,loc,'{"goods_in_receive_transfer":true,"operations":false}',0);
+ perform app_test.set_store_module_access(m,loc,'{"goods_in_receive_transfer":true,"operations":false}',0);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
  if not exists(select 1 from public.transfer_history(biz) where id=t) then raise exception 'ASSERT destination-only history';end if;
  if (public.transfer_detail(t)->>'source')<>'Warehouse' then raise exception 'ASSERT receive details';end if;

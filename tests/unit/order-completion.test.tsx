@@ -144,12 +144,12 @@ it("expands details directly below the clicked order and collapses on another cl
   expect(screen.queryByRole("region", { name: "Order summary" })).toBeNull();
 });
 
-it("hides the Orders invoice-list shortcut for employees with invoice access", () => {
+it("shows the Orders invoice-list shortcut for employees with explicit invoice access", () => {
   mocks.role = "employee";
   render(<OrdersConsole />);
   expect(
     screen.queryByRole("link", { name: "View invoices" }),
-  ).not.toBeInTheDocument();
+  ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "ORDER-1" })).toBeVisible();
 });
 it("retains the Orders invoice-list shortcut for managers with permission", () => {

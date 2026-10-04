@@ -78,7 +78,7 @@ describe("session location access", () => {
     mock.preferred = "shop";
     mock.error = false;
     mock.ready = true;
-    mock.grants = [];
+    mock.grants = [{membership_id:"staff-member",store_id:"shop",permissions:{dashboard:true}}];
     mock.setupRequired = false;
     mock.stores = [
       {
@@ -122,7 +122,7 @@ describe("session location access", () => {
       {
         membership_id: "staff-member",
         store_id: "shop",
-        permissions: { goods_out: false },
+        permissions: { dashboard:true, goods_out: false },
       },
       {
         membership_id: "owner-member",

@@ -1,10 +1,11 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
  declare u uuid:=gen_random_uuid(); employee uuid:=gen_random_uuid(); biz uuid; loc uuid; otherloc uuid; c uuid; p uuid; p2 uuid; member uuid; res jsonb; qid uuid; oid uuid; iid uuid; rid uuid; line uuid; req uuid:=gen_random_uuid(); items jsonb; result jsonb; blocked boolean; po uuid; n integer;
 begin
  insert into auth.users(id,email,raw_user_meta_data) values(u,'document-owner@test.invalid','{}'),(employee,'document-staff@test.invalid','{}');
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
  res:=public.create_business('Document workflows','Shop');biz:=(res->>'business_id')::uuid;loc:=(res->>'store_id')::uuid;
- reset role; member:=public.add_member_by_email(biz,'document-staff@test.invalid','employee'); set local role authenticated;perform public.set_member_locations(member,array[loc]);
+ reset role; member:=app_test.add_member_by_email(biz,'document-staff@test.invalid','employee'); set local role authenticated;perform app_test.set_member_locations(member,array[loc]);
  insert into public.customers(business_id,store_id,name) values(biz,loc,'Quote customer') returning id into c;
  p:=public.create_product(loc,'In stock water','DOC-WATER',null,null,5,10,0,0,'each',false);
  p2:=public.create_product(loc,'Unavailable water','DOC-NONE',null,null,5,17,0,0,'each',false);
@@ -78,7 +79,7 @@ begin
  if jsonb_array_length(public.stock_export(loc,'out','Export test'))<>24 then raise exception 'ASSERT all matching exports exceed screen page size';end if;
  blocked:=false;begin perform public.save_quote(loc,c,items,current_date-1,0,'Expired',gen_random_uuid());exception when others then if sqlerrm<>'QUOTE_VALIDITY_REQUIRED' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT invalid validity';end if;
- perform public.set_store_module_access(member,loc,'{"returns":false,"invoices":false,"check_stock":false}',0);
+ perform app_test.set_store_module_access(member,loc,'{"returns":false,"invoices":false,"check_stock":false}',0);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
  if (public.my_module_access(loc)->>'returns')::boolean then raise exception 'ASSERT module revoked';end if;
  blocked:=false;begin perform public.process_goods_return(rid,true);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;

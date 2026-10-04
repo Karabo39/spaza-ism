@@ -15,8 +15,8 @@ describe("Access Control editor", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Goods Out" }));
     fireEvent.click(screen.getByRole("button", { name: "Save access" }));
     await waitFor(() => expect(mock.rpc).toHaveBeenCalled());
-    expect(mock.rpc.mock.calls[0][1]).toMatchObject({ p_store: "store-a", p_membership: "membership", p_expected: 3, p_permissions: { goods_out: false, settings: false, access_control: false } });
-    expect(screen.getByRole("checkbox", { name: /Adjust Stock/ })).toBeDisabled();
+    expect(mock.rpc.mock.calls[0][1]).toMatchObject({ p_store: "store-a", p_membership: "membership", p_expected: 3, p_permissions: { goods_out: true, settings: false, access_control: false } });
+    expect(screen.getByRole("checkbox", { name: /Adjust Stock/ })).not.toBeDisabled();
   });
   it("keeps unsaved choices when a concurrent edit is rejected", async () => {
     mock.rpc.mockResolvedValue({ error: { message: "ACCESS_CHANGED_REFRESH" } });
@@ -24,7 +24,7 @@ describe("Access Control editor", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Goods Out" }));
     fireEvent.click(screen.getByRole("button", { name: "Save access" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Someone changed these permissions");
-    expect(screen.getByRole("checkbox", { name: "Goods Out" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Goods Out" })).toBeChecked();
   });
   it("cannot disable owner recovery or save changes offline", () => {
     render(<PermissionEditor member={{ ...member, role: "owner" }} />);
@@ -41,7 +41,7 @@ vi.mock("@/features/users/return-access", () => ({ ReturnAccess: () => null }));
 
 it("expands child permissions, preserves choices under a disabled parent and saves them",async()=>{
  cleanup(); mock.online=true;mock.rpc.mockReset(); mock.rpc.mockResolvedValue({data:4,error:null});
- render(<PermissionEditor member={member}/>);
+ render(<PermissionEditor member={{...member,permissions:{orders:true,orders_new:true,orders_recent:true}}}/>);
  fireEvent.click(screen.getByRole("button",{name:"Expand Orders"}));
  const options=within(screen.getByRole("group",{name:"Orders options"}));
  fireEvent.click(options.getByRole("checkbox",{name:"New Order"}));

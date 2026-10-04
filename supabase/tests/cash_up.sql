@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare owner_id uuid:=gen_random_uuid(); staff_id uuid:=gen_random_uuid(); r jsonb; source jsonb; biz uuid; loc uuid; elsewhere uuid; member uuid; product uuid; customer uuid; credit_customer uuid; sale uuid; sale_item uuid; ret uuid; order_id uuid; invoice uuid; day date:=(now() at time zone 'Africa/Johannesburg')::date; cash_up uuid; submission uuid; tid uuid; req uuid; blocked boolean;
 begin
@@ -5,7 +6,7 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true); set local role authenticated;
  r:=public.create_business('Cash-up test','Cash store'); biz:=(r->>'business_id')::uuid; loc:=(r->>'store_id')::uuid;
  elsewhere:=public.create_location(biz,'Other store','store');
- reset role; member:=public.add_member_by_email(biz,'cash-staff@test.invalid','employee'); set local role authenticated; perform public.set_member_locations(member,array[loc]);
+ reset role; member:=app_test.add_member_by_email(biz,'cash-staff@test.invalid','employee'); set local role authenticated; perform app_test.set_member_locations(member,array[loc]);
  product:=public.create_product(loc,'Cash test item','CASH-1',null,null,5,10);
  perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',product,'quantity',100)));
  insert into public.customers(business_id,store_id,name) values(biz,loc,'Invoice customer') returning id into customer;

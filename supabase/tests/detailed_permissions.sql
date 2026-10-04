@@ -14,7 +14,7 @@ begin
  perms:=base||'{"dashboard":true,"orders":true,"invoices":true,"orders_new":false,"orders_recent":false,"invoices_create_quotes":false,"invoices_view_quotes":false,"invoices_create_from_order":false,"invoices_view_invoices":false,"dashboard_movements":false,"invoices_outstanding":false,"invoices_paid":false}';
  v:=public.set_store_module_access(m,s,perms,v);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
- if app.has_module(s,'orders_new') or not app.has_module(s2,'orders_new') then raise exception 'ASSERT separate stores';end if;
+ if app.has_module(s,'orders_new') or app.has_module(s2,'orders_new') then raise exception 'ASSERT separate stores default denied';end if;
  if app.has_module(s,'dashboard_check_stock') then raise exception 'ASSERT linked module required';end if;
  if app.has_module(s,'dashboard_adjust') or app.has_module(s,'dashboard_locations') then raise exception 'ASSERT role restrictions';end if;
  if exists(select 1 from public.sales_orders where store_id=s) or exists(select 1 from public.sales_quotes where store_id=s) or exists(select 1 from public.sales_invoices where store_id=s) or exists(select 1 from public.stock_movements where store_id=s) then raise exception 'ASSERT direct reads denied';end if;

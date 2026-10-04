@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 
 do $$
 declare u uuid:=gen_random_uuid(); emp uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid();biz uuid;loc uuid;loc2 uuid;c uuid;p uuid;res jsonb;details jsonb;profile jsonb; sid uuid:=gen_random_uuid();iid uuid;oid uuid;qid uuid;rid uuid;line uuid;v bigint;stamp timestamptz;blocked boolean;outcome jsonb;ref text;mail jsonb;today date:=(now() at time zone 'Africa/Johannesburg')::date;
@@ -64,6 +65,7 @@ begin
  insert into public.store_memberships(membership_id,store_id,business_id) select id,loc,biz from public.memberships where business_id=biz and user_id=u on conflict do nothing;
  blocked:=false;begin perform app_private.generate_recurring_invoice(qid);exception when others then if sqlerrm<>'SCHEDULE_ACCESS_REVOKED' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT revoked scheduler author';end if;
+ perform app_test.seed_assigned_user(u,biz);
  set local role authenticated;
  if exists(select 1 from public.recurring_invoices) then raise exception 'ASSERT employee cannot list recurring schedules';end if;
  blocked:=false;begin perform public.set_recurring_active(qid,1,false);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;

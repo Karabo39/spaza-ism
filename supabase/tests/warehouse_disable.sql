@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); biz uuid; shop uuid; wh uuid; m uuid; p uuid; w uuid; t uuid; r jsonb; blocked boolean;
 begin
@@ -13,14 +14,14 @@ begin
  blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm<>'WAREHOUSE_HAS_OPEN_TRANSFERS' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT in transit blocked';end if;
  perform public.receive_warehouse_transfer(t,shop);
  blocked:=false;begin perform public.disable_warehouse(shop);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT selling store cannot disable';end if;
- reset role;m:=public.add_member_by_email(biz,'disable-manager@test.invalid','manager');set local role authenticated;
- perform public.set_member_locations(m,array[wh]);perform public.set_store_module_access(m,wh,'{"warehouse_disable":false}',0);
+ reset role;m:=app_test.add_member_by_email(biz,'disable-manager@test.invalid','manager');set local role authenticated;
+ perform app_test.set_member_locations(m,array[wh]);perform app_test.set_store_module_access(m,wh,'{"warehouse_disable":false}',0);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
  blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm not like '%FORBIDDEN%' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT manager denied by scoped override';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',outsider,'role','authenticated')::text,true);
  blocked:=false;begin perform public.disable_warehouse(wh);exception when others then if sqlerrm not like '%FORBIDDEN%' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT other business denied';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
- perform public.set_store_module_access(m,wh,'{"warehouse_disable":true}',1);
+ perform app_test.set_store_module_access(m,wh,'{"warehouse_disable":true}',1);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
  perform public.disable_warehouse(wh);
  reset role;

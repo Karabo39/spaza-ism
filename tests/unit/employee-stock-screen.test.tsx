@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import CheckStockPage from "@/app/(app)/check-stock/page";
 const m = vi.hoisted(() => ({ role: "employee", exportRows: [] as Record<string, unknown>[] }));
-vi.mock("@/lib/session", () => ({ getSession: async () => ({ activeStore: { id: "store", role: m.role, currency: "ZAR" } }) }));
+vi.mock("@/lib/session", () => ({ getSession: async () => ({ activeStore: { id: "store", role: m.role, modules: {check_stock_costs: m.role === "manager"}, currency: "ZAR" } }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ rpc: async () => ({ data: { rows: [{ id: "p", name: "Coffee", category_name: "Beverages", cost_price: 1234, stock_value: 2468, selling_price: 1600, quantity: 2, unit: "each", stock_status: "ok", is_active: true }], next: null }, error: null }) }) }));
 vi.mock("@/components/shell/page-header", () => ({ PageHeader: () => <h1>Check Stock</h1> }));
 vi.mock("@/components/shell/toolbar-search", () => ({ ToolbarSearch: () => null }));

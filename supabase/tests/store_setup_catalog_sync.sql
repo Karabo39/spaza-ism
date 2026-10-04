@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare owner_id uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); biz uuid; shop uuid; other_shop uuid; wh uuid; foreign_wh uuid; member uuid;
  p uuid; existing uuid; fresh uuid; pack uuid; new_bulk uuid; bulk_store uuid; conflict uuid; r jsonb; before_products integer; before_audit integer; before_moves integer; blocked boolean;
@@ -59,7 +60,7 @@ begin
  reset role;
  insert into public.memberships(business_id,user_id,role) values(biz,staff,'employee') returning id into member;
  set local role authenticated;
- perform public.set_member_locations(member,array[other_shop]);
+ perform app_test.set_member_locations(member,array[other_shop]);
  perform public.set_store_member_access(shop,member,true);
  perform public.set_store_member_access(shop,member,false);
  if not exists(select 1 from public.store_memberships where membership_id=member and store_id=other_shop) or exists(select 1 from public.store_memberships where membership_id=member and store_id=shop) then raise exception 'ASSERT scoped assignment';end if;
@@ -71,9 +72,9 @@ begin
  blocked:=false;begin perform public.set_store_member_access(shop,member,false);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT employee assignment forbidden';end if;
  reset role;perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);set local role authenticated;
- perform public.set_member_locations(member,array[shop,other_shop,wh]);
- reset role;update public.memberships set role='manager' where id=member;set local role authenticated;
- perform public.set_store_module_access(member,shop,jsonb_build_object('products',false),coalesce((select version from public.store_module_access where membership_id=member and store_id=shop),0));
+ perform app_test.set_member_locations(member,array[shop,other_shop,wh]);
+ reset role;perform app_test.seed_assigned_user(staff,biz,'manager');set local role authenticated;
+ perform app_test.set_store_module_access(member,shop,jsonb_build_object('products',false),coalesce((select version from public.store_module_access where membership_id=member and store_id=shop),0));
  reset role;perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);set local role authenticated;
  blocked:=false;begin perform public.sync_store_products(shop,wh,false);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
  if not blocked then raise exception 'ASSERT manager product permission enforced';end if;

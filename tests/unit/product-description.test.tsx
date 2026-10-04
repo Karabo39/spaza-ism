@@ -15,7 +15,7 @@ const rpc = vi.hoisted(() =>
 );
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/lib/store-context", () => ({
-  useStore: () => ({ store: { id: "store" } }),
+  useStore: () => ({ store: { id: "store" }, canModule: () => true }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/lib/supabase/client", () => ({

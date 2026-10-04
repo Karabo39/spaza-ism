@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 -- Run after 0013. Exercises actual authenticated RLS and SECURITY DEFINER RPCs.
 do $$
 declare
@@ -17,10 +18,10 @@ begin
   other_shop := public.create_location(biz, 'Second shop', 'store');
   res := public.create_business('Other business', 'Foreign shop');
   foreign_biz := (res->>'business_id')::uuid; foreign_shop := (res->>'store_id')::uuid;
-  reset role; manager_member := public.add_member_by_email(biz,'location-manager@test.invalid','manager'); set local role authenticated;
-  reset role; employee_member := public.add_member_by_email(biz,'location-employee@test.invalid','employee'); set local role authenticated;
-  perform public.set_member_locations(manager_member, array[shop,warehouse]);
-  perform public.set_member_locations(employee_member, array[shop]);
+  reset role; manager_member := app_test.add_member_by_email(biz,'location-manager@test.invalid','manager'); set local role authenticated;
+  reset role; employee_member := app_test.add_member_by_email(biz,'location-employee@test.invalid','employee'); set local role authenticated;
+  perform app_test.set_member_locations(manager_member, array[shop,warehouse]);
+  perform app_test.set_member_locations(employee_member, array[shop]);
   warehouse_product := public.create_product(warehouse, 'Milk warehouse', 'WH-MILK');
   shop_product := public.create_product(shop, 'Milk shop', 'SHOP-MILK');
   perform public.receive_stock(warehouse,null,'WH-RECEIPT',null,jsonb_build_array(jsonb_build_object('product_id',warehouse_product,'quantity',10)));
@@ -42,7 +43,7 @@ begin
   if not blocked then raise exception 'ASSERT warehouse sale denied'; end if;
   if exists(select 1 from public.reconcile_stock(warehouse) where diff <> 0) then raise exception 'ASSERT warehouse reconciles'; end if;
   blocked := false;
-  begin perform public.set_member_locations(employee_member, array[foreign_shop]);
+  begin perform app_test.set_member_locations(employee_member, array[foreign_shop]);
   exception when others then if sqlerrm <> 'INVALID_LOCATION' then raise; end if; blocked := true; end;
   if not blocked then raise exception 'ASSERT cross-business assignment denied'; end if;
   if not exists(select 1 from public.store_memberships where membership_id=employee_member and store_id=shop) then raise exception 'ASSERT invalid assignment rollback'; end if;
@@ -71,7 +72,7 @@ begin
   if exists(select 1 from public.audit_logs where store_id=other_shop or store_id is null) then raise exception 'ASSERT manager audit isolation'; end if;
 
   perform set_config('request.jwt.claims', jsonb_build_object('sub',owner_id,'role','authenticated')::text, true);
-  perform public.set_store_module_access(employee_member,shop,'{"goods_in_new_stock":true}',0);
+  perform app_test.set_store_module_access(employee_member,shop,'{"goods_in_new_stock":true}',0);
   perform set_config('request.jwt.claims', jsonb_build_object('sub',employee_id,'role','authenticated')::text, true);
   if exists(select 1 from public.stock where store_id=warehouse) then raise exception 'ASSERT warehouse stock hidden'; end if;
   perform public.receive_stock(shop,null,null,null,jsonb_build_array(jsonb_build_object('product_id',shop_product,'quantity',3)));
@@ -83,7 +84,7 @@ begin
   exception when others then if sqlerrm <> 'FORBIDDEN' then raise; end if; blocked := true; end;
   if not blocked then raise exception 'ASSERT employee warehouse receipt denied'; end if;
   blocked := false;
-  begin perform public.set_member_locations(employee_member,array[shop,warehouse]);
+  begin perform app_test.set_member_locations(employee_member,array[shop,warehouse]);
   exception when others then if sqlerrm <> 'FORBIDDEN' then raise; end if; blocked := true; end;
   if not blocked then raise exception 'ASSERT no self-assignment'; end if;
   blocked := false;
@@ -100,7 +101,7 @@ begin
   if not blocked then raise exception 'ASSERT product business validated'; end if;
 
   perform set_config('request.jwt.claims', jsonb_build_object('sub',owner_id,'role','authenticated')::text, true);
-  perform public.set_member_locations(employee_member,array[]::uuid[]);
+  perform app_test.set_member_locations(employee_member,array[]::uuid[]);
   perform set_config('request.jwt.claims', jsonb_build_object('sub',owner_id,'role','authenticated')::text, true);
 
   perform set_config('request.jwt.claims', jsonb_build_object('sub',employee_id,'role','authenticated')::text, true);

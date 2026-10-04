@@ -12,14 +12,14 @@ begin
  if v<>1 then raise exception 'ASSERT first access version'; end if;
  blocked:=false; begin perform public.set_store_module_access(m,a,denied,0); exception when others then if sqlerrm<>'ACCESS_CHANGED_REFRESH' then raise; end if; blocked:=true; end;
  if not blocked then raise exception 'ASSERT stale editor cannot overwrite'; end if;
- blocked:=false; begin perform public.set_store_module_access(m,a,'{"adjust":true}',1); exception when others then if sqlerrm<>'INVALID_PERMISSIONS' then raise; end if; blocked:=true; end;
+ blocked:=false; begin perform public.set_store_module_access(m,a,'{"access_control":true}',1); exception when others then if sqlerrm<>'INVALID_PERMISSIONS' then raise; end if; blocked:=true; end;
  if not blocked then raise exception 'ASSERT role cap'; end if;
  blocked:=false; begin perform public.set_store_module_access(m,a,'{"check_price":"yes"}',1); exception when others then if sqlerrm<>'INVALID_PERMISSIONS' then raise; end if; blocked:=true; end;
  if not blocked then raise exception 'ASSERT strict booleans'; end if;
  if not app.has_module(a,'access_control') then raise exception 'ASSERT owner recovery'; end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee_id,'role','authenticated','user_metadata',jsonb_build_object('role','owner'))::text,true);
  if not app.has_module(a,'check_price') or app.has_module(a,'goods_out') or app.has_module(a,'settings') then raise exception 'ASSERT per-module defaults overridden'; end if;
- if not app.has_module(b,'goods_out') then raise exception 'ASSERT store B unaffected'; end if;
+ if app.has_module(b,'goods_out') then raise exception 'ASSERT unconfigured store defaults denied'; end if;
  if not exists(select 1 from public.products where id=p) then raise exception 'ASSERT price lookup remains available'; end if;
  blocked:=false; begin perform public.complete_sale(a,'CASH',null,'[]'); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
  if not blocked then raise exception 'ASSERT hidden checkout RPC denied'; end if;
@@ -31,7 +31,7 @@ begin
  if not blocked then raise exception 'ASSERT private implementation denied'; end if;
  blocked:=false; begin perform public.set_store_module_access(m,a,'{}',1); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
  if not blocked then raise exception 'ASSERT no self grant'; end if;
- perform public.create_product(b,'Allowed at B');
+ begin perform public.create_product(b,'Denied at unconfigured B');raise exception 'ASSERT unconfigured create allowed';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);
  perform public.set_store_module_access(m,a,denied,1);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee_id,'role','authenticated')::text,true);

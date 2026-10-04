@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); employee uuid:=gen_random_uuid(); target uuid; b uuid; s uuid; usa uuid; p uuid; c uuid; o uuid; i uuid; result jsonb; req uuid:=gen_random_uuid(); member uuid; blocked boolean; before_count integer;
 begin
@@ -21,8 +22,8 @@ begin
  perform public.issue_sales_invoice(i);perform public.post_invoice_entry(i,'PAYMENT',20,gen_random_uuid(),'CASH');perform public.issue_invoice_goods(i);
  target:=public.create_product(s,'SA item','SA-1',null,null,5,10,0,0,'each',false);
  blocked:=false;begin perform public.create_stock_transfer(usa,s,jsonb_build_array(jsonb_build_object('source_product_id',p,'destination_product_id',target,'quantity',1)),gen_random_uuid());exception when others then if sqlerrm<>'TRANSFER_CURRENCY_MISMATCH' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT no implicit currency conversion on transfers';end if;
- reset role;member:=public.add_member_by_email(b,'currency-staff@test.invalid','employee');set local role authenticated;perform public.set_member_locations(member,array[usa]);
- perform public.set_store_module_access(member,usa,'{"reports":false,"invoices":true,"returns":true,"settings":false}',0);
+ reset role;member:=app_test.add_member_by_email(b,'currency-staff@test.invalid','employee');set local role authenticated;perform app_test.set_member_locations(member,array[usa]);
+ perform app_test.set_store_module_access(member,usa,'{"reports":false,"invoices":true,"returns":true,"settings":false}',0);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
  result:=public.prepare_document_email('invoice',i,req,repeat('a',64),'buyer@test.invalid');
  if nullif(result->>'id','') is null then raise exception 'ASSERT invoices user may email without reports';end if;

@@ -49,7 +49,7 @@ it("allows approval before receipt and clearing receipt without clearing approva
   render(<PurchaseOrder order="order" />);
   const received = screen.getByRole("checkbox", { name: "PO received" });
   const approved = screen.getByRole("checkbox", {
-    name: "PO approved by manager/owner",
+    name: "PO approved by authorised user",
   });
   expect(approved).toBeEnabled();
   fireEvent.click(approved);
@@ -74,7 +74,7 @@ it("lets staff record receipt but protects manager approval and approved content
   mocks.approved = true;
   render(<PurchaseOrder order="order" />);
   expect(
-    screen.getByRole("checkbox", { name: "PO approved by manager/owner" }),
+    screen.getByRole("checkbox", { name: "PO approved by authorised user" }),
   ).toBeDisabled();
   expect(screen.getByLabelText("Customer PO reference")).toBeDisabled();
   expect(screen.getByLabelText("Attach purchase order")).toBeDisabled();

@@ -30,7 +30,7 @@ describe("friendlyError", () => {
   it("maps known RPC errors to human text", () => {
     expect(friendlyError("INSUFFICIENT_STOCK: product x")).toMatch(/not enough stock/i);
     expect(friendlyError("CREDIT_LIMIT_EXCEEDED: ...")).toMatch(/credit limit/i);
-    expect(friendlyError("OVERRIDE_NOT_AUTHORIZED")).toMatch(/manager or owner/i);
+    expect(friendlyError("OVERRIDE_NOT_AUTHORIZED")).toMatch(/authorised approver/i);
     expect(friendlyError("FORBIDDEN")).toMatch(/permission/i);
   });
   it("passes through unknown messages", () => {

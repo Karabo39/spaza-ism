@@ -30,6 +30,14 @@ try {
   for (const name of (await readdir("supabase/migrations"))
     .filter((n) => n.endsWith(".sql"))
     .sort()) {
+    if (name.endsWith("_employee_explicit_permissions.sql")) {
+      await client.query("begin");
+      await client.query(await readFile("supabase/tests/employee_access_upgrade_before.sql", "utf8"));
+      await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
+      await client.query(await readFile("supabase/tests/employee_access_upgrade_after.sql", "utf8"));
+      await client.query("rollback");
+      console.log("Passed existing employee/manager access migration (rolled back)");
+    }
     if (name === "0024_reporting_history.sql") {
       await client.query("begin");
       await client.query(
@@ -91,6 +99,7 @@ try {
     await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
     console.log(`Applied ${name}`);
   }
+  await client.query(await readFile("supabase/tests/explicit_access_fixtures.sql", "utf8"));
   for (const file of [
     "rpc_integration.sql",
     "location_access.sql",
@@ -138,6 +147,7 @@ try {
     "customer_notifications.sql",
     "orders_delivery_collaboration.sql",
     "mixed_document_refinements.sql",
+    "october_workflows.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); employee uuid:=gen_random_uuid(); biz uuid; loc uuid; member uuid;
   res jsonb; c uuid; p uuid; oid uuid; iid uuid; blocked boolean; req uuid;
@@ -5,7 +6,7 @@ begin
   insert into auth.users(id,email,raw_user_meta_data) values(u,'workflow-owner@test.invalid','{}'),(employee,'workflow-employee@test.invalid','{}');
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true); set local role authenticated;
   res:=public.create_business('Workflow test','Shop'); biz:=(res->>'business_id')::uuid; loc:=(res->>'store_id')::uuid;
-  reset role; member:=public.add_member_by_email(biz,'workflow-employee@test.invalid','employee'); set local role authenticated; perform public.set_member_locations(member,array[loc]);
+  reset role; member:=app_test.add_member_by_email(biz,'workflow-employee@test.invalid','employee'); set local role authenticated; perform app_test.set_member_locations(member,array[loc]);
   insert into public.customers(business_id,store_id,name) values(biz,loc,'Customer') returning id into c;
   p:=public.create_product(loc,'Product','WORKFLOW-1',null,null,5,10);
   perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',10)));
@@ -28,14 +29,14 @@ begin
   if public.order_workflow_summary(loc)->0->>'status'<>'AWAITING_PAYMENT' then raise exception 'ASSERT adjustment reopens balance'; end if;
   perform public.post_invoice_entry(iid,'PAYMENT',2,gen_random_uuid(),'CASH');
   -- Orders-only employee can see this limited summary, not the full invoice API.
-  perform public.set_store_module_access(member,loc,'{"invoices":false,"reports":false,"returns":false,"credit":false}',0);
+  perform app_test.set_store_module_access(member,loc,'{"invoices":false,"reports":false,"returns":false,"credit":false}',0);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
   if public.order_workflow_summary(loc)->0->>'status'<>'COMPLETED' then raise exception 'ASSERT orders-only summary'; end if;
   if exists(select 1 from public.sales_invoices where id=iid) then raise exception 'ASSERT invoice access not widened'; end if;
   blocked:=false; begin perform public.order_workflow_summary(gen_random_uuid()); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT cross-store denied'; end if;
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
-  perform public.set_store_module_access(member,loc,'{"orders":false}',1);
+  perform app_test.set_store_module_access(member,loc,'{"orders":false}',1);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
   blocked:=false; begin perform public.order_workflow_summary(loc); exception when others then if sqlerrm<>'FORBIDDEN' then raise; end if; blocked:=true; end;
   if not blocked then raise exception 'ASSERT revoked orders denied'; end if;

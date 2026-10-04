@@ -6,9 +6,9 @@ describe("itemVisible (role gating)", () => {
   const users = NAV.flatMap((g) => g.items).find((i) => i.href === "/users")!;
   const dashboard = NAV.flatMap((g) => g.items).find((i) => i.href === "/")!;
 
-  it("hides manager-only items from employees", () => {
-    expect(itemVisible(adjust, "employee")).toBe(false);
-    expect(itemVisible(adjust, "manager")).toBe(true);
+  it("requires explicit permissions for operational items", () => {
+    expect(itemVisible(adjust, "employee", () => false)).toBe(false);
+    expect(itemVisible(adjust, "employee", () => true)).toBe(true);
     expect(itemVisible(adjust, "owner")).toBe(true);
   });
 

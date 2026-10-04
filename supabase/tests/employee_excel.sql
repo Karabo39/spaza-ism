@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare owner_id uuid:=gen_random_uuid(); employee uuid:=gen_random_uuid(); b uuid; s uuid; other_store uuid;
  membership uuid; p uuid; p2 uuid; take uuid; item uuid; result jsonb; template jsonb; rows jsonb; export_id uuid:=gen_random_uuid();
@@ -9,9 +10,9 @@ begin
  other_store:=public.create_location(b,'Other shop','store',null);
  p:=public.create_product(s,'Product A',null,null,null,5,10);p2:=public.create_product(s,'Product B',null,null,null,2,7);
  perform public.receive_stock(s,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',100,'unit_cost',5),jsonb_build_object('product_id',p2,'quantity',50,'unit_cost',2)));
- reset role;membership:=public.add_member_by_email(b,'excel-employee@test.invalid','employee');set local role authenticated;
- perform public.set_member_locations(membership,array[s,other_store]);
- v:=public.set_store_module_access(membership,s,'{"goods_in_new_stock":true}',v);
+ reset role;membership:=app_test.add_member_by_email(b,'excel-employee@test.invalid','employee');set local role authenticated;
+ perform app_test.set_member_locations(membership,array[s,other_store]);
+ v:=app_test.set_store_module_access(membership,s,'{"goods_in_new_stock":true}',v);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
  if app.has_module(s,'goods_out_change_price') or app.has_module(s,'invoices_summary') then raise exception 'ASSERT employee defaults';end if;
  begin perform public.complete_sale(s,'CASH',null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1,'unit_price',9)));raise exception 'ASSERT employee discount denied';exception when others then if sqlerrm<>'PRICE_CHANGE_NOT_ALLOWED' then raise;end if;end;
@@ -20,7 +21,7 @@ begin
  perform public.receive_stock(s,null,null,null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1,'unit_cost',5)));
  if (select cost_price from public.products where id=p)<>5 then raise exception 'ASSERT employee cost preserved';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);
- v:=public.set_store_module_access(membership,s,'{"goods_in_new_stock":true,"goods_out_change_price":true}',v);
+ v:=app_test.set_store_module_access(membership,s,'{"goods_in_new_stock":true,"goods_out_change_price":true}',v);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
  perform public.complete_sale(s,'CASH',null,jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1,'unit_price',9)));
  if app.has_module(other_store,'goods_out_change_price') then raise exception 'ASSERT price grant scoped to store';end if;
@@ -57,7 +58,7 @@ begin
  if (select quantity from public.stock where product_id=p)<>0 then raise exception 'ASSERT owner approves zero count';end if;
  if exists(select 1 from public.reconcile_stock(s) where diff<>0) then raise exception 'ASSERT stock reconciles';end if;
  -- Fresh permission checks precede even idempotent retries.
- v:=public.set_store_module_access(membership,s,'{"stock_take":false}',v);
+ v:=app_test.set_store_module_access(membership,s,'{"stock_take":false}',v);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);
  begin perform public.import_stock_take_template(s,export_id,rows);raise exception 'ASSERT revoked access denied';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
  reset role;raise exception 'TESTS_PASSED';

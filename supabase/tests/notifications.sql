@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare owner_id uuid:=gen_random_uuid(); manager uuid:=gen_random_uuid(); cashier uuid:=gen_random_uuid(); biz uuid; loc uuid; member uuid; res jsonb; jobs jsonb; jid uuid; product uuid; tracked uuid; blocked boolean;
 begin
@@ -7,12 +8,12 @@ begin
   product:=public.create_product(loc,'Out product','NOTIFY-OUT');
   tracked:=public.create_product(loc,'Expiry product','NOTIFY-EXP',null,null,1,2,0,0,'each',true);
   perform public.receive_stock(loc,null,null,null,jsonb_build_array(jsonb_build_object('product_id',tracked,'quantity',3,'expiry_date',current_date+5)));
-  reset role; member:=public.add_member_by_email(biz,'notification-manager@test.invalid','manager'); set local role authenticated;perform public.set_member_locations(member,array[loc]);
+  reset role; member:=app_test.add_member_by_email(biz,'notification-manager@test.invalid','manager'); set local role authenticated;perform app_test.set_member_locations(member,array[loc]);
   perform public.set_notification_preference(loc,'OUT_OF_STOCK',true,0);perform public.set_notification_preference(loc,'UPCOMING_EXPIRY',true,0);perform public.set_notification_preference(loc,'WEEKLY_PROFIT',true,0);
   blocked:=false;begin perform public.claim_notification_deliveries();exception when insufficient_privilege then blocked:=true;end;
   if not blocked then raise exception 'ASSERT browser cannot invoke delivery worker';end if;
   perform set_config('request.jwt.claims',jsonb_build_object('sub',manager,'role','authenticated')::text,true);perform public.set_notification_preference(loc,'OUT_OF_STOCK',true,0);
-  perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);perform public.set_member_locations(member,array[]::uuid[]);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_id,'role','authenticated')::text,true);perform app_test.set_member_locations(member,array[]::uuid[]);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',cashier,'role','authenticated')::text,true);
   blocked:=false;begin perform public.set_notification_preference(loc,'OUT_OF_STOCK',true,0);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;
   if not blocked then raise exception 'ASSERT employee preference denied';end if;

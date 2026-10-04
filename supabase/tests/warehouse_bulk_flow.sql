@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); m uuid; biz uuid; shop uuid; wh uuid; wp uuid; wu uuid; sp uuid; su uuid; conversion uuid; t uuid; r jsonb; blocked boolean;
 begin
@@ -12,7 +13,7 @@ begin
  t:=public.create_stock_transfer(wh,shop,jsonb_build_array(jsonb_build_object('source_product_id',wp,'destination_product_id',sp,'quantity',3)),gen_random_uuid());
  perform public.process_stock_transfer(t,'submit');perform public.process_stock_transfer(t,'dispatch');perform public.process_stock_transfer(t,'receive');
  conversion:=public.set_bulk_conversion(sp,su,6);
- reset role;m:=public.add_member_by_email(biz,'bulk-flow-staff@test.invalid','employee');set local role authenticated;perform public.set_member_locations(m,array[shop]);
+ reset role;m:=app_test.add_member_by_email(biz,'bulk-flow-staff@test.invalid','employee');set local role authenticated;perform app_test.set_member_locations(m,array[shop]);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
  perform public.unpack_stock(conversion,1,'Unpack delivered pack',gen_random_uuid());
  blocked:=false;begin perform public.set_bulk_conversion(sp,su,7);exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;blocked:=true;end;

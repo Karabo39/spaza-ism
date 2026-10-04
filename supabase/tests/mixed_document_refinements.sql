@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 #variable_conflict use_variable
 declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid();
@@ -17,7 +18,7 @@ begin
  perform public.save_purchase_order(q,null,false,true,'PO-1',null,null,null,0);
  if not exists(select 1 from public.sales_purchase_orders where quote_id=q and approved and not received and approved_by=u) then raise exception 'ASSERT approval without receipt';end if;
  select approved_at into approval_time from public.sales_purchase_orders where quote_id=q;
- reset role;member:=public.add_member_by_email(b,'mixed-staff@test.invalid','employee');set local role authenticated;perform public.set_member_locations(member,array[s]);
+ reset role;member:=app_test.add_member_by_email(b,'mixed-staff@test.invalid','employee');set local role authenticated;perform app_test.set_member_locations(member,array[s]);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
  perform public.save_purchase_order(q,null,true,true,'PO-1',null,null,null,1);
  perform public.save_purchase_order(q,null,false,true,'PO-1',null,null,null,2);

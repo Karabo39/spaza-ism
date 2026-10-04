@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); worker uuid:=gen_random_uuid(); biz uuid; loc uuid; p uuid; take uuid; item uuid; req uuid:=gen_random_uuid(); aid uuid; result jsonb;
 begin
@@ -23,7 +24,7 @@ begin
   take:=public.start_stock_take(loc);perform public.cancel_stock_take(take,'Abandoned count');
   begin perform public.complete_stock_take(take);raise exception 'ASSERT cancelled take cannot post';exception when others then if sqlerrm<>'STOCK_TAKE_CLOSED' then raise;end if;end;
   if exists(select 1 from public.reconcile_stock(loc) where diff<>0) then raise exception 'ASSERT counts reconcile';end if;
-  reset role;insert into public.memberships(business_id,user_id,role) values(biz,worker,'employee');insert into public.store_memberships(business_id,store_id,membership_id) select biz,loc,id from public.memberships where business_id=biz and user_id=worker;
+  reset role;insert into public.memberships(business_id,user_id,role) values(biz,worker,'employee');insert into public.store_memberships(business_id,store_id,membership_id) select biz,loc,id from public.memberships where business_id=biz and user_id=worker;perform app_test.seed_assigned_user(worker,biz);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',worker,'role','authenticated')::text,true);set local role authenticated;
   take:=public.start_stock_take(loc);select id into item from public.stock_take_items where stock_take_id=take and product_id=p;perform public.save_stock_take_count(item,6);
   begin perform public.complete_stock_take(take);raise exception 'ASSERT employee cannot approve';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;

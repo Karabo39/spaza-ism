@@ -1,3 +1,4 @@
+-- Existing workflow fixture grants are explicit; see explicit_access_fixtures.sql.
 do $$
 declare u uuid:=gen_random_uuid(); staff uuid:=gen_random_uuid(); r jsonb; biz uuid; loc uuid; wh uuid; food uuid; normal uuid; pack uuid; wp uuid; wu uuid; sale uuid; li uuid; ret uuid; conv uuid; t uuid; v jsonb; request uuid:=gen_random_uuid(); take uuid; report record; count_before int; own_shift uuid; other_shift uuid; customer uuid; invoice uuid; order_id uuid; submission uuid; cash_day date:=(now() at time zone 'Africa/Johannesburg')::date;
 begin
@@ -51,9 +52,9 @@ begin
  take:=public.start_stock_take(loc);
  if exists(select 1 from public.stock_take_items where stock_take_id=take and product_id=food) then raise exception 'ASSERT counts exclude sales-only';end if;
  begin perform public.save_product_details(food,'{"name":"KOTA","cost_price":10,"selling_price":35,"min_stock_level":0,"reorder_level":0,"unit":"each","track_expiry":false,"is_active":true,"tracking_type":"QUANTITY"}');raise exception 'ASSERT historical tracking locked';exception when others then if sqlerrm<>'TRACKING_CHANGE_HAS_HISTORY_OR_STOCK' then raise;end if;end;
- reset role;insert into public.memberships(business_id,user_id,role) values(biz,staff,'employee');insert into public.store_memberships(business_id,store_id,membership_id) select biz,loc,id from public.memberships where business_id=biz and user_id=staff;
+ reset role;insert into public.memberships(business_id,user_id,role) values(biz,staff,'employee');insert into public.store_memberships(business_id,store_id,membership_id) select biz,loc,id from public.memberships where business_id=biz and user_id=staff;perform app_test.seed_assigned_user(staff,biz);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);set local role authenticated;
- begin perform public.save_product_details(normal,v);raise exception 'ASSERT employee cannot configure';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
+ begin perform public.save_product_details(normal,v||'{"units_per_pack":99}');raise exception 'ASSERT employee cannot configure';exception when others then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
 
  own_shift:=public.open_cash_up(loc,cash_day-1,20);
  r:=public.cash_up_summary(loc,cash_day-1);

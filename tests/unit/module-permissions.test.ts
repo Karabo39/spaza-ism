@@ -7,14 +7,14 @@ import {
 } from "@/lib/modules";
 import { NAV, itemVisible } from "@/components/shell/nav-config";
 describe("store module permissions", () => {
-  it("preserves role defaults while capping attempted role elevation", () => {
+  it("defaults to no access and honours explicit operational grants", () => {
     const p = modulePermissions("employee", {
       goods_out: false,
       settings: true,
     });
     expect(p.goods_out).toBe(false);
-    expect(p.goods_in).toBe(true);
-    expect(p.settings).toBe(false);
+    expect(p.goods_in).toBe(false);
+    expect(p.settings).toBe(true);
   });
   it("does not treat string booleans or malformed grants as permission", () => {
     expect(
@@ -79,26 +79,26 @@ describe("child permissions", () => {
       }).invoices_outstanding,
     ).toBe(false);
   });
-  it("preserves legacy defaults and independently denies children", () => {
+  it("requires explicit parent and child grants", () => {
     const p = modulePermissions("employee", {
       orders_new: false,
       invoices_paid: false,
     });
     expect(p.orders_new).toBe(false);
-    expect(p.orders_recent).toBe(true);
+    expect(p.orders_recent).toBe(false);
     expect(p.invoices_paid).toBe(false);
     expect(p.invoices_outstanding).toBe(false);
   });
 });
 
 it("requires employee receiving grants independently for each store", () => {
-  const a = modulePermissions("employee", { goods_in_receive_transfer: true });
+  const a = modulePermissions("employee", { goods_in:true, goods_in_receive_transfer: true });
   expect(a.goods_in_receive_transfer).toBe(true);
   expect(a.goods_in_new_stock).toBe(false);
   expect(a.warehouse).toBe(false);
   expect(modulePermissions("employee").goods_in_receive_transfer).toBe(false);
   expect(
-    modulePermissions("employee", { goods_in_new_stock: true })
+    modulePermissions("employee", { goods_in:true, goods_in_new_stock: true })
       .goods_in_new_stock,
   ).toBe(true);
   expect(
@@ -107,7 +107,7 @@ it("requires employee receiving grants independently for each store", () => {
       goods_in_receive_transfer: true,
     }).goods_in_receive_transfer,
   ).toBe(false);
-  expect(modulePermissions("manager").goods_in_new_stock).toBe(true);
+  expect(modulePermissions("manager").goods_in_new_stock).toBe(false);
 });
 
 it("keeps unpacking under Stock Control and honours existing Operations grants", () => {
@@ -130,9 +130,9 @@ it("keeps unpacking under Stock Control and honours existing Operations grants",
 
 it("requires explicit employee sale-price permission and never grants invoice summaries", () => {
   expect(modulePermissions("employee").goods_out_change_price).toBe(false);
-  expect(modulePermissions("employee", { goods_out_change_price: true }).goods_out_change_price).toBe(true);
+  expect(modulePermissions("employee", { goods_out:true, goods_out_change_price: true }).goods_out_change_price).toBe(true);
   expect(modulePermissions("employee", { goods_out: false, goods_out_change_price: true }).goods_out_change_price).toBe(false);
-  expect(modulePermissions("manager").goods_out_change_price).toBe(true);
+  expect(modulePermissions("manager").goods_out_change_price).toBe(false);
   expect(modulePermissions("employee", { invoices_summary: true, invoices_outstanding: true, dashboard_invoicing: true }).invoices_outstanding).toBe(false);
-  expect(modulePermissions("employee").invoices_view_invoices).toBe(true);
+  expect(modulePermissions("employee").invoices_view_invoices).toBe(false);
 });
