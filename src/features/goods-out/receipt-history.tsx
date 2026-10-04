@@ -147,62 +147,67 @@ export function ReceiptHistory({ refreshKey }: { refreshKey: string | null }) {
           Next
         </Button>
       </div>
-      {can("manager") && !prefs.isPending && !prefs.isError && (
-        <details>
-          <summary className="cursor-pointer text-sm">
-            Store receipt settings
-          </summary>
-          <div className="mt-3 space-y-2 text-sm">
-            <label className="flex gap-2">
-              <input
-                type="checkbox"
-                checked={prefs.data?.second_copy ?? false}
-                onChange={(e) =>
-                  save(e.target.checked, prefs.data?.delay_seconds ?? 3)
-                }
-              />
-              Request a second receipt copy automatically
-            </label>
-            <label>
-              Delay after the first print dialog closes{" "}
-              <select
-                value={prefs.data?.delay_seconds ?? 3}
-                onChange={(e) =>
-                  save(prefs.data?.second_copy ?? false, Number(e.target.value))
-                }
-              >
-                {[2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>
-                    {n} seconds
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              Receipt paper{" "}
-              <select
-                value={prefs.data?.paper_format ?? "80mm"}
-                onChange={(e) =>
-                  save(
-                    prefs.data?.second_copy ?? false,
-                    prefs.data?.delay_seconds ?? 3,
-                    e.target.value,
-                  )
-                }
-              >
-                <option value="58mm">58 mm thermal</option>
-                <option value="80mm">80 mm thermal</option>
-                <option value="A4">A4</option>
-              </select>
-            </label>
-            <p className="text-xs text-muted">
-              Choose the installed USB, network or Bluetooth printer in the
-              system print dialog. Browser printing requires confirmation for
-              each copy. A print request does not confirm paper was printed.
-            </p>
-          </div>
-        </details>
-      )}
+      {can("manager", "goods_out_receipt_settings") &&
+        !prefs.isPending &&
+        !prefs.isError && (
+          <details>
+            <summary className="cursor-pointer text-sm">
+              Store receipt settings
+            </summary>
+            <div className="mt-3 space-y-2 text-sm">
+              <label className="flex gap-2">
+                <input
+                  type="checkbox"
+                  checked={prefs.data?.second_copy ?? false}
+                  onChange={(e) =>
+                    save(e.target.checked, prefs.data?.delay_seconds ?? 3)
+                  }
+                />
+                Request a second receipt copy automatically
+              </label>
+              <label>
+                Delay after the first print dialog closes{" "}
+                <select
+                  value={prefs.data?.delay_seconds ?? 3}
+                  onChange={(e) =>
+                    save(
+                      prefs.data?.second_copy ?? false,
+                      Number(e.target.value),
+                    )
+                  }
+                >
+                  {[2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>
+                      {n} seconds
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                Receipt paper{" "}
+                <select
+                  value={prefs.data?.paper_format ?? "80mm"}
+                  onChange={(e) =>
+                    save(
+                      prefs.data?.second_copy ?? false,
+                      prefs.data?.delay_seconds ?? 3,
+                      e.target.value,
+                    )
+                  }
+                >
+                  <option value="58mm">58 mm thermal</option>
+                  <option value="80mm">80 mm thermal</option>
+                  <option value="A4">A4</option>
+                </select>
+              </label>
+              <p className="text-xs text-muted">
+                Choose the installed USB, network or Bluetooth printer in the
+                system print dialog. Browser printing requires confirmation for
+                each copy. A print request does not confirm paper was printed.
+              </p>
+            </div>
+          </details>
+        )}
     </details>
   );
 }

@@ -421,7 +421,6 @@ function InvitationEditor({
                   }}
                 >
                   <option value="employee">Employee</option>
-                  <option value="manager">Manager</option>
                   <option value="owner">Owner</option>
                 </select>
               </div>

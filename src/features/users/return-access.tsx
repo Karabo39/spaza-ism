@@ -53,7 +53,8 @@ function ReturnAccessEditor({
       <legend className="px-2 font-semibold">Delegated return actions</legend>
       <p className="text-sm text-muted-foreground">
         These actions apply only at {store.name} and require Goods Return module
-        access. Managers and owners retain their existing approval powers.
+        access. Owners have full access. The Returns management permission also
+        authorises these actions.
       </p>
       <label className="flex items-center gap-2">
         <input

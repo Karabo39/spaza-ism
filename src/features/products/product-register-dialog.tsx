@@ -34,7 +34,7 @@ function ProductRegisterDialogContent({
   initialName?: string;
   onCreated?: (product: ProductStock) => void;
 }) {
-  const { store } = useStore();
+  const { store, canModule } = useStore();
   const [name, setName] = React.useState(initialName);
   const [sku, setSku] = React.useState("");
   const [barcode, setBarcode] = React.useState(initialBarcode);
@@ -168,7 +168,7 @@ function ProductRegisterDialogContent({
               />
             </div>
           </div>
-          <StockConfiguration value={stockConfig} onChange={setStockConfig} />
+          <StockConfiguration disabled={!canModule("products_manage")} value={stockConfig} onChange={setStockConfig} />
           {stockConfig.tracking_type === "QUANTITY" && (
             <>
               <div className="grid grid-cols-2 gap-3">

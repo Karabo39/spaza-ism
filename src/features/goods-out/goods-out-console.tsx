@@ -184,7 +184,7 @@ export function GoodsOutConsole() {
       setUnknownCode(code);
       toast.error(`No product for "${code}"`, {
         action:
-          can("manager") && canModule("products")
+          can("manager", "products_edit") && canModule("products")
             ? { label: "Register", onClick: () => setRegisterOpen(true) }
             : undefined,
       });
@@ -309,7 +309,7 @@ export function GoodsOutConsole() {
       !approvalToken
     ) {
       toast.error(
-        "Ask a manager to approve this amount before completing the sale.",
+        "Ask an authorised approver to approve this amount before completing the sale.",
       );
       return;
     }
@@ -704,7 +704,7 @@ export function GoodsOutConsole() {
                   <p className="mt-1 text-muted-foreground">
                     New balance would be {money(projectedBalance, currency)}.
                   </p>
-                  {can("manager") ? (
+                  {can("manager", "goods_out_override") ? (
                     <label className="mt-2 flex items-center gap-2 text-foreground">
                       <input
                         type="checkbox"

@@ -75,7 +75,18 @@ export function StockExport({
         <ExportButton
           rows={[]}
           loadRows={loadRows}
-          columns={can("manager") ? columns : columns.filter((c) => ["name", "quantity", "stock_status", "selling_price"].includes(c.key))}
+          columns={
+            can("manager", "check_stock_costs")
+              ? columns
+              : columns.filter((c) =>
+                  [
+                    "name",
+                    "quantity",
+                    "stock_status",
+                    "selling_price",
+                  ].includes(c.key),
+                )
+          }
           filename={`stock-${status}`}
           module="check_stock"
         />

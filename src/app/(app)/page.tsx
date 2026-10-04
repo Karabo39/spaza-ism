@@ -37,12 +37,11 @@ export default async function DashboardPage() {
   const store = session.activeStore;
   const supabase = await createClient();
 
-  const { data: summaryRaw } =
-    store.role === "employee"
-      ? { data: null }
-      : await supabase.rpc("dashboard_summary", {
-          p_store: store.id,
-        });
+  const { data: summaryRaw } = !store.modules.check_stock_costs
+    ? { data: null }
+    : await supabase.rpc("dashboard_summary", {
+        p_store: store.id,
+      });
 
   const s = (summaryRaw as Summary | null) ?? {
     stock_value: 0,
@@ -78,7 +77,7 @@ export default async function DashboardPage() {
         />
       )}
 
-      {store.role !== "employee" && (
+      {store.modules.check_stock_costs && (
         <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           {store.modules.dashboard_check_stock && (
             <MetricCard

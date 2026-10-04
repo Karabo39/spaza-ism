@@ -72,7 +72,7 @@ function CustomerPickerContent({
         name: newName.trim(),
         email: email.trim() || null,
         customer_type: customerType,
-        credit_enabled: can("manager") && creditEnabled,
+        credit_enabled: can("manager", "credit_manage") && creditEnabled,
         email_notifications: autoEmail && !!email.trim(),
         phone: newPhone.trim() || null,
       })
@@ -153,7 +153,7 @@ function CustomerPickerContent({
                 <option value="BUSINESS">Business</option>
               </select>
             </label>
-            {can("manager") && (
+            {can("manager", "credit_manage") && (
               <label className="flex gap-2 text-sm">
                 <input
                   type="checkbox"

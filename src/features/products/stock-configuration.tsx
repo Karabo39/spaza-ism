@@ -10,12 +10,14 @@ export type StockConfigurationValue = {
 export function StockConfiguration({
   value,
   onChange,
+  disabled = false,
 }: {
+  disabled?: boolean;
   value: StockConfigurationValue;
   onChange: (v: StockConfigurationValue) => void;
 }) {
   return (
-    <fieldset className="space-y-3 rounded-lg border border-border bg-surface-2 p-3">
+    <fieldset disabled={disabled} className="space-y-3 rounded-lg border border-border bg-surface-2 p-3">
       <legend className="px-1 text-sm font-semibold">Stock tracking</legend>
       <Label htmlFor="tracking-type">Stock Tracking Type</Label>
       <select

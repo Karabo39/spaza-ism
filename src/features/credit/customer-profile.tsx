@@ -153,7 +153,7 @@ export function CustomerProfile({
                 <input
                   type="checkbox"
                   checked={draft.credit_enabled}
-                  disabled={!can("manager")}
+                  disabled={!can("manager", "credit_manage")}
                   onChange={(e) =>
                     setDraft({ ...draft, credit_enabled: e.target.checked })
                   }

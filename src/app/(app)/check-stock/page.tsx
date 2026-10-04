@@ -35,7 +35,7 @@ export default async function CheckStockPage({
   const session = await getSession("check_stock");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
-  const showCosts = store.role !== "employee";
+  const showCosts = store.modules.check_stock_costs;
 
   const status = FILTERS.some((f) => f.key === sp.status) ? sp.status! : "all";
   const q = sp.q ?? "";

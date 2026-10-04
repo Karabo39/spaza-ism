@@ -84,7 +84,7 @@ export const MODULES = [
     key: "adjust",
     label: "Adjust Stock",
     href: "/adjust",
-    role: "manager",
+    role: "employee",
     group: "Stock",
   },
   {
@@ -126,7 +126,7 @@ export const MODULES = [
     key: "imports",
     label: "Data Imports and Exports",
     href: "/imports",
-    role: "manager",
+    role: "employee",
     group: "Catalogue",
   },
   {
@@ -154,14 +154,14 @@ export const MODULES = [
     key: "audit",
     label: "Audit",
     href: "/audit",
-    role: "manager",
+    role: "employee",
     group: "Administration",
   },
   {
     key: "settings",
     label: "Settings",
     href: "/settings",
-    role: "manager",
+    role: "employee",
     group: "Administration",
   },
   {
@@ -188,7 +188,7 @@ export const ROLE_RANK: Record<MembershipRole, number> = {
   owner: 3,
 };
 
-/** No row means the existing role defaults. A malformed row fails closed. */
+/** Employees require explicit per-store grants. Missing or malformed grants fail closed. */
 export function permissionSettings(
   role: MembershipRole,
   overrides: unknown = {},
@@ -196,25 +196,13 @@ export function permissionSettings(
   const valid =
     !!overrides && typeof overrides === "object" && !Array.isArray(overrides);
   return Object.fromEntries(
-    PERMISSIONS.map((m) => {
-      const value = valid
-        ? (overrides as Record<string, unknown>)[m.key]
-        : false;
-      return [
-        m.key,
-        role === "owner" ||
-          (ROLE_RANK[role] >= ROLE_RANK[m.role] &&
-            (value === true ||
-              (value === undefined &&
-                (role !== "employee" ||
-                  ![
-                    "warehouse",
-                    "goods_in_new_stock",
-                    "goods_out_change_price",
-                    "goods_in_receive_transfer",
-                  ].includes(m.key))))),
-      ];
-    }),
+    PERMISSIONS.map((m) => [
+      m.key,
+      role === "owner" ||
+        (m.role !== "owner" &&
+          valid &&
+          (overrides as Record<string, unknown>)[m.key] === true),
+    ]),
   ) as ModulePermissions;
 }
 /** Effective permissions include the parent and linked-module requirements. */
@@ -236,6 +224,8 @@ export function modulePermissions(
 }
 export function moduleForPath(path: string): ModuleKey | undefined {
   const pathname = path.split("?")[0];
+  if (pathname === "/reports/profit" || pathname === "/reports/reconciliation")
+    return "reports_financial";
   if (pathname.startsWith("/reports/deliveries")) return "reports_delivery";
   if (pathname.startsWith("/orders/deliveries")) return "orders_deliveries";
   if (pathname === "/unpack-bulk-stock") return "operations";

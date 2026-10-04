@@ -510,7 +510,7 @@ export function CashUpConsole() {
                             p_note: note,
                             p_request: request,
                           }),
-                        "Shift count saved for manager approval",
+                        "Shift count saved for approval",
                         true,
                       )
                     }
@@ -597,7 +597,7 @@ export function CashUpConsole() {
                           {dateTime(p.created_at)} · Ref {p.id.slice(0, 8)}
                         </p>
                       </div>
-                      {can("manager") && (
+                      {can("manager", "cash_up_manage") && (
                         <div className="flex gap-2">
                           {["CASH", "CARD_EFT"].map((method) => (
                             <Button
@@ -628,7 +628,7 @@ export function CashUpConsole() {
                 </ul>
               </section>
             )}
-            {can("manager") && !data.sealed && (
+            {can("manager", "cash_up_manage") && !data.sealed && (
               <CashManagement
                 key={`${session?.id}:${session?.version}:${day}`}
                 data={data}
@@ -889,7 +889,7 @@ export function CashCount({
           Complete shift
         </Button>
         <p className="text-xs text-muted">
-          A manager reviews this count. Submitting does not change stock or
+          An authorised user reviews this count. Submitting does not change stock or
           customer balances.
         </p>
       </form>
@@ -919,7 +919,7 @@ function ReviewCount({
           className={`size-5 ${approved ? "text-success" : "text-primary-hover"}`}
         />
         <h2 className="text-lg font-semibold">
-          {approved ? "Cash-up approved" : "Awaiting manager approval"}
+          {approved ? "Cash-up approved" : "Awaiting approval"}
         </h2>
       </div>
       {count && (
@@ -945,7 +945,7 @@ function ReviewCount({
           {count.note}
         </p>
       )}
-      {can("manager") && !data.sealed ? (
+      {can("manager", "cash_up_manage") && !data.sealed ? (
         <div className="mt-5 space-y-3">
           <Label htmlFor="review-note">Manager note / reason to reopen</Label>
           <textarea
@@ -987,7 +987,7 @@ function ReviewCount({
         <p className="mt-5 text-sm text-muted">
           {data.sealed
             ? "This approved shift is preserved as read-only history."
-            : "Ask a manager to review this count or reopen it for corrections."}
+            : "Ask an authorised user to review this count or reopen it for corrections."}
         </p>
       )}
     </section>

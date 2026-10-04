@@ -15,7 +15,7 @@ export default async function ProfitReport({
   const session = await getSession("reports");
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
-  if (store.role === "employee") redirect("/reports");
+  if (!store.modules.reports_financial) redirect("/reports");
   const to = sp.to ?? businessDate();
   const start = new Date(`${to}T00:00:00Z`);
   start.setUTCDate(start.getUTCDate() - 6);

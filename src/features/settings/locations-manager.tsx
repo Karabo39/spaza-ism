@@ -131,7 +131,7 @@ export function LocationsManager({
             </div>
           </div>
           <p className="text-xs text-muted">
-            Owners have access to every location. Assign managers and standard
+            Owners have access to every location. Assign
             users in Users. Creating locations requires a connection.
           </p>
           <Button

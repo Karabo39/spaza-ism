@@ -55,7 +55,7 @@ export function SyncStoreProducts() {
   );
   if (
     store.locationType !== "store" ||
-    !can("manager") ||
+    !can("manager", "products_manage") ||
     !canModule("products") ||
     !warehouses.length
   )
@@ -83,7 +83,7 @@ export function SyncStoreProducts() {
         await cache.invalidateQueries({ queryKey: ["store-setup"] });
         await Promise.all(
           ["product-picker", "operation-products", "order-product-search"].map(
-            key => cache.invalidateQueries({ queryKey: [key, store.id] }),
+            (key) => cache.invalidateQueries({ queryKey: [key, store.id] }),
           ),
         );
         router.refresh();

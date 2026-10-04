@@ -1,4 +1,5 @@
 "use client";
+import { useStore } from "@/lib/store-context";
 import Link from "next/link";
 import * as React from "react";
 import {
@@ -30,6 +31,7 @@ export function ProductEditDialog({
   barcode?: string;
 }) {
   const router = useRouter();
+  const { canModule } = useStore();
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState({
     name: product.name,
@@ -174,7 +176,7 @@ export function ProductEditDialog({
                 />
               </div>
             </div>
-            <StockConfiguration value={stockConfig} onChange={setStockConfig} />
+            <StockConfiguration disabled={!canModule("products_manage")} value={stockConfig} onChange={setStockConfig} />
             {stockConfig.tracking_type === "QUANTITY" && (
               <div className="grid grid-cols-3 gap-3">
                 <div>

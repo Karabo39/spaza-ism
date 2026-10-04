@@ -125,9 +125,9 @@ export function SettingsForm({
         <CardHeader>
           <CardTitle>Store</CardTitle>
           <CardDescription>
-            {can("manager")
+            {can("manager", "settings_manage")
               ? "Details for the active store."
-              : "Managers can edit store details."}
+              : "Users with location-settings access can edit store details."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -138,7 +138,7 @@ export function SettingsForm({
                 id="sname"
                 value={s.name}
                 onChange={(e) => setS({ ...s, name: e.target.value })}
-                disabled={!can("manager")}
+                disabled={!can("manager", "settings_manage")}
               />
             </div>
             <div>
@@ -147,11 +147,11 @@ export function SettingsForm({
                 id="scode"
                 value={s.code}
                 onChange={(e) => setS({ ...s, code: e.target.value })}
-                disabled={!can("manager")}
+                disabled={!can("manager", "settings_manage")}
                 placeholder="e.g. MAIN"
               />
             </div>
-            {can("manager") ? (
+            {can("manager", "settings_manage") ? (
               <Button type="submit" loading={busy === "store"}>
                 Save store
               </Button>

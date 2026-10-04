@@ -7,7 +7,7 @@ export default async function Page() {
   const s = session?.activeStore;
   if (!s) redirect("/onboarding");
   if (
-    s.role === "employee" ||
+    !s.modules.invoices_manage ||
     !s.modules.invoices_create_from_order ||
     !s.modules.invoices_view_invoices ||
     !s.modules.orders_recent

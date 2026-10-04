@@ -38,9 +38,9 @@ export function ExpiryBatches({
           <li className="flex justify-between gap-3 py-2 text-sm" key={b.id}>
             <span>{b.expiry_date ?? "Date required"}</span>
             <span>{qty(b.quantity)} units</span>
-            {can("manager") && b.quantity > 0 && b.expiry_date && (
-              <BatchCorrection batch={b} />
-            )}
+            {can("manager", "products_manage") &&
+              b.quantity > 0 &&
+              b.expiry_date && <BatchCorrection batch={b} />}
           </li>
         ))}
       </ul>
@@ -49,7 +49,7 @@ export function ExpiryBatches({
           {qty(undated)} units still need an expiry date.
         </p>
       )}
-      {can("manager") && undated > 0 && (
+      {can("manager", "products_manage") && undated > 0 && (
         <form
           className="flex flex-wrap items-end gap-3"
           onSubmit={async (e) => {

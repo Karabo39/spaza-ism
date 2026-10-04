@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession, hasRole } from "@/lib/session";
+import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/shell/page-header";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -25,7 +25,7 @@ export default async function AuditPage({
   if (!session?.activeStore) redirect("/onboarding");
   const store = session.activeStore;
 
-  if (!hasRole(store.role, "manager")) {
+  if (!store.modules.audit) {
     return (
       <>
         <PageHeader
@@ -34,7 +34,7 @@ export default async function AuditPage({
         />
         <EmptyState
           icon={Lock}
-          title="Managers only"
+          title="Access required"
           description="Audit history is available to managers and owners."
         />
       </>

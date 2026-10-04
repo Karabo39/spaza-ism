@@ -76,7 +76,7 @@ export default async function InvoicesPage({
                 <Link href="/invoices/quotes?create=1">Create Quotes</Link>
               </Button>
             )}
-            {store.role !== "employee" &&
+            {store.modules.invoices_manage &&
               store.modules.invoices_create_from_order &&
               store.modules.invoices_view_invoices &&
               store.modules.orders_recent && (
@@ -104,7 +104,7 @@ export default async function InvoicesPage({
       />
       {store.modules.invoices_view_invoices && (
         <>
-          {store.role !== "employee" && (
+          {store.modules.invoices_view_invoices && (
             <form className="mb-5 flex flex-wrap gap-3">
               <input
                 className="rounded border border-border bg-input px-3 py-2"
@@ -210,7 +210,7 @@ export default async function InvoicesPage({
               </button>
             </form>
           )}
-          {store.role !== "employee" && (
+          {store.modules.invoices_view_invoices && (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted">
                 {rows.length} invoices shown

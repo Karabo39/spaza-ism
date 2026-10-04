@@ -16,7 +16,6 @@ import {
 } from "@/lib/modules";
 import type { MembershipRole, Json } from "@/lib/db/database.types";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { friendlyError } from "@/lib/format";
 
 type MemberAccess = {
@@ -31,6 +30,9 @@ type MemberAccess = {
 export function AccessControl() {
   const { store } = useStore();
   const [selected, setSelected] = React.useState("");
+  const [section, setSection] = React.useState<"owner" | "employee" | null>(
+    null,
+  );
   const members = useQuery({
     queryKey: ["module-members", store.id],
     refetchOnWindowFocus: false,
@@ -82,10 +84,7 @@ export function AccessControl() {
         .sort((a, b) => a.name.localeCompare(b.name));
     },
   });
-  const member =
-    members.data?.find((m) => m.id === selected) ??
-    members.data?.find((m) => m.role !== "owner" && m.active && m.assigned) ??
-    members.data?.[0];
+  const member = members.data?.find((m) => m.id === selected);
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/25 bg-primary/5 p-5">
@@ -105,6 +104,27 @@ export function AccessControl() {
           Add users or assign stores
         </Link>
       </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {(["owner", "employee"] as const).map((r) => (
+          <button
+            key={r}
+            className="rounded-xl border border-border bg-surface p-6 text-left focus-ring"
+            onClick={() => {
+              setSection(r);
+              setSelected("");
+            }}
+          >
+            <h2 className="text-lg font-semibold">
+              {r === "owner" ? "Owner" : "Employee"}
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              {r === "owner"
+                ? "Full access to all modules and stores"
+                : "Individual module and function access for each store"}
+            </p>
+          </button>
+        ))}
+      </div>
       {members.isLoading ? (
         <p role="status">Loading team access…</p>
       ) : members.error ? (
@@ -116,26 +136,9 @@ export function AccessControl() {
         </p>
       ) : member ? (
         <>
-          <div className="max-w-lg">
-            <Label htmlFor="access-member">Team member</Label>
-            <select
-              id="access-member"
-              className="mt-2 h-11 w-full rounded-md border border-border bg-input px-3 text-sm"
-              value={member.id}
-              onChange={(e) => setSelected(e.target.value)}
-            >
-              {members.data?.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} · {m.role}
-                  {!m.active
-                    ? " · inactive"
-                    : !m.assigned
-                      ? " · not assigned"
-                      : ""}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Button variant="secondary" onClick={() => setSelected("")}>
+            Back to employees
+          </Button>
           {!member.active ? (
             <p className="rounded-lg border border-border p-5">
               This user is inactive. Reactivate them in Users before granting
@@ -153,7 +156,41 @@ export function AccessControl() {
           )}
         </>
       ) : (
-        <p>No team members yet. Add a user to begin.</p>
+        section && (
+          <div className="rounded-xl border border-border divide-y divide-border">
+            {members.data
+              ?.filter(
+                (m) => (m.role === "owner" ? "owner" : "employee") === section,
+              )
+              .map((m) => (
+                <div
+                  key={m.id}
+                  className="flex flex-wrap items-center justify-between gap-3 p-4"
+                >
+                  <div>
+                    <p className="font-semibold">{m.name}</p>
+                    <p className="text-sm text-muted">
+                      {m.role === "owner" ? "Owner" : "Employee"} ·{" "}
+                      {m.active ? "Active" : "Inactive"}
+                      {!m.assigned ? " · Not assigned to this store" : ""}
+                    </p>
+                  </div>
+                  <Button onClick={() => setSelected(m.id)}>
+                    {m.role === "owner"
+                      ? "View full access"
+                      : "View / Manage Access"}
+                  </Button>
+                </div>
+              ))}
+            {!members.data?.some(
+              (m) => (m.role === "owner" ? "owner" : "employee") === section,
+            ) && (
+              <p className="p-4">
+                No {section === "owner" ? "owners" : "employees"} found.
+              </p>
+            )}
+          </div>
+        )
       )}
     </div>
   );
@@ -212,7 +249,7 @@ export function PermissionEditor({ member }: { member: MemberAccess }) {
           <p className="mt-1 text-sm text-muted-foreground">
             {owner
               ? "Owners always have all modules so they can manage and recover access."
-              : "Expand Dashboard, Orders or Invoicing to choose individual options. Parent and linked-module access are required. Existing manager approvals still apply."}
+              : "Expand Dashboard, Orders or Invoicing to choose individual options. Parent and linked-module access are required. Approval and management actions are granted separately."}
           </p>
         </div>
       </div>

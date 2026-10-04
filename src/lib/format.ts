@@ -167,7 +167,7 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("PRODUCT_UNITS_MISMATCH"))
     return "The products must use matching units and expiry tracking.";
   if (m.includes("BATCH_QUANTITY_MISSING"))
-    return "Expiry batches do not cover this quantity. Ask a manager to check the source stock.";
+    return "Expiry batches do not cover this quantity. Ask an authorised user to check the source stock.";
   if (m.includes("REQUEST_CONFLICT"))
     return "This request was already used with different details. Refresh before trying again.";
   if (m.includes("LOCATION_NOT_SALEABLE"))
@@ -198,7 +198,7 @@ export function friendlyError(message: string | undefined | null): string {
   if (m.includes("CREDIT_LIMIT_EXCEEDED"))
     return "This sale exceeds the customer's credit limit.";
   if (m.includes("OVERRIDE_NOT_AUTHORIZED"))
-    return "This approval has expired, was used, or does not cover the sale. Ask a manager or owner to approve again.";
+    return "This approval has expired, was used, or does not cover the sale. Ask an authorised approver to approve again.";
   if (m.includes("PRODUCT_NOT_FOUND_OR_INACTIVE"))
     return "One of the products is unavailable or inactive.";
   if (m.includes("CUSTOMER_REQUIRED"))
@@ -245,6 +245,9 @@ export function friendlyError(message: string | undefined | null): string {
     return "Excel stock takes support up to 10,000 products. Use the stock-take screen for this location.";
   if (m.includes("INVALID_COUNTS") || m.includes("DUPLICATE_COUNT"))
     return "Check for invalid quantities or duplicate products in the workbook. No counts were saved.";
+  if (m.includes("DEACTIVATE_SCHEDULE_FIRST")) return "Deactivate the recurring schedule before deleting it.";
+  if (m.includes("COUNT_CHANGED_REFRESH")) return "A count changed elsewhere. Refresh and review before saving again.";
+  if (m.includes("INVALID_DELIVERY_FEE")) return "Enter a non-negative delivery fee with no more than two decimal places.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
   if (m.includes("PAYMENT_UNDERPAID"))
     return "Collect the remaining balance before completing this sale.";

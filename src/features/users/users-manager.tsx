@@ -140,7 +140,6 @@ export function UsersManager() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="employee">Employee</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
                         <SelectItem value="owner">Owner</SelectItem>
                       </SelectContent>
                     </Select>

@@ -12,7 +12,7 @@ export default async function ImportsPage({
     kind === "customers" || kind === "suppliers" ? kind : "products";
   const session = await getSession("imports");
   if (!session?.activeStore) redirect("/onboarding");
-  if (session.activeStore.role === "employee") redirect("/");
+  if (!session.activeStore.modules.imports) redirect("/");
   return (
     <>
       <PageHeader

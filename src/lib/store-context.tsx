@@ -14,7 +14,7 @@ type StoreContextValue = {
   role: MembershipRole;
   currency: string;
   setStore: (id: string) => void;
-  can: (min: MembershipRole) => boolean;
+  can: (min: MembershipRole, permission?: ModuleKey) => boolean;
   canModule: (module: ModuleKey) => boolean;
 };
 
@@ -105,7 +105,11 @@ export function StoreProvider({
       role: session.activeStore.role,
       currency: session.activeStore.currency,
       setStore,
-      can: (min) => RANK[session.activeStore.role] >= RANK[min],
+      can: (min, permission) =>
+        session.activeStore.role === "owner" ||
+        (permission
+          ? session.activeStore.modules[permission] === true
+          : RANK[session.activeStore.role] >= RANK[min]),
       canModule: (module) =>
         session.activeStore.modules[module] === true ||
         (module === "warehouse" &&

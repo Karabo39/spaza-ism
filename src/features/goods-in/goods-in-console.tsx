@@ -44,7 +44,9 @@ type Line = {
   expiry: string;
 };
 
-export function GoodsInConsole({ fixedLocation = false }: { fixedLocation?: boolean } = {}) {
+export function GoodsInConsole({
+  fixedLocation = false,
+}: { fixedLocation?: boolean } = {}) {
   const router = useRouter();
   const cache = useQueryClient();
   const [selectedProduct, setSelectedProduct] =
@@ -143,10 +145,13 @@ export function GoodsInConsole({ fixedLocation = false }: { fixedLocation?: bool
       } else {
         setUnknownCode(code);
         toast.error(`No product for "${code}"`, {
-          action: can("manager") && canModule("products") ? {
-            label: "Register",
-            onClick: () => setRegisterOpen(true),
-          } : undefined,
+          action:
+            can("manager", "products_edit") && canModule("products")
+              ? {
+                  label: "Register",
+                  onClick: () => setRegisterOpen(true),
+                }
+              : undefined,
         });
       }
     } catch {
@@ -294,7 +299,7 @@ export function GoodsInConsole({ fixedLocation = false }: { fixedLocation?: bool
                     </TD>
                     <TD className="text-right">
                       <Input
-                        readOnly={!can("manager")}
+                        readOnly={!can("manager", "goods_in_cost")}
                         aria-label={`Unit cost ${l.name}`}
                         value={l.unitCost}
                         onChange={(e) =>
@@ -358,8 +363,8 @@ export function GoodsInConsole({ fixedLocation = false }: { fixedLocation?: bool
             {fixedLocation
               ? "Receiving into this store only. Goods In requires a connection."
               : lines.length
-              ? "Clear the items before changing destination."
-              : "Choose a destination before scanning. Goods In requires a connection."}
+                ? "Clear the items before changing destination."
+                : "Choose a destination before scanning. Goods In requires a connection."}
           </p>
         </div>
         <div>

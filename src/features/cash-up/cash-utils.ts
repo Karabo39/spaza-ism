@@ -35,11 +35,11 @@ export function cashError(message: string): string {
       "Cash activity or the opening float changed. Refresh, check the latest total and count again.",
     CASH_UP_CHANGED: "This cash-up has changed. Refresh before continuing.",
     CASH_UP_NOT_OPEN:
-      "This count has already been submitted. A manager must reopen it before another count.",
+      "This count has already been submitted. An authorised user must reopen it before another count.",
     CASH_UP_ALREADY_OPEN:
       "A cash-up already exists for this date with a different float. Refresh to open it.",
     UNCLASSIFIED_PAYMENTS:
-      "A manager must identify the payment methods shown below before you submit.",
+      "An authorised user must identify the payment methods shown below before you submit.",
     VARIANCE_NOTE_REQUIRED: "Explain the cash difference before continuing.",
     INVALID_CASH_AMOUNT:
       "Enter a valid amount with no more than two decimal places.",
@@ -49,7 +49,7 @@ export function cashError(message: string): string {
       "Enter whole numbers for the number of notes and coins.",
     REASON_REQUIRED: "Enter a reason before continuing.",
     SHIFT_BELONGS_TO_OTHER_USER:
-      "This shift belongs to another user. Ask a manager to complete the handover before starting your shift.",
+      "This shift belongs to another user. Ask an authorised user to complete the handover before starting your shift.",
     FORBIDDEN: "You do not have permission to do this at this store.",
     PAYMENT_ALREADY_CLASSIFIED:
       "This payment already has a recorded method. Refresh its details.",
