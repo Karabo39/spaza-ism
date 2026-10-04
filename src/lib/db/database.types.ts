@@ -1236,6 +1236,16 @@ export type Database = {
       };
     };
     Functions: {
+      delete_recurring_invoice: {
+        Args: { p_id: string; p_expected: number };
+        Returns: undefined;
+      };
+      save_all_stock_take_counts: {
+        Args: { p_stock_take: string; p_counts: Json };
+        Returns: number;
+      };
+      warehouse_management: { Args: { p_business: string }; Returns: Json };
+      enable_warehouse: { Args: { p_store: string }; Returns: undefined };
       customer_email_history: { Args: { p_customer: string }; Returns: Json };
       queue_customer_statement: {
         Args: {
@@ -1279,7 +1289,12 @@ export type Database = {
         Returns: Json;
       };
       create_delivery_invoice: {
-        Args: { p_order: string; p_due: string; p_discount?: number };
+        Args: {
+          p_order: string;
+          p_due: string;
+          p_discount?: number;
+          p_delivery_fee?: number;
+        };
         Returns: string;
       };
       amend_invoice_items: {
@@ -2321,6 +2336,7 @@ export type SalesOrderItem = {
 };
 
 export type SalesInvoice = {
+  delivery_fee?: number;
   revision?: number;
   recurring_schedule_id?: string | null;
   billing_period?: string | null;
