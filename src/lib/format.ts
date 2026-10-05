@@ -245,9 +245,12 @@ export function friendlyError(message: string | undefined | null): string {
     return "Excel stock takes support up to 10,000 products. Use the stock-take screen for this location.";
   if (m.includes("INVALID_COUNTS") || m.includes("DUPLICATE_COUNT"))
     return "Check for invalid quantities or duplicate products in the workbook. No counts were saved.";
-  if (m.includes("DEACTIVATE_SCHEDULE_FIRST")) return "Deactivate the recurring schedule before deleting it.";
-  if (m.includes("COUNT_CHANGED_REFRESH")) return "A count changed elsewhere. Refresh and review before saving again.";
-  if (m.includes("INVALID_DELIVERY_FEE")) return "Enter a non-negative delivery fee with no more than two decimal places.";
+  if (m.includes("DEACTIVATE_SCHEDULE_FIRST"))
+    return "Deactivate the recurring schedule before deleting it.";
+  if (m.includes("COUNT_CHANGED_REFRESH"))
+    return "A count changed elsewhere. Refresh and review before saving again.";
+  if (m.includes("INVALID_DELIVERY_FEE"))
+    return "Enter a non-negative delivery fee with no more than two decimal places.";
   if (m.includes("FORBIDDEN")) return "You don't have permission to do that.";
   if (m.includes("PAYMENT_UNDERPAID"))
     return "Collect the remaining balance before completing this sale.";
@@ -273,6 +276,20 @@ export function friendlyError(message: string | undefined | null): string {
       "A delivery note already exists. Refresh to manage it.",
     DELIVERY_RELEASE_GOODS_FIRST:
       "Release the goods from the invoice before dispatching.",
+    ONLINE_ORDER_FIXED:
+      "Online order items are fixed to their reservation. Use the approved return/refund workflow or cancel and place a new order.",
+    STOCK_RESERVED_ONLINE:
+      "This stock is reserved for online orders. Reduce the sale quantity or cancel the reservation first.",
+    USE_ONLINE_ORDERS:
+      "Process this order in Online Orders to keep its payment and reserved stock correct.",
+    SETTINGS_CHANGED: "These settings changed. Refresh before saving.",
+    PRODUCT_CHANGED: "This product changed. Refresh before saving.",
+    PAYMENT_INSTRUCTIONS_REQUIRED:
+      "Add the store's bank payment instructions before enabling online ordering.",
+    ORDER_CHANGED: "This order changed. Refresh before continuing.",
+    ORDER_EXPIRED: "This unpaid reservation has expired.",
+    COLLECTION_PAYMENT_REQUIRED:
+      "Confirm payment and mark this order ready before completing collection.",
     DELIVERY_PAYMENT_REQUIRED:
       "The invoice must be fully paid without credit notes before delivery.",
     DELIVERY_DRIVER_REQUIRED:

@@ -227,6 +227,7 @@ export function moduleForPath(path: string): ModuleKey | undefined {
   if (pathname === "/reports/profit" || pathname === "/reports/reconciliation")
     return "reports_financial";
   if (pathname.startsWith("/reports/deliveries")) return "reports_delivery";
+  if (pathname.startsWith("/orders/online")) return "orders_online";
   if (pathname.startsWith("/orders/deliveries")) return "orders_deliveries";
   if (pathname === "/unpack-bulk-stock") return "operations";
   return MODULES.find(

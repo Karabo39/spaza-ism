@@ -43,6 +43,7 @@ export const NAV: NavGroup[] = [
       { href: "/goods-in", label: "Goods In", icon: PackagePlus },
       { href: "/goods-out", label: "Goods Out", icon: PackageMinus },
       { href: "/orders", label: "Orders", icon: ClipboardList },
+      { href: "/orders/online", label: "Online Orders", icon: ClipboardList },
       { href: "/orders/deliveries", label: "Deliveries", icon: Truck },
       { href: "/invoices", label: "Invoicing", icon: ScrollText },
       {

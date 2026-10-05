@@ -357,4 +357,32 @@ export const MODULE_FEATURES = [
     role: "employee",
     requires: [],
   },
+  {
+    key: "orders_online",
+    label: "Online Orders",
+    parent: "orders",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "orders_online_process",
+    label: "Process online orders and confirm payments",
+    parent: "orders_online",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "orders_online_settings",
+    label: "Customer ordering links and settings",
+    parent: "orders_online",
+    role: "employee",
+    requires: [],
+  },
+  {
+    key: "products_online",
+    label: "Online product availability and images",
+    parent: "products",
+    role: "employee",
+    requires: [],
+  },
 ] as const;

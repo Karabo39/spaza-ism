@@ -1,3 +1,4 @@
+import { ProductOnlineSettings } from "@/features/online-orders/product-online-settings";
 import { stockQuantity } from "@/lib/format";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -86,6 +87,7 @@ export default async function ProductDetailPage({
         }
       />
 
+      <ProductOnlineSettings key={p.id} id={p.id} />
       {p.description && (
         <p className="mb-6 whitespace-pre-wrap break-words rounded-lg border border-border bg-surface p-4 text-sm">
           {p.description}
