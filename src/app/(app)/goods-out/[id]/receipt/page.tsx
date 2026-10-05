@@ -49,7 +49,10 @@ export default async function ReceiptPage({
   const thermal = paper === "58mm" || paper === "80mm";
   // Resolve the image before returning the receipt. The print-only HTML fetch
   // does not execute the scripts that insert streamed React content.
-  const logo = await DocumentLogo({ businessId: session.activeStore.businessId });
+  const logo = await DocumentLogo({
+    businessId: session.activeStore.businessId,
+    receiptFallback: true,
+  });
   return (
     <div className="space-y-4">
       <style>{`@media print { @page { size: ${thermal ? "auto" : "A4"}; margin: ${thermal ? "0" : "10mm"}; } #receipt { width: ${thermal ? paper : "100%"}; max-width: 100%; padding: ${thermal ? "3mm" : "0"}; font-size: ${paper === "58mm" ? "10px" : "12px"}; border-radius: 0; } #receipt table { font-size: inherit; table-layout: fixed; } #receipt td, #receipt th, #receipt p { overflow-wrap: anywhere; } #receipt h1, #receipt h2 { font-size: ${thermal ? "16px" : "24px"}; } }`}</style>

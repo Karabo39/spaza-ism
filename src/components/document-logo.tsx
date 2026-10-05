@@ -1,11 +1,21 @@
 /* eslint-disable @next/next/no-img-element -- Inline document image bytes must remain printable without an image proxy. */
 import { createClient } from "@/lib/supabase/server";
 import { loadDocumentLogo } from "@/lib/document-logo";
-export async function DocumentLogo({ businessId }: { businessId: string }) {
-  const logo = await loadDocumentLogo(await createClient(), businessId);
+import { loadReceiptLogo } from "@/lib/receipt-logo";
+export async function DocumentLogo({
+  businessId,
+  receiptFallback = false,
+}: {
+  businessId: string;
+  receiptFallback?: boolean;
+}) {
+  const db = await createClient();
+  const logo = receiptFallback
+    ? await loadReceiptLogo(db, businessId)
+    : await loadDocumentLogo(db, businessId);
   if (!logo) return null;
   // Inline bytes are ready before auto-print; signed image URLs cannot expire mid-print.
-  
+
   return (
     <img
       src={logo.dataUrl}
