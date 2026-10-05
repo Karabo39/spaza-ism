@@ -1236,6 +1236,31 @@ export type Database = {
       };
     };
     Functions: {
+      online_orders_page: {
+        Args: { p_store: string; p_before?: string; p_before_id?: string };
+        Returns: Json;
+      };
+      process_online_order: {
+        Args: {
+          p_order: string;
+          p_expected: number;
+          p_action: string;
+          p_details: Json;
+          p_request: string;
+        };
+        Returns: undefined;
+      };
+      save_online_ordering_settings: {
+        Args: { p_store: string; p_expected: number; p_values: Json };
+        Returns: string;
+      };
+      save_product_online: {
+        Args: { p_product: string; p_expected: string; p_values: Json };
+        Returns: undefined;
+      };
+      online_settings: { Args: { p_store: string }; Returns: Json };
+      product_online_settings: { Args: { p_product: string }; Returns: Json };
+
       delete_recurring_invoice: {
         Args: { p_id: string; p_expected: number };
         Returns: undefined;

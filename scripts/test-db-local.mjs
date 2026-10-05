@@ -1,4 +1,5 @@
-import {testDeliveryRace} from "../supabase/tests/delivery-race.mjs";
+import { testOnlineOrderingRace } from "../supabase/tests/online-ordering-race.mjs";
+import { testDeliveryRace } from "../supabase/tests/delivery-race.mjs";
 import { testMixedDocumentsRace } from "../supabase/tests/mixed-documents-race.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import pg from "pg";
@@ -32,11 +33,23 @@ try {
     .sort()) {
     if (name.endsWith("_employee_explicit_permissions.sql")) {
       await client.query("begin");
-      await client.query(await readFile("supabase/tests/employee_access_upgrade_before.sql", "utf8"));
+      await client.query(
+        await readFile(
+          "supabase/tests/employee_access_upgrade_before.sql",
+          "utf8",
+        ),
+      );
       await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
-      await client.query(await readFile("supabase/tests/employee_access_upgrade_after.sql", "utf8"));
+      await client.query(
+        await readFile(
+          "supabase/tests/employee_access_upgrade_after.sql",
+          "utf8",
+        ),
+      );
       await client.query("rollback");
-      console.log("Passed existing employee/manager access migration (rolled back)");
+      console.log(
+        "Passed existing employee/manager access migration (rolled back)",
+      );
     }
     if (name === "0024_reporting_history.sql") {
       await client.query("begin");
@@ -99,7 +112,9 @@ try {
     await client.query(await readFile(`supabase/migrations/${name}`, "utf8"));
     console.log(`Applied ${name}`);
   }
-  await client.query(await readFile("supabase/tests/explicit_access_fixtures.sql", "utf8"));
+  await client.query(
+    await readFile("supabase/tests/explicit_access_fixtures.sql", "utf8"),
+  );
   for (const file of [
     "rpc_integration.sql",
     "location_access.sql",
@@ -148,6 +163,7 @@ try {
     "orders_delivery_collaboration.sql",
     "mixed_document_refinements.sql",
     "october_workflows.sql",
+    "online_customer_ordering.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));
@@ -161,6 +177,7 @@ try {
   await testRecurringRace(url);
   await testDeliveryRace(url);
   await testMixedDocumentsRace(url);
+  await testOnlineOrderingRace(url);
 } finally {
   await client.end();
 }

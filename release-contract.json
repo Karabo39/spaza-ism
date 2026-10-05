@@ -33,6 +33,7 @@
     "orders_delivery_collaboration_v1",
     "mixed_document_refinements_v1",
     "october_workflows_v1",
-    "employee_explicit_permissions_v1"
+    "employee_explicit_permissions_v1",
+    "online_ordering_v1"
   ]
 }
