@@ -10,7 +10,7 @@ export function DeliveryStatus({ status }: { status: string }) {
       ? "bg-emerald-500 text-slate-950"
       : ["RESCHEDULED", "SCHEDULED"].includes(status)
         ? "bg-yellow-400 text-slate-950"
-        : ["CANCELLED", "FAILED"].includes(status)
+        : ["CANCELLED", "FAILED", "PENDING"].includes(status)
           ? "bg-red-600 text-white"
           : status === "CREATED"
             ? "bg-[#9400d3] text-white"

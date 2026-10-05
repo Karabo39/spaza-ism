@@ -14,7 +14,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useBillingAction } from "@/features/billing/use-billing-action";
-import { OnlineOrderingButton } from "./ordering-settings";
 import type { OnlineOrder } from "./types";
 import type { Json } from "@/lib/db/database.types";
 export function OnlineOrdersConsole() {
@@ -35,7 +34,6 @@ export function OnlineOrdersConsole() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap justify-between gap-3">
-        <OnlineOrderingButton />
         <Button
           variant="secondary"
           disabled={isFetching}
@@ -159,6 +157,13 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
           )}
         </div>
       </details>
+      {o.goods_released &&
+        o.fulfilment === "DELIVERY" &&
+        canModule("orders_deliveries") && (
+          <Button asChild className="mt-4">
+            <Link href={`/orders/deliveries/${o.id}`}>Manage Delivery</Link>
+          </Button>
+        )}
       {canModule("orders_online_process") && !closed && (
         <div className="mt-4 flex flex-wrap gap-2">
           {!paid && (
@@ -171,8 +176,7 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
           )}
           {paid && (
             <Button
-              variant="secondary"
-              disabled={busy}
+              disabled={busy || o.goods_released}
               onClick={() => process("processing")}
             >
               Processing
@@ -180,8 +184,7 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
           )}
           {(paid || o.payment_option === "PAY_ON_COLLECTION") && (
             <Button
-              variant="secondary"
-              disabled={busy}
+              disabled={busy || o.goods_released}
               onClick={() => process("ready")}
             >
               {o.fulfilment === "COLLECTION"
@@ -198,10 +201,12 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
             )}
           {o.fulfilment === "DELIVERY" && paid && (
             <Button
-              disabled={busy}
+              disabled={busy || o.goods_released}
               onClick={() => setAction("release_delivery")}
             >
-              Release goods for delivery
+              {o.goods_released
+                ? "Goods released for delivery"
+                : "Release goods for delivery"}
             </Button>
           )}
           {o.fulfilment === "DELIVERY" && (
@@ -210,11 +215,7 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
             </Button>
           )}
           {canModule("orders_approve") && (
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => setAction("cancel")}
-            >
+            <Button disabled={busy} onClick={() => setAction("cancel")}>
               Cancel order
             </Button>
           )}

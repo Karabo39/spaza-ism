@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { OnlineOrderingButton } from "@/features/online-orders/ordering-settings";
 import { PermissionTree } from "./permission-tree";
 import { ReturnAccess } from "./return-access";
 import Link from "next/link";
@@ -125,6 +126,28 @@ export function AccessControl() {
           </button>
         ))}
       </div>
+      <section className="rounded-xl border border-border bg-surface p-6 space-y-3">
+        <h2 className="text-lg font-semibold">Online Order Access</h2>
+        <p className="text-sm text-muted">
+          Owners retain full access. Employee permissions apply separately to
+          this store: view Online Orders, process orders and confirm payments,
+          manage ordering links and settings, and publish online products.
+          Cancellation still requires order approval access; deliveries require
+          delivery access.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <OnlineOrderingButton />
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSection("employee");
+              setSelected("");
+            }}
+          >
+            Manage employee permissions
+          </Button>
+        </div>
+      </section>
       {members.isLoading ? (
         <p role="status">Loading team access…</p>
       ) : members.error ? (

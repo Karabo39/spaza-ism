@@ -26,10 +26,10 @@ export function OnlineOrderingButton() {
     return null;
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Online Ordering</Button>
+      <Button onClick={() => setOpen(true)}>Online Order Access</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogTitle>Online Ordering · {store.name}</DialogTitle>
+          <DialogTitle>Online Order Access · {store.name}</DialogTitle>
           <DialogDescription>
             Share this store&apos;s link or QR code. Only products marked
             Available Online are visible.

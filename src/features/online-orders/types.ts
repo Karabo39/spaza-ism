@@ -77,4 +77,5 @@ export type OnlineOrder = {
   }[];
   version: number;
   invoice_id: string | null;
+  goods_released: boolean;
 };

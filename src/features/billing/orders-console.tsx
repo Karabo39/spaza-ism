@@ -1,5 +1,4 @@
 "use client";
-import { OnlineOrderingButton } from "@/features/online-orders/ordering-settings";
 import { AmountSummary } from "@/components/ui/amount-summary";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { statusLabel } from "./status-label";
@@ -316,7 +315,7 @@ export function OrdersConsole({
   ) : null;
   return (
     <div className="space-y-6">
-      {canModule("orders_online") && <Link className="inline-block rounded-lg border border-border px-4 py-3 text-primary" href="/orders/online">Online Orders</Link>}
+      {canModule("orders_online") && !canModule("orders_new") && <Button asChild><Link href="/orders/online">Online Orders</Link></Button>}
       {!canModule("orders_new") && !canModule("orders_recent") && (
         <p className="rounded-lg border border-border p-5 text-sm text-muted">
           No Orders options are enabled at this store. Ask your owner to update
@@ -341,7 +340,7 @@ export function OrdersConsole({
               >
                 {customer?.name ?? "Choose customer"}
               </Button>
-              <OnlineOrderingButton/>
+              {canModule("orders_online") && <Button asChild><Link href="/orders/online">Online Orders</Link></Button>}
               <Button
                 aria-pressed={guestMode}
                 variant="primary"
