@@ -50,5 +50,10 @@ begin
  perform set_config('request.jwt.claims','{"role":"service_role"}',true);
  result:=public.claim_customer_documents(5);
  if jsonb_array_length(result)=0 then raise exception 'ASSERT system online emails claimed';end if;
+ result:=public.place_customer_order(link,gen_random_uuid(),secret,'{"name":"Cancel Buyer","phone":"01234","email":"cancel@example.test","email_notifications":true}',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),'COLLECTION',today,'PAY_ON_COLLECTION');o2:=(result->>'order_id')::uuid;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ perform public.process_online_order(o2,1,'cancel','{"reason":"Customer requested cancellation"}',gen_random_uuid());
+ reset role;set constraints all immediate;set constraints all deferred;
+ if (select count(*) from public.customer_document_notifications where customer_id=(select customer_id from public.sales_orders where id=o2) and document->>'summary' in ('CANCELLED','Customer requested cancellation'))<>1 then raise exception 'ASSERT one cancellation notification';end if;
  raise exception 'TESTS_PASSED';
 end $$;
