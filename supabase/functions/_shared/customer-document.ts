@@ -28,6 +28,8 @@ export type CustomerDocument = {
     balance?: number;
   }[];
   details?: Record<string, unknown>;
+  tracking_url?: string | null;
+  courier_tracking_url?: string | null;
 };
 
 const escape = (value: unknown) =>
@@ -93,9 +95,22 @@ export function documentFields(doc: CustomerDocument): [string, string][] {
       dateText(doc.due),
     ]);
   if (doc.address) fields.push(["Customer address", doc.address]);
+  if (safeLink(doc.tracking_url))
+    fields.push(["Private order tracking", doc.tracking_url!]);
+  if (safeLink(doc.courier_tracking_url))
+    fields.push(["Courier tracking", doc.courier_tracking_url!]);
   return fields;
 }
 
+function safeLink(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
 /** All customer-controlled content is escaped, including table cells and subjects. */
 export function customerEmail(doc: CustomerDocument) {
   const subject = `${doc.business} | ${doc.type} ${doc.reference}`
@@ -103,7 +118,7 @@ export function customerEmail(doc: CustomerDocument) {
     .slice(0, 240);
   const fields = documentFields(doc);
   const text = `Dear ${doc.customer},\n\nPlease find your ${doc.type.toLowerCase()} attached.\n\n${fields.map(([key, value]) => `${key}: ${value}`).join("\n")}\n\nThank you for your business.\n${doc.business}${doc.business_contact ? `\n${doc.business_contact}` : ""}\n\nThis email reflects the transaction when the document was prepared.`;
-  const html = `<!doctype html><html><body style="margin:0;background:#f3f5f8;color:#172033;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:auto;background:#fff;border:1px solid #dce2eb;border-radius:8px"><tr><td style="padding:28px;background:#172b4d;color:#fff"><p style="margin:0 0 8px;font-size:13px;letter-spacing:1px">${escape(doc.business)}</p><h1 style="margin:0;font-size:24px">${escape(doc.type)}</h1><p style="margin:8px 0 0">${escape(doc.reference)}</p></td></tr><tr><td style="padding:28px"><p>Dear ${escape(doc.customer)},</p><p>Please find your ${escape(doc.type.toLowerCase())} attached.</p><table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:14px">${fields.map(([key, value]) => `<tr><th align="left" valign="top" style="width:38%;border-bottom:1px solid #e8edf3">${escape(key)}</th><td style="border-bottom:1px solid #e8edf3;overflow-wrap:anywhere">${escape(value)}</td></tr>`).join("")}</table><p style="margin-top:24px">Thank you for your business.<br><strong>${escape(doc.business)}</strong></p>${doc.business_contact ? `<p>${escape(doc.business_contact)}</p>` : ""}<p style="font-size:12px;color:#617086">This email reflects the transaction when the document was prepared. Please refer to the attached document for the full details.</p></td></tr></table></td></tr></table></body></html>`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f3f5f8;color:#172033;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:auto;background:#fff;border:1px solid #dce2eb;border-radius:8px"><tr><td style="padding:28px;background:#172b4d;color:#fff"><p style="margin:0 0 8px;font-size:13px;letter-spacing:1px">${escape(doc.business)}</p><h1 style="margin:0;font-size:24px">${escape(doc.type)}</h1><p style="margin:8px 0 0">${escape(doc.reference)}</p></td></tr><tr><td style="padding:28px"><p>Dear ${escape(doc.customer)},</p><p>Please find your ${escape(doc.type.toLowerCase())} attached.</p><table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:14px">${fields.map(([key, value]) => `<tr><th align="left" valign="top" style="width:38%;border-bottom:1px solid #e8edf3">${escape(key)}</th><td style="border-bottom:1px solid #e8edf3;overflow-wrap:anywhere">${safeLink(value) && (key === "Private order tracking" || key === "Courier tracking") ? `<a href="${escape(value)}">${escape(key)}</a>` : escape(value)}</td></tr>`).join("")}</table><p style="margin-top:24px">Thank you for your business.<br><strong>${escape(doc.business)}</strong></p>${doc.business_contact ? `<p>${escape(doc.business_contact)}</p>` : ""}<p style="font-size:12px;color:#617086">This email reflects the transaction when the document was prepared. Please refer to the attached document for the full details.</p></td></tr></table></td></tr></table></body></html>`;
   return { subject, text, html };
 }
 

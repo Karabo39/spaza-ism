@@ -164,3 +164,18 @@ describe("customer document worker", () => {
     expect(await response.json()).toEqual({ sent: 1, failed: 0 });
   });
 });
+
+it("includes safe private and courier tracking links and rejects executable URLs", () => {
+  const email = customerEmail({
+    ...doc,
+    tracking_url: "https://posinventory.shop/shop/link/track/order#private",
+    courier_tracking_url: "https://courier.test/track?a=1&b=2",
+  });
+  expect(email.html).toContain(
+    'href="https://posinventory.shop/shop/link/track/order#private"',
+  );
+  expect(email.html).toContain('href="https://courier.test/track?a=1&amp;b=2"');
+  expect(
+    customerEmail({ ...doc, tracking_url: "javascript:alert(1)" }).html,
+  ).not.toContain("javascript:");
+});
