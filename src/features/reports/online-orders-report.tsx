@@ -67,12 +67,14 @@ export function OnlineOrdersReport() {
   const data = query.data;
   const rows = data
     ? [
-        ...Object.entries(data.metrics).map(([k, v]) => ({
-          section: "Summary",
-          item: onlineMetricLabels[k] ?? k,
-          quantity: "",
-          value: v,
-        })),
+        ...Object.keys(onlineMetricLabels)
+          .map((key) => [key, data.metrics[key] ?? 0] as const)
+          .map(([k, v]) => ({
+            section: "Summary",
+            item: onlineMetricLabels[k] ?? k,
+            quantity: "",
+            value: v,
+          })),
         ...data.statuses.map((s) => ({
           section: "Order status",
           item: s.status.replaceAll("_", " "),
@@ -147,21 +149,23 @@ export function OnlineOrdersReport() {
       {data && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(data.metrics).map(([k, v]) => (
-              <div
-                key={k}
-                className="rounded-lg border border-border bg-surface p-4"
-              >
-                <p className="text-sm text-muted">
-                  {onlineMetricLabels[k] ?? k}
-                </p>
-                <p className="text-xl font-semibold">
-                  {/(value|sales|fees|discounts|tax|refunds)$/.test(k)
-                    ? money(v, store.currency)
-                    : v}
-                </p>
-              </div>
-            ))}
+            {Object.keys(onlineMetricLabels)
+              .map((key) => [key, data.metrics[key] ?? 0] as const)
+              .map(([k, v]) => (
+                <div
+                  key={k}
+                  className="rounded-lg border border-border bg-surface p-4"
+                >
+                  <p className="text-sm text-muted">
+                    {onlineMetricLabels[k] ?? k}
+                  </p>
+                  <p className="text-xl font-semibold">
+                    {/(value|sales|fees|discounts|tax|refunds)$/.test(k)
+                      ? money(v, store.currency)
+                      : v}
+                  </p>
+                </div>
+              ))}
           </div>
           <h2 className="font-semibold">Order Status Summary</h2>
           <Table>
