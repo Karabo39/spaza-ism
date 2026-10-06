@@ -77,13 +77,13 @@ const metricOrder: Record<string, string[]> = {
   DAILY_SALES: ["total_sales", "cash", "card", "eft", "card_eft_unclassified", "invoice_credit_sales", "credit_sales", "refunds", "discounts", "transactions"],
   CASH_UP: ["expected_cash", "actual_cash", "variance", "cash", "card", "eft", "card_eft_unclassified", "refunds"],
   ONLINE_ORDERS: ["total_orders", "order_value", "online_sales", "paid_orders", "paid_value", "unpaid_orders", "unpaid_value", "completed_orders", "completed_value", "pending_orders", "pending_value", "cancelled_orders", "cancelled_value", "deliveries", "collections", "delivery_fees", "discounts", "refund_count", "refunds", "average_order_value", "new_customers", "returning_customers"],
-  BUSINESS_PERFORMANCE: ["sales", "recorded_supplier_purchases", "gross_profit", "orders", "refunds", "previous_period"],
+  BUSINESS_PERFORMANCE: ["sales", "returns", "net_sales", "cost_of_goods", "gross_profit", "recorded_supplier_purchases", "orders", "refunds", "estimated_cost_movements"],
 };
 const friendly = (key: string) => key.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 function valueText(key: string, value: unknown, currency: string): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "object") return Object.entries(value as Record<string, unknown>).map(([k, v]) => `${friendly(k)}: ${v}`).join(" · ");
-  if (typeof value === "number" && /amount|sales|value|cash|paid|outstanding|total|refund|discount|variance|profit|purchase|fee|debit|credit/i.test(key))
+  if (typeof value === "number" && /amount|sales|value|cash|paid|outstanding|total|refund|return|discount|variance|profit|cost|purchase|fee|debit|credit/i.test(key))
     return `${currency} ${new Intl.NumberFormat("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
   return String(value).replaceAll("−", "-").replaceAll("×", "x");
 }
@@ -91,7 +91,11 @@ export function notificationDocumentSections(job: NotificationJob): DocumentSect
   const p = job.payload;
   const metrics = p.metrics ?? {};
   const ordered = metricOrder[p.kind] ?? Object.keys(metrics);
-  const metricRows = ordered.filter((key) => key in metrics).flatMap((key) => {
+  const previousPeriod = metrics.previous_period && typeof metrics.previous_period === "object"
+    ? metrics.previous_period as Record<string, unknown>
+    : undefined;
+  const comparisonKeys = ["sales", "returns", "net_sales", "cost_of_goods", "gross_profit"];
+  const metricRows = ordered.filter((key) => key in metrics && !(p.kind === "BUSINESS_PERFORMANCE" && previousPeriod && comparisonKeys.includes(key))).flatMap((key) => {
     const title = metricLabels[key] ?? friendly(key);
     const value = metrics[key];
     if (value && typeof value === "object" && !Array.isArray(value))
@@ -103,6 +107,20 @@ export function notificationDocumentSections(job: NotificationJob): DocumentSect
   });
   const sections: DocumentSection[] = [];
   if (metricRows.length) sections.push({ title: p.kind === "ONLINE_ORDERS" ? "Online order summary" : "Summary", columns: [{ key: "measure", label: "Measure" }, { key: "value", label: "Value" }], rows: metricRows });
+  if (p.kind === "BUSINESS_PERFORMANCE" && previousPeriod) {
+    const rows = comparisonKeys.filter((key) => key in metrics || key in previousPeriod).map((key) => {
+      const current = metrics[key];
+      const previous = previousPeriod[key];
+      const difference = typeof current === "number" && typeof previous === "number" ? current - previous : undefined;
+      return {
+        metric: metricLabels[key] ?? friendly(key),
+        current: valueText(key, current, p.currency),
+        previous: valueText(key, previous, p.currency),
+        difference: valueText(key, difference, p.currency),
+      };
+    });
+    if (rows.length) sections.push({ title: "Current vs previous period", columns: [{ key: "metric", label: "Metric" }, { key: "current", label: "Current period" }, { key: "previous", label: "Previous period" }, { key: "difference", label: "Difference" }], rows });
+  }
   if (p.statuses?.length) sections.push({ title: "Order status summary", columns: [{ key: "status", label: "Order status" }, { key: "count", label: "Orders" }, { key: "value", label: `Order value (${p.currency})` }], rows: p.statuses.map((row) => ({ ...row, status: friendly(String(row.status ?? "")), value: valueText("value", row.value, p.currency) })) });
   if (p.products?.length) sections.push({ title: "Top 5 online-selling products", columns: [{ key: "product", label: "Product" }, { key: "quantity", label: "Sales quantity" }, { key: "value", label: `Sales value (${p.currency})` }], rows: p.products.slice(0, 5).map((row) => ({ ...row, value: valueText("value", row.value, p.currency) })) });
   if (p.rows?.length) {
