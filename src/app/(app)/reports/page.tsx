@@ -16,6 +16,12 @@ import {
 
 const REPORTS = [
   {
+    href: "/reports/online-orders",
+    label: "Online Orders Report",
+    desc: "Online order totals, fulfilment, payments and products",
+    icon: ClipboardList,
+  },
+  {
     href: "/reports/deliveries",
     label: "Delivery Report",
     desc: "Delivery statuses, attempts, schedules and totals",
