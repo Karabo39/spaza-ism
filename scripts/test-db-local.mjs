@@ -164,6 +164,7 @@ try {
     "mixed_document_refinements.sql",
     "october_workflows.sql",
     "online_customer_ordering.sql",
+    "oct6_reports_schedules.sql",
   ]) {
     try {
       await client.query(await readFile(`supabase/tests/${file}`, "utf8"));

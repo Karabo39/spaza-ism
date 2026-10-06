@@ -1,5 +1,5 @@
 do $$
-declare u uuid:=gen_random_uuid(); b uuid;s uuid;s2 uuid;p uuid;link uuid;link2 uuid;req uuid:=gen_random_uuid();secret text:=repeat('a',64);result jsonb;o uuid;o2 uuid;i uuid;d uuid;blocked boolean;today date:=(now() at time zone 'Africa/Johannesburg')::date;v bigint;
+declare u uuid:=gen_random_uuid(); b uuid;s uuid;s2 uuid;p uuid;link uuid;link2 uuid;req uuid:=gen_random_uuid();secret text:=repeat('a',64);result jsonb;o uuid;o2 uuid;i uuid;d uuid;blocked boolean;today date:=(now() at time zone 'Africa/Johannesburg')::date;v bigint;employee uuid:=gen_random_uuid();mid uuid;report jsonb;
 begin
  insert into auth.users(id,email,raw_user_meta_data) values(u,'online-owner@test.invalid','{}');
  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
@@ -33,13 +33,28 @@ begin
  reset role;perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
  blocked:=false;begin perform public.process_online_order(o2,1,'ready','{}',gen_random_uuid());exception when others then if sqlerrm<>'PAYMENT_REQUIRED' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT unpaid delivery cannot prepare';end if;
  blocked:=false;begin perform public.create_sales_invoice(o2,today,'CASH');exception when others then if sqlerrm<>'USE_ONLINE_ORDERS' then raise;end if;blocked:=true;end;if not blocked then raise exception 'ASSERT invoice payment bypass';end if;
+ reset role;
+ insert into auth.users(id,email,raw_user_meta_data) values(employee,'online-processor@test.invalid','{}');
+ insert into public.memberships(business_id,user_id,role) values(b,employee,'employee') returning id into mid;
+ insert into public.store_memberships(membership_id,store_id,business_id) values(mid,s,b);
+ insert into public.store_module_access(membership_id,store_id,permissions) values(mid,s,'{"orders":false,"orders_online":true,"orders_online_process":true}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);set local role authenticated;
  perform public.process_online_order(o2,1,'confirm_payment','{"method":"CARD_EFT"}',gen_random_uuid());
+ reset role;
  select invoice_id into i from public.online_orders where order_id=o2;select id into d from public.order_deliveries where invoice_id=i;
  if d is null or (select total from public.sales_invoices where id=i)<>29 then raise exception 'ASSERT shared delivery and fee';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);set local role authenticated;
  perform public.process_online_order(o2,2,'tracking','{"courier_company":"Courier","tracking_number":"TRACK123","tracking_url":"https://example.test/track/123"}',gen_random_uuid());
  perform public.process_online_order(o2,3,'release_delivery','{}',gen_random_uuid());
+ reset role;perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
  perform public.process_delivery(d,1,'dispatch','{}',gen_random_uuid());perform public.process_delivery(d,2,'complete','{"received_by":"Buyer"}',gen_random_uuid());
- reset role;perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+ report:=public.online_orders_report(s,today,today);
+ if (report->'metrics'->>'total_orders')::int<>2 or (report->'metrics'->>'paid_value')::numeric<>65 or (report->'metrics'->>'delivery_fees')::numeric<>5 or (report->'metrics'->>'completed_orders')::int<>2 or (report->'products'->0->>'quantity')::numeric<>5 then raise exception 'ASSERT populated online report totals: %',report;end if;
+ reset role;report:=app_private.scheduled_report_data(s,'DAILY_SALES',today,today);
+ if (report->'metrics'->>'total_sales')::numeric<>65 or (report->'metrics'->>'cash')::numeric<>36 or (report->'metrics'->>'card_eft')::numeric<>29 then raise exception 'ASSERT daily invoice/payment totals: %',report;end if;
+ report:=app_private.scheduled_report_data(s,'BUSINESS_PERFORMANCE',today,today);
+ if (report->'metrics'->>'total_sales')::numeric<>65 then raise exception 'ASSERT no double counted business invoice sales: %',report;end if;
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
  if public.customer_order_status(link,o2,secret)->>'status'<>'DELIVERED' then raise exception 'ASSERT public delivery tracking';end if;
  result:=public.place_customer_order(link,gen_random_uuid(),secret,'{"name":"Expiry Buyer","phone":"01234"}',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)),'COLLECTION',today,'PAY_ON_COLLECTION');o2:=(result->>'order_id')::uuid;
  reset role;update public.online_orders set expires_at=now()-interval '1 second' where order_id=o2;perform app_private.expire_online_orders();

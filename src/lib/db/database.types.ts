@@ -1236,6 +1236,20 @@ export type Database = {
       };
     };
     Functions: {
+      online_orders_report: {
+        Args: { p_store: string; p_from: string; p_to: string };
+        Returns: Json;
+      };
+      save_report_schedule: {
+        Args: {
+          p_store: string;
+          p_settings: Json;
+          p_id?: string;
+          p_expected?: number;
+        };
+        Returns: string;
+      };
+      report_schedules_page: { Args: { p_store: string }; Returns: Json };
       online_orders_page: {
         Args: { p_store: string; p_before?: string; p_before_id?: string };
         Returns: Json;

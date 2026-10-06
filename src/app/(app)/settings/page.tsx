@@ -1,4 +1,4 @@
-import {DocumentContactSettings} from '@/features/settings/document-contact';
+import { DocumentContactSettings } from "@/features/settings/document-contact";
 import { DocumentLogoSettings } from "@/features/settings/document-logo";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -8,7 +8,7 @@ import { SettingsForm } from "@/features/settings/settings-form";
 import Link from "next/link";
 import { OverrideCodeSettings } from "@/features/credit/override-approval";
 import { BillingPreferences } from "@/features/billing/billing-preferences";
-import { NotificationPreferences } from "@/features/settings/notification-preferences";
+import { ReportSchedules } from "@/features/settings/report-schedules";
 import { BusinessLogoSettings } from "@/features/settings/business-logo";
 import { ReturnReasonSettings } from "@/features/billing/return-reason-settings";
 import { DEFAULT_RETURN_REASONS } from "@/features/billing/return-reasons";
@@ -24,12 +24,6 @@ export default async function SettingsPage() {
     .eq("business_id", store.businessId)
     .maybeSingle();
   if (billingError) throw billingError;
-  const { data: notifications, error: notificationsError } = await supabase
-    .from("notification_preferences")
-    .select("*")
-    .eq("store_id", store.id);
-  if (notificationsError) throw notificationsError;
-
   const [{ data: profile }, { data: storeRow }, { data: business }] =
     await Promise.all([
       supabase
@@ -71,7 +65,15 @@ export default async function SettingsPage() {
           currency: business?.currency ?? "ZAR",
         }}
       />
-      {store.role === "owner" && <p className="mt-5 rounded-lg border border-border bg-surface p-5 text-sm">Adding another store? <Link href="/stores" className="text-primary-hover underline">Open My Stores</Link> to add locations and set up staff and products.</p>}
+      {store.role === "owner" && (
+        <p className="mt-5 rounded-lg border border-border bg-surface p-5 text-sm">
+          Adding another store?{" "}
+          <Link href="/stores" className="text-primary-hover underline">
+            Open My Stores
+          </Link>{" "}
+          to add locations and set up staff and products.
+        </p>
+      )}
       <BusinessLogoSettings />
       <DocumentLogoSettings />
       <DocumentContactSettings />
@@ -81,10 +83,7 @@ export default async function SettingsPage() {
         tax={Number(billing?.tax_percent ?? 0)}
         returnApproval={billing?.return_approval_required ?? true}
       />
-      <NotificationPreferences
-        key={`${store.id}:${session.userId}`}
-        initial={notifications ?? []}
-      />
+      <ReportSchedules key={store.id} />
       <ReturnReasonSettings
         key={`reasons:${store.businessId}`}
         initial={billing?.return_reasons ?? DEFAULT_RETURN_REASONS}

@@ -1,0 +1,43 @@
+do $$
+declare u uuid:=gen_random_uuid();employee uuid:=gen_random_uuid();b uuid;s uuid;s2 uuid;mid uuid;task uuid;result jsonb;report jsonb;job jsonb;jobs jsonb;original_due timestamptz;blocked boolean;k text;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'report-owner@test.invalid','{}'),(employee,'report-employee@test.invalid','{}');
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);set local role authenticated;
+ result:=public.create_business('Report business','Report shop');b:=(result->>'business_id')::uuid;s:=(result->>'store_id')::uuid;s2:=public.create_location(b,'Other report shop','store','OTHER');
+ task:=public.save_report_schedule(s,'{"name":"Daily sales","kind":"DAILY_SALES","frequency":"DAILY","send_time":"08:37","weekday":1,"monthday":1,"recipients":["a@example.test","b@example.test"],"active":true}');
+ report:=public.online_orders_report(s,current_date-1,current_date);
+ if (report->'metrics'->>'total_orders')::int<>0 or report->'products'<>'[]'::jsonb then raise exception 'ASSERT empty online report';end if;
+ blocked:=false;begin perform public.save_report_schedule(s2,'{}',task,1);exception when others then blocked:=true;end;if not blocked then raise exception 'ASSERT cross-store edit';end if;
+ blocked:=false;begin perform public.save_report_schedule(s,'{"name":"Bad email","kind":"DAILY_SALES","frequency":"DAILY","send_time":"08:37","weekday":1,"monthday":1,"recipients":["x\nBcc: private@test.invalid"],"active":true}');exception when others then blocked:=true;end;if not blocked then raise exception 'ASSERT recipient injection';end if;
+ reset role;
+ foreach k in array array['DAILY_SALES','LOW_STOCK','OUT_OF_STOCK','OUTSTANDING_PAYMENTS','OVERDUE_INVOICES','STOCK_MOVEMENTS','MOVING_PRODUCTS','CASH_UP','ONLINE_ORDERS','BUSINESS_PERFORMANCE','UPCOMING_EXPIRY','STOCK_TAKE_COMPLETED'] loop
+  report:=app_private.scheduled_report_data(s,k,current_date-1,current_date);if report is null then raise exception 'ASSERT report % missing',k;end if;
+ end loop;
+ if app_private.next_report_send('DAILY','08:37',1,1,'2026-10-06 06:36:59+00')<>'2026-10-06 06:37:00+00' then raise exception 'ASSERT minute precision';end if;
+ if app_private.next_report_send('DAILY','08:37',1,1,'2026-10-06 06:37:00+00')<>'2026-10-07 06:37:00+00' then raise exception 'ASSERT next day';end if;
+ if app_private.next_report_send('MONTHLY','08:37',1,1,'2026-12-31 22:00:00+00')<>'2027-01-01 06:37:00+00' then raise exception 'ASSERT month/year rollover';end if;
+ update public.report_schedules set next_send_at=now()-interval '1 minute' where id=task returning next_send_at into original_due;
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+ select jsonb_agg(x) into jobs from public.claim_notification_deliveries(2)x;
+ if jsonb_array_length(jobs)<>2 then raise exception 'ASSERT one job per recipient';end if;
+ select jsonb_agg(x) into result from public.claim_notification_deliveries(2)x;if result is not null then raise exception 'ASSERT concurrent leases';end if;
+ job:=jobs->0;perform public.complete_notification_delivery((job->>'id')::uuid,true,'provider-a');
+ reset role;if (select last_sent_at from public.report_schedules where id=task) is not null then raise exception 'ASSERT last sent only after all recipients';end if;
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+ job:=jobs->1;perform public.complete_notification_delivery((job->>'id')::uuid,false,null,'Temporary mail failure');
+ reset role;update public.report_schedule_deliveries set claimed_at=null where id=(job->>'id')::uuid;
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);set local role service_role;
+ select jsonb_agg(x) into result from public.claim_notification_deliveries(2)x;
+ if jsonb_array_length(result)<>1 or result->0->>'id'<>job->>'id' then raise exception 'ASSERT retry only unsent recipient';end if;
+ if not public.scheduled_notification_authorized((job->>'id')::uuid) then raise exception 'ASSERT valid worker lease';end if;
+ job:=jobs->1;perform public.complete_notification_delivery((job->>'id')::uuid,true,'provider-b');perform public.complete_notification_delivery((job->>'id')::uuid,true,'provider-b');
+ reset role;if not exists(select 1 from public.report_schedules where id=task and last_sent_at is not null and next_send_at>original_due) then raise exception 'ASSERT successful send advances schedule';end if;
+ insert into public.memberships(business_id,user_id,role) values(b,employee,'employee') returning id into mid;
+ insert into public.store_memberships(membership_id,store_id,business_id) values(mid,s,b);
+ insert into public.store_module_access(membership_id,store_id,permissions) values(mid,s,'{"orders":false,"orders_online":true,"orders_online_process":true}');
+ if not app.member_has_module(employee,s,'orders_online') or app.member_has_module(employee,s,'orders') then raise exception 'ASSERT Online Orders independent';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',employee,'role','authenticated')::text,true);set local role authenticated;
+ result:=public.online_orders_page(s);blocked:=false;begin perform public.online_orders_report(s,current_date-1,current_date);exception when others then blocked:=true;end;if not blocked then raise exception 'ASSERT report explicit grant';end if;
+ blocked:=false;begin perform public.save_report_schedule(s,'{}');exception when others then blocked:=true;end;if not blocked then raise exception 'ASSERT scheduling requires settings';end if;
+ reset role;raise exception 'TESTS_PASSED';
+end $$;
