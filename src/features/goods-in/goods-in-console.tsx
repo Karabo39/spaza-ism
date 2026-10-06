@@ -53,6 +53,7 @@ export function GoodsInConsole({
     React.useState<ProductStock | null>(null);
   const { store, stores, currency, setStore, can, canModule } = useStore();
   const { online } = useOffline();
+  const [destination, setDestination] = React.useState(store.id);
   const [lines, setLines] = React.useState<Line[]>([]);
   const [suppliers, setSuppliers] = React.useState<
     { id: string; name: string }[]
@@ -125,6 +126,10 @@ export function GoodsInConsole({
   }
 
   async function onScan(code: string) {
+    if (destination !== store.id) {
+      toast.error("Apply the receiving destination before scanning.");
+      return;
+    }
     if (!online) {
       toast.error("Receiving stock requires a connection.");
       return;
@@ -169,6 +174,10 @@ export function GoodsInConsole({
     setLines((prev) => prev.filter((l) => l.productId !== id));
 
   async function complete() {
+    if (destination !== store.id) {
+      toast.error("Apply the receiving destination first.");
+      return;
+    }
     if (!online) {
       toast.error("Goods In requires a connection.");
       return;
@@ -227,7 +236,7 @@ export function GoodsInConsole({
         </p>
         <ScanInput
           onScan={onScan}
-          busy={busy}
+          busy={busy || destination !== store.id}
           placeholder="Scan received products, then Enter"
         />
         <div className="flex items-center justify-between">
@@ -237,6 +246,7 @@ export function GoodsInConsole({
           <Button
             variant="secondary"
             size="sm"
+            disabled={destination !== store.id}
             onClick={() => setSearchOpen(true)}
           >
             <PackageSearch className="size-4" /> Add product
@@ -339,9 +349,9 @@ export function GoodsInConsole({
           <Label htmlFor="receiving-location">Receiving destination</Label>
           <select
             id="receiving-location"
-            value={store.id}
+            value={destination}
             disabled={fixedLocation || !online || lines.length > 0 || busy}
-            onChange={(e) => setStore(e.target.value)}
+            onChange={(e) => setDestination(e.target.value)}
             className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm"
           >
             {stores
@@ -350,6 +360,7 @@ export function GoodsInConsole({
                   (!fixedLocation || s.id === store.id) &&
                   s.businessId === store.businessId &&
                   s.locationType === store.locationType &&
+                  (s.role === "owner" || s.modules.goods_in_new_stock) &&
                   (store.locationType !== "warehouse" || s.id === store.id),
               )
               .map((s) => (
@@ -359,6 +370,15 @@ export function GoodsInConsole({
                 </option>
               ))}
           </select>
+          {destination !== store.id && (
+            <Button
+              className="mt-2"
+              disabled={!online || busy || lines.length > 0}
+              onClick={() => setStore(destination)}
+            >
+              Use receiving destination
+            </Button>
+          )}
           <p className="mt-1 text-xs text-muted">
             {fixedLocation
               ? "Receiving into this store only. Goods In requires a connection."

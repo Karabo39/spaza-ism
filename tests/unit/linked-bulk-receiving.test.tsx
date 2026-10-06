@@ -10,6 +10,7 @@ import {
 import { GoodsInConsole } from "@/features/goods-in/goods-in-console";
 const m = vi.hoisted(() => ({
   rpc: vi.fn(),
+  setStore: vi.fn(),
   product: {
     id: "juice",
     store_id: "shop",
@@ -40,9 +41,24 @@ vi.mock("@/lib/store-context", () => ({
       name: "Shop",
       locationType: "store",
     },
-    stores: [{ id: "shop", businessId: "business", name: "Shop", locationType: "store" }, {id: "other", businessId: "business",name:"Other store",locationType:"store"}],
+    stores: [
+      {
+        id: "shop",
+        businessId: "business",
+        name: "Shop",
+        locationType: "store",
+        modules: { goods_in_new_stock: true },
+      },
+      {
+        id: "other",
+        businessId: "business",
+        name: "Other store",
+        locationType: "store",
+        modules: { goods_in_new_stock: true },
+      },
+    ],
     currency: "ZAR",
-    setStore: vi.fn(),
+    setStore: m.setStore,
     can: () => false,
     canModule: () => true,
   }),
@@ -91,6 +107,7 @@ vi.mock("@/features/scan/product-search-dialog", () => ({
 beforeEach(() => {
   cleanup();
   m.rpc.mockReset();
+  m.setStore.mockReset();
   m.rpc.mockResolvedValue({ data: "receipt", error: null });
 });
 it("receives existing linked packs without creating another catalogue product", async () => {
@@ -127,10 +144,28 @@ it("locks the destination inside a store setup workspace", () => {
   const destination = screen.getByLabelText("Receiving destination");
   expect(destination).toBeDisabled();
   expect(destination).toHaveValue("shop");
-  expect(screen.queryByRole("option", {name: "Other store · Store"})).toBeNull();
+  expect(
+    screen.queryByRole("option", { name: "Other store · Store" }),
+  ).toBeNull();
 });
 it("retains destination selection on the ordinary receiving page", () => {
   render(<GoodsInConsole />);
   expect(screen.getByLabelText("Receiving destination")).toBeEnabled();
-  expect(screen.getByRole("option", {name: "Other store · Store"})).toBeVisible();
+  expect(
+    screen.getByRole("option", { name: "Other store · Store" }),
+  ).toBeVisible();
+});
+
+it("keeps destination selection local until applied and prevents receiving into the old store", () => {
+  render(<GoodsInConsole />);
+  fireEvent.change(screen.getByLabelText("Receiving destination"), {
+    target: { value: "other" },
+  });
+  expect(screen.getByLabelText("Receiving destination")).toHaveValue("other");
+  expect(m.setStore).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Add product" })).toBeDisabled();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Use receiving destination" }),
+  );
+  expect(m.setStore).toHaveBeenCalledWith("other");
 });

@@ -162,7 +162,10 @@ export default async function CreditPage({
           rows={rows.map((r) => ({
             name: r.name,
             phone: r.phone,
-            email: r.email, address: r.address, type: r.customer_type, credit_enabled: r.credit_enabled,
+            email: r.email,
+            address: r.address,
+            type: r.customer_type,
+            credit_enabled: r.credit_enabled,
             balance: Number(r.balance),
             credit_limit: Number(r.credit_limit),
             status: !r.is_active
@@ -176,7 +179,10 @@ export default async function CreditPage({
           columns={[
             { key: "name", label: "Customer" },
             { key: "phone", label: "Phone" },
-            {key:"email",label:"Email"},{key:"address",label:"Address"},{key:"type",label:"Customer type"},{key:"credit_enabled",label:"Credit enabled"},
+            { key: "email", label: "Email" },
+            { key: "address", label: "Address" },
+            { key: "type", label: "Customer type" },
+            { key: "credit_enabled", label: "Credit enabled" },
             { key: "balance", label: "Balance" },
             { key: "credit_limit", label: "Limit" },
             { key: "status", label: "Status" },
@@ -196,7 +202,9 @@ export default async function CreditPage({
             <THead>
               <TR>
                 <TH>Customer</TH>
-                <TH>Contact details</TH>
+                <TH>Contact number</TH>
+                <TH>Email</TH>
+                <TH>Address</TH>
                 <TH className="text-right">Balance</TH>
                 <TH className="text-right">Limit</TH>
                 <TH className="text-right">Available</TH>
@@ -212,9 +220,19 @@ export default async function CreditPage({
                       className="hover:text-primary-hover"
                     >
                       {r.name}
-                    </Link><p className="text-xs text-muted">{r.customer_type === "BUSINESS" ? "Business" : "Individual"} · {r.credit_enabled ? "Credit enabled" : "Cash / card"}</p>
+                    </Link>
+                    <p className="text-xs text-muted">
+                      {r.customer_type === "BUSINESS"
+                        ? "Business"
+                        : "Individual"}{" "}
+                      · {r.credit_enabled ? "Credit enabled" : "Cash / card"}
+                    </p>
                   </TD>
-                  <TD className="text-muted"><p>{r.phone || "No phone"}</p><p>{r.email || "No email"}</p><p className="max-w-xs whitespace-normal">{r.address || "No address"}</p></TD>
+                  <TD className="text-muted">{r.phone || "No phone"}</TD>
+                  <TD className="text-muted">{r.email || "No email"}</TD>
+                  <TD className="max-w-xs whitespace-pre-wrap text-muted">
+                    {r.address || "No address"}
+                  </TD>
                   <TD
                     className={cn(
                       "text-right tabular-nums",

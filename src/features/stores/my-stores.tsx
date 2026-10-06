@@ -124,7 +124,10 @@ export function MyStores() {
                     </dd>
                   </div>
                 </dl>
-                <Button asChild className="w-full">
+                <Button
+                  asChild
+                  className="w-full bg-[#30162e] hover:bg-[#462040]"
+                >
                   <Link href={`/stores/${s.id}`}>
                     Open Store <ArrowRight className="size-4" />
                   </Link>

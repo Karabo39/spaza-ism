@@ -16,7 +16,7 @@ export default async function GoodsInPage() {
           <h2 className="mb-4 text-lg font-semibold">
             Receive New Stock / Supplier → Store
           </h2>
-          <GoodsInConsole />
+          <GoodsInConsole key={session!.activeStore!.id} />
         </section>
       )}
       {modules.goods_in_receive_transfer && (
