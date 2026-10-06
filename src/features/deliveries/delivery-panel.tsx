@@ -1,6 +1,6 @@
 "use client";
 import { PrintDocumentButton } from "@/components/print-document-button";
-import { DeliveryStatus, deliveryLabel } from "./delivery-status";
+import { DeliveryStatus } from "./delivery-status";
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -54,19 +54,9 @@ export function DeliveryPanel({
   if (!query.data) return <p role="status">Loading delivery details…</p>;
   if (compact)
     return (
-      <div className="rounded border border-border p-3">
-        <p>
-          Delivery:{" "}
-          {query.data.delivery
-            ? deliveryLabel(query.data.delivery.status)
-            : query.data.order.required
-              ? "Required — awaiting full payment"
-              : "Collection / not required"}
-        </p>
-        <Button asChild>
-          <Link href={`/orders/deliveries/${orderId}`}>Manage delivery</Link>
-        </Button>
-      </div>
+      <Button asChild>
+        <Link href={`/orders/deliveries/${orderId}`}>Manage Delivery</Link>
+      </Button>
     );
   return (
     <DeliveryEditor
@@ -175,19 +165,21 @@ function DeliveryEditor({ data }: { data: DeliveryDetail }) {
               {d.scheduled_date ? dateOnly(d.scheduled_date) : "Not scheduled"}{" "}
               ({data.timezone})
             </p>
+          </>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {d && (
             <PrintDocumentButton
               href={`/orders/deliveries/${data.order.id}/note`}
             >
               Print delivery note
             </PrintDocumentButton>
-          </>
-        )}
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="secondary">
+          )}
+          <Button asChild>
             <Link href={`/orders?order=${data.order.id}`}>View order</Link>
           </Button>
           {data.invoice_id && canModule("invoices_view_invoices") && (
-            <Button asChild variant="secondary">
+            <Button asChild>
               <Link href={`/invoices/${data.invoice_id}`}>
                 View invoice / release goods
               </Link>

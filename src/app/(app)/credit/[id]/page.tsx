@@ -1,3 +1,4 @@
+import { DocumentLogo } from "@/components/document-logo";
 import { DeliveryQueue } from "@/features/deliveries/delivery-queue";
 import { CustomerProfile } from "@/features/credit/customer-profile";
 import { CustomerEmails } from "@/features/credit/customer-emails";
@@ -91,8 +92,12 @@ export default async function CustomerCreditPage({
     note: string | null;
   }[];
 
+  const documentLogo = session?.activeStore
+    ? await DocumentLogo({ businessId: session.activeStore.businessId })
+    : null;
   return (
     <>
+      {documentLogo}
       <PageHeader
         title={customer.name}
         crumbs={[

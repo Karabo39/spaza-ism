@@ -36,6 +36,9 @@ export default async function ReceiptPage({
       .order("created_at"),
   ]);
   if (lines.error || entries.error) throw lines.error ?? entries.error;
+  const documentLogo = await DocumentLogo({
+    businessId: session.activeStore.businessId,
+  });
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
@@ -49,7 +52,7 @@ export default async function ReceiptPage({
         className="mx-auto max-w-3xl bg-white p-8 text-black rounded-lg space-y-5"
       >
         <header className="flex flex-wrap justify-between gap-4">
-          <DocumentLogo businessId={session.activeStore.businessId} />
+          {documentLogo}
           <div>
             <h1 className="text-2xl font-bold">{i.business_name}</h1>
             <p>{i.store_name}</p>

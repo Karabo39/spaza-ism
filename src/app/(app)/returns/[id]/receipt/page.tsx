@@ -86,6 +86,9 @@ export default async function ReturnReceiptPage({
     0,
   );
   const currency = invoice.data?.currency ?? store.currency;
+  const documentLogo = await DocumentLogo({
+    businessId: session.activeStore.businessId,
+  });
   return (
     <>
       <div className="mb-4 flex justify-between print:hidden">
@@ -99,7 +102,7 @@ export default async function ReturnReceiptPage({
         className="mx-auto max-w-3xl space-y-5 rounded-lg bg-white p-8 text-black"
       >
         <header className="flex flex-wrap justify-between gap-4">
-          <DocumentLogo businessId={session.activeStore.businessId} />
+          {documentLogo}
           <div>
             <h1 className="text-2xl font-bold">
               {invoice.data?.business_name ?? store.businessName}

@@ -173,7 +173,7 @@ function Settings() {
           Allow payment on collection
         </label>
         <label>
-          Fixed delivery fee
+          Standard online delivery fee
           <Input
             name="fee"
             type="number"

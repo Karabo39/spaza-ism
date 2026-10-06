@@ -34,11 +34,7 @@ export function OnlineOrdersConsole() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap justify-between gap-3">
-        <Button
-          variant="secondary"
-          disabled={isFetching}
-          onClick={() => refetch()}
-        >
+        <Button disabled={isFetching} onClick={() => refetch()}>
           Refresh orders
         </Button>
       </div>
@@ -112,7 +108,9 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
           </p>
         </div>
         <div className="text-right">
-          <p className="font-semibold">{money(o.total, o.currency)}</p>
+          <p className="inline-block rounded px-3 py-1 font-semibold bg-emerald-500 text-slate-950">
+            {money(o.total, o.currency)}
+          </p>
           <p className="text-sm text-primary">
             {o.status.replaceAll("_", " ")}
           </p>
@@ -139,31 +137,31 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
             {o.courier_company} {o.tracking_number}
           </p>
           {o.comments && <p className="whitespace-pre-wrap">{o.comments}</p>}
-          {o.invoice_id && (
-            <Link
-              className="inline-block text-primary underline"
-              href={`/invoices/${o.invoice_id}`}
-            >
-              Invoice {o.invoice_number}
-            </Link>
-          )}
-          {o.delivery_number && (
-            <Link
-              className="ml-3 inline-block text-primary underline"
-              href="/orders/deliveries"
-            >
-              Delivery {o.delivery_number}
-            </Link>
-          )}
         </div>
       </details>
-      {o.goods_released &&
-        o.fulfilment === "DELIVERY" &&
-        canModule("orders_deliveries") && (
-          <Button asChild className="mt-4">
-            <Link href={`/orders/deliveries/${o.id}`}>Manage Delivery</Link>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {o.goods_released &&
+          o.fulfilment === "DELIVERY" &&
+          canModule("orders_deliveries") && (
+            <Button asChild>
+              <Link href={`/orders/deliveries/${o.id}`}>Manage Delivery</Link>
+            </Button>
+          )}
+        {o.invoice_id && canModule("invoices_view_invoices") && (
+          <Button asChild>
+            <Link href={`/invoices/${o.invoice_id}`}>
+              Invoice {o.invoice_number}
+            </Link>
           </Button>
         )}
+        {o.delivery_number && canModule("orders_deliveries") && (
+          <Button asChild>
+            <Link href={`/orders/deliveries/${o.id}`}>
+              Delivery {o.delivery_number}
+            </Link>
+          </Button>
+        )}
+      </div>
       {canModule("orders_online_process") && !closed && (
         <div className="mt-4 flex flex-wrap gap-2">
           {!paid && (
@@ -210,7 +208,7 @@ function OrderCard({ order: o }: { order: OnlineOrder }) {
             </Button>
           )}
           {o.fulfilment === "DELIVERY" && (
-            <Button variant="secondary" onClick={() => setAction("tracking")}>
+            <Button onClick={() => setAction("tracking")}>
               Courier tracking
             </Button>
           )}

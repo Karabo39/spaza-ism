@@ -117,11 +117,11 @@ export function InvoiceWorkspace({
   }
   return (
     <div className="space-y-5">
-      <DeliveryPanel orderId={i.order_id} compact />
       {!online && (
         <p className="text-warning">Invoice actions require a connection.</p>
       )}
       <div className="flex flex-wrap gap-3">
+        <DeliveryPanel orderId={i.order_id} compact />
         <Button asChild>
           <Link href={`/invoices/${i.id}/receipt`}>Open invoice / receipt</Link>
         </Button>

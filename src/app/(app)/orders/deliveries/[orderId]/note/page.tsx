@@ -25,6 +25,7 @@ export default async function DeliveryNote({
     d = detail.delivery;
   if (!d || d.store_id !== session.activeStore.id) notFound();
   const s = d.snapshot;
+  const documentLogo = await DocumentLogo({ businessId: d.business_id });
   return (
     <>
       <div className="mb-4 flex flex-wrap items-start gap-3 print:hidden">
@@ -42,7 +43,7 @@ export default async function DeliveryNote({
       >
         <style>{`@media print { @page { size: A4; margin: 10mm; } #receipt { position: static; padding: 0; } #receipt thead { display: table-header-group; } #receipt tr, #receipt .signatures { break-inside: avoid; } }`}</style>
         <header className="space-y-2">
-          <DocumentLogo businessId={d.business_id} />
+          {documentLogo}
           <h1 className="text-2xl font-bold">{s.business_name}</h1>
           <p className="whitespace-pre-wrap">
             {s.business_address || "Business address not configured"}

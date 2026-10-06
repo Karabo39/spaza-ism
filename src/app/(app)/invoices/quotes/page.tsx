@@ -1,3 +1,4 @@
+import { DocumentLogo } from "@/components/document-logo";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { PageHeader } from "@/components/shell/page-header";
@@ -9,8 +10,12 @@ export default async function QuotesPage() {
     !session?.activeStore?.modules.invoices_view_quotes
   )
     redirect("/no-access");
+  const documentLogo = session?.activeStore
+    ? await DocumentLogo({ businessId: session.activeStore.businessId })
+    : null;
   return (
     <>
+      {documentLogo}
       <PageHeader
         title="Quotations"
         description="Prepare customer quotes and review stock before creating an order."

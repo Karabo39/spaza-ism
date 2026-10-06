@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -233,9 +234,6 @@ export function CustomerShop({ link }: { link: string }) {
             <p className="text-sm font-medium text-primary">
               Order from {shop.name}
             </p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Local favourites. Ready for you.
-            </h2>
             <p className="mt-3 max-w-2xl text-muted">
               Choose your items and reserve them for{" "}
               {shop.collection_enabled && shop.delivery_enabled
@@ -499,7 +497,10 @@ export function CustomerShop({ link }: { link: string }) {
                           (cart.length >= 50 &&
                             !cart.some((l) => l.product.id === p.id))
                         }
-                        onClick={() => quantity(p, 1)}
+                        onClick={() => {
+                          quantity(p, 1);
+                          toast.success(`${p.name} added to your basket`);
+                        }}
                       >
                         {p.available ? "Add" : "Unavailable"}
                       </Button>
