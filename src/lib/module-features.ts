@@ -1,6 +1,13 @@
 // Per-store child permissions. Parents and dependencies must also be enabled.
 export const MODULE_FEATURES = [
   {
+    key: "reports_online",
+    label: "Online Orders report",
+    parent: "reports",
+    role: "employee",
+    requires: ["orders_online"],
+  },
+  {
     key: "products_edit",
     label: "Add and edit product records",
     parent: "products",
@@ -354,13 +361,6 @@ export const MODULE_FEATURES = [
     key: "invoices_month_to_date",
     label: "Invoiced This Month",
     parent: "invoices_summary",
-    role: "employee",
-    requires: [],
-  },
-  {
-    key: "orders_online",
-    label: "Online Orders",
-    parent: "orders",
     role: "employee",
     requires: [],
   },

@@ -92,13 +92,16 @@ describe("child permissions", () => {
 });
 
 it("requires employee receiving grants independently for each store", () => {
-  const a = modulePermissions("employee", { goods_in:true, goods_in_receive_transfer: true });
+  const a = modulePermissions("employee", {
+    goods_in: true,
+    goods_in_receive_transfer: true,
+  });
   expect(a.goods_in_receive_transfer).toBe(true);
   expect(a.goods_in_new_stock).toBe(false);
   expect(a.warehouse).toBe(false);
   expect(modulePermissions("employee").goods_in_receive_transfer).toBe(false);
   expect(
-    modulePermissions("employee", { goods_in:true, goods_in_new_stock: true })
+    modulePermissions("employee", { goods_in: true, goods_in_new_stock: true })
       .goods_in_new_stock,
   ).toBe(true);
   expect(
@@ -130,9 +133,43 @@ it("keeps unpacking under Stock Control and honours existing Operations grants",
 
 it("requires explicit employee sale-price permission and never grants invoice summaries", () => {
   expect(modulePermissions("employee").goods_out_change_price).toBe(false);
-  expect(modulePermissions("employee", { goods_out:true, goods_out_change_price: true }).goods_out_change_price).toBe(true);
-  expect(modulePermissions("employee", { goods_out: false, goods_out_change_price: true }).goods_out_change_price).toBe(false);
+  expect(
+    modulePermissions("employee", {
+      goods_out: true,
+      goods_out_change_price: true,
+    }).goods_out_change_price,
+  ).toBe(true);
+  expect(
+    modulePermissions("employee", {
+      goods_out: false,
+      goods_out_change_price: true,
+    }).goods_out_change_price,
+  ).toBe(false);
   expect(modulePermissions("manager").goods_out_change_price).toBe(false);
-  expect(modulePermissions("employee", { invoices_summary: true, invoices_outstanding: true, dashboard_invoicing: true }).invoices_outstanding).toBe(false);
+  expect(
+    modulePermissions("employee", {
+      invoices_summary: true,
+      invoices_outstanding: true,
+      dashboard_invoicing: true,
+    }).invoices_outstanding,
+  ).toBe(false);
   expect(modulePermissions("employee").invoices_view_invoices).toBe(false);
+});
+
+it("allows Online Orders independently and still requires separate report grants", () => {
+  const p = modulePermissions("employee", {
+    orders: false,
+    orders_online: true,
+    orders_online_process: true,
+    reports: true,
+    reports_online: true,
+  });
+  expect(p.orders).toBe(false);
+  expect(p.orders_online).toBe(true);
+  expect(p.orders_online_process).toBe(true);
+  expect(p.reports_online).toBe(true);
+  expect(
+    modulePermissions("employee", { reports_online: true, orders_online: true })
+      .reports_online,
+  ).toBe(false);
 });

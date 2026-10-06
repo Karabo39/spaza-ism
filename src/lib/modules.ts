@@ -39,6 +39,13 @@ export const MODULES = [
     group: "Daily work",
   },
   {
+    key: "orders_online",
+    label: "Online Orders",
+    href: "/orders/online",
+    role: "employee",
+    group: "Daily work",
+  },
+  {
     key: "orders",
     label: "Orders",
     href: "/orders",
@@ -226,6 +233,7 @@ export function moduleForPath(path: string): ModuleKey | undefined {
   const pathname = path.split("?")[0];
   if (pathname === "/reports/profit" || pathname === "/reports/reconciliation")
     return "reports_financial";
+  if (pathname.startsWith("/reports/online-orders")) return "reports_online";
   if (pathname.startsWith("/reports/deliveries")) return "reports_delivery";
   if (pathname.startsWith("/orders/online")) return "orders_online";
   if (pathname.startsWith("/orders/deliveries")) return "orders_deliveries";

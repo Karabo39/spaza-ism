@@ -103,9 +103,12 @@ export function PermissionTree({
     );
   };
   return (
-    <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       {[...new Set(MODULES.map((m) => m.group))].map((group) => (
-        <fieldset key={group}>
+        <fieldset
+          key={group}
+          className="min-w-0 rounded-lg border border-border p-4"
+        >
           <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
             {group}
           </legend>
