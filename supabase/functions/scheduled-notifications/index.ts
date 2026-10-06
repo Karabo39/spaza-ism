@@ -1,7 +1,7 @@
 import { jsPDF } from "npm:jspdf@4.2.1";
 import { autoTable } from "npm:jspdf-autotable@5.0.8";
 import { decodeDocumentLogo, logoSize } from "../_shared/document-logo.ts";
-import { notificationHtml } from "./handler.ts";
+import { notificationDocumentSections, notificationHtml } from "./handler.ts";
 import nodemailer from "npm:nodemailer@10.0.3";
 import { smtpOptions, sendSmtp } from "../_shared/smtp.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.4";
@@ -43,8 +43,12 @@ const handler = notificationHandler({
     });
     if (authorized.error || !authorized.data)
       throw new Error("Schedule inactive or access revoked");
-    const doc = new jsPDF();
-    let y = 18;
+    const sections = notificationDocumentSections(job);
+    const landscape = sections.some((section) => section.columns.length > 5);
+    const doc = new jsPDF({ orientation: landscape ? "landscape" : "portrait", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let logo: ReturnType<typeof decodeDocumentLogo> | undefined;
     if (job.payload.business_id) {
       const business = await db
         .from("businesses")
@@ -57,30 +61,53 @@ const handler = notificationHandler({
           .from("document-logos")
           .download(business.data.document_logo_path);
         if (asset.error) throw asset.error;
-        const logo = decodeDocumentLogo(
+        logo = decodeDocumentLogo(
           new Uint8Array(await asset.data.arrayBuffer()),
         );
-        const size = logoSize(logo, 45, 24);
-        doc.addImage(logo.dataUrl, "PNG", 14, 8, size.width, size.height);
-        y = 42;
       }
     }
-    doc.setFontSize(14);
-    doc.text(doc.splitTextToSize(message.subject, 180), 14, y);
-    y += 14;
-    autoTable(doc, {
-      startY: y,
-      head: [["Scheduled report", "Details"]],
-      body: message.text
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          const at = line.indexOf(":");
-          return at >= 0 ? [line.slice(0, at), line.slice(at + 1)] : [line, ""];
-        }),
-      styles: { fontSize: 9, overflow: "linebreak" },
-      headStyles: { fillColor: [24, 44, 77] },
-    });
+    const period = job.payload.from && job.payload.to ? `${job.payload.from} to ${job.payload.to}` : "";
+    const drawPageHeader = (pageNumber: number) => {
+      if (logo) {
+        const size = logoSize(logo, 45, 20);
+        doc.addImage(logo.dataUrl, "PNG", 14, 7, size.width, size.height);
+      }
+      doc.setTextColor(24, 44, 77);
+      doc.setFontSize(14);
+      doc.text(doc.splitTextToSize(message.subject, pageWidth - 28), 14, 31);
+      doc.setFontSize(8);
+      doc.setTextColor(82, 98, 118);
+      const metadata = [job.payload.business, job.payload.store, job.payload.currency, period].filter(Boolean).join(" · ");
+      doc.text(doc.splitTextToSize(metadata, pageWidth - 28), 14, 38);
+      doc.setDrawColor(217, 224, 232);
+      doc.line(14, 44, pageWidth - 14, 44);
+      doc.text(`${job.payload.business} · ${job.payload.store} · Page ${pageNumber}`, 14, pageHeight - 8);
+    };
+    let y = 52;
+    if (!sections.length) {
+      doc.setFontSize(10);
+      doc.text("No report data for this period.", 14, y);
+    }
+    for (const section of sections) {
+      if (y > pageHeight - 24) { doc.addPage(); y = 52; }
+      doc.setFontSize(10);
+      doc.setTextColor(24, 44, 77);
+      doc.text(section.title, 14, y);
+      autoTable(doc, {
+        startY: y + 3,
+        margin: { top: 48, bottom: 14, left: 14, right: 14 },
+        head: [section.columns.map((column) => column.label)],
+        body: section.rows.map((row) => section.columns.map((column) => String(row[column.key] ?? "—"))),
+        styles: { fontSize: landscape ? 7 : 8, cellPadding: 2, overflow: "linebreak", valign: "top" },
+        headStyles: { fillColor: [24, 44, 77], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [244, 247, 250] },
+        horizontalPageBreak: true,
+        horizontalPageBreakRepeat: 0,
+        showHead: "everyPage",
+        didDrawPage: (data) => drawPageHeader(data.pageNumber),
+      });
+      y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y + 12) + 9;
+    }
     const pdf = doc.output("datauristring").split(",")[1];
     const transport = nodemailer.createTransport(smtp);
     try {

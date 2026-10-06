@@ -33,6 +33,90 @@ export const notificationLabels: Record<string, string> = {
   ONLINE_ORDERS: "Online Orders Summary",
   BUSINESS_PERFORMANCE: "Business Performance Report",
 };
+type DocumentColumn = { key: string; label: string };
+type DocumentSection = { title: string; columns: DocumentColumn[]; rows: Record<string, unknown>[] };
+const detailColumns: Record<string, DocumentColumn[]> = {
+  LOW_STOCK: [
+    { key: "product", label: "Product" }, { key: "sku", label: "SKU" },
+    { key: "quantity", label: "Current stock" }, { key: "min_stock_level", label: "Minimum" },
+    { key: "reorder_level", label: "Reorder level" }, { key: "store", label: "Location / store" },
+  ],
+  OUT_OF_STOCK: [
+    { key: "product", label: "Product" }, { key: "sku", label: "SKU" },
+    { key: "quantity", label: "Available stock" }, { key: "store", label: "Location / store" },
+  ],
+  OUTSTANDING_PAYMENTS: [
+    { key: "customer", label: "Customer" }, { key: "reference", label: "Invoice number" },
+    { key: "invoice_date", label: "Invoice date" }, { key: "total", label: "Total amount" },
+    { key: "paid", label: "Amount paid" }, { key: "outstanding", label: "Amount outstanding" },
+    { key: "status", label: "Payment status" },
+  ],
+  OVERDUE_INVOICES: [
+    { key: "customer", label: "Customer" }, { key: "reference", label: "Invoice number" },
+    { key: "due_date", label: "Due date" }, { key: "total", label: "Invoice amount" },
+    { key: "outstanding", label: "Amount outstanding" }, { key: "days_overdue", label: "Days overdue" },
+  ],
+  STOCK_MOVEMENTS: [
+    { key: "product", label: "Product" }, { key: "sku", label: "SKU" },
+    { key: "stock_received", label: "Stock received" }, { key: "stock_sold", label: "Stock sold" },
+    { key: "stock_transferred", label: "Stock transferred" }, { key: "stock_adjusted", label: "Stock adjusted" },
+    { key: "stock_returned", label: "Stock returned" }, { key: "closing_stock", label: "Closing / current stock" },
+  ],
+  MOVING_PRODUCTS: [
+    { key: "category", label: "Movement / performance" }, { key: "product", label: "Product" },
+    { key: "sku", label: "SKU" }, { key: "quantity", label: "Quantity sold" }, { key: "value", label: "Sales value" },
+  ],
+  ONLINE_ORDERS: [
+    { key: "order_number", label: "Order number" }, { key: "customer", label: "Customer" },
+    { key: "order_date", label: "Order date" }, { key: "items", label: "Items / products" },
+    { key: "total", label: "Order total" }, { key: "payment_status", label: "Payment status" },
+    { key: "order_status", label: "Order status" },
+  ],
+};
+const metricOrder: Record<string, string[]> = {
+  DAILY_SALES: ["total_sales", "cash", "card", "eft", "card_eft_unclassified", "invoice_credit_sales", "credit_sales", "refunds", "discounts", "transactions"],
+  CASH_UP: ["expected_cash", "actual_cash", "variance", "cash", "card", "eft", "card_eft_unclassified", "refunds"],
+  ONLINE_ORDERS: ["total_orders", "order_value", "online_sales", "paid_orders", "paid_value", "unpaid_orders", "unpaid_value", "completed_orders", "completed_value", "pending_orders", "pending_value", "cancelled_orders", "cancelled_value", "deliveries", "collections", "delivery_fees", "discounts", "refund_count", "refunds", "average_order_value", "new_customers", "returning_customers"],
+  BUSINESS_PERFORMANCE: ["sales", "recorded_supplier_purchases", "gross_profit", "orders", "refunds", "previous_period"],
+};
+const friendly = (key: string) => key.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+function valueText(key: string, value: unknown, currency: string): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "object") return Object.entries(value as Record<string, unknown>).map(([k, v]) => `${friendly(k)}: ${v}`).join(" · ");
+  if (typeof value === "number" && /amount|sales|value|cash|paid|outstanding|total|refund|discount|variance|profit|purchase|fee|debit|credit/i.test(key))
+    return `${currency} ${new Intl.NumberFormat("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+  return String(value).replaceAll("−", "-").replaceAll("×", "x");
+}
+export function notificationDocumentSections(job: NotificationJob): DocumentSection[] {
+  const p = job.payload;
+  const metrics = p.metrics ?? {};
+  const ordered = metricOrder[p.kind] ?? Object.keys(metrics);
+  const metricRows = ordered.filter((key) => key in metrics).flatMap((key) => {
+    const title = metricLabels[key] ?? friendly(key);
+    const value = metrics[key];
+    if (value && typeof value === "object" && !Array.isArray(value))
+      return Object.entries(value as Record<string, unknown>).map(([childKey, childValue]) => ({
+        measure: `${title} — ${metricLabels[childKey] ?? friendly(childKey)}`,
+        value: valueText(childKey, childValue, p.currency),
+      }));
+    return [{ measure: title, value: valueText(key, value, p.currency) }];
+  });
+  const sections: DocumentSection[] = [];
+  if (metricRows.length) sections.push({ title: p.kind === "ONLINE_ORDERS" ? "Online order summary" : "Summary", columns: [{ key: "measure", label: "Measure" }, { key: "value", label: "Value" }], rows: metricRows });
+  if (p.statuses?.length) sections.push({ title: "Order status summary", columns: [{ key: "status", label: "Order status" }, { key: "count", label: "Orders" }, { key: "value", label: `Order value (${p.currency})` }], rows: p.statuses.map((row) => ({ ...row, status: friendly(String(row.status ?? "")), value: valueText("value", row.value, p.currency) })) });
+  if (p.products?.length) sections.push({ title: "Top 5 online-selling products", columns: [{ key: "product", label: "Product" }, { key: "quantity", label: "Sales quantity" }, { key: "value", label: `Sales value (${p.currency})` }], rows: p.products.slice(0, 5).map((row) => ({ ...row, value: valueText("value", row.value, p.currency) })) });
+  if (p.rows?.length) {
+    const columns = detailColumns[p.kind]?.filter((column) => p.rows!.some((row) => column.key in row))
+      ?? Object.keys(p.rows[0]).map((key) => ({ key, label: friendly(key) }));
+    const rows = p.rows.map((row) => Object.fromEntries(columns.map((column) => [column.key, valueText(column.key, row[column.key], p.currency)])));
+    if (p.kind === "MOVING_PRODUCTS") {
+      const groups = [...new Set(rows.map((row) => row.category))];
+      for (const group of groups) sections.push({ title: String(group), columns: columns.filter((column) => column.key !== "category"), rows: rows.filter((row) => row.category === group) });
+    } else sections.push({ title: p.kind === "ONLINE_ORDERS" ? "Online orders" : "Report details", columns, rows });
+  }
+  if (!sections.length && p.count !== undefined) sections.push({ title: "Summary", columns: [{ key: "measure", label: "Measure" }, { key: "value", label: "Value" }], rows: [{ measure: "Records", value: p.count }] });
+  return sections;
+}
 const metricLabels: Record<string, string> = {
   card_eft_unclassified: "Combined invoice Card/EFT (method not separated)",
   recorded_cash_removals: "Recorded cash removals (not necessarily expenses)",
@@ -107,7 +191,12 @@ const escape = (s: string) =>
     .replaceAll('"', "&quot;");
 export function notificationHtml(job: NotificationJob) {
   const m = notificationMessage(job);
-  return `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#182c4d;padding:24px"><h1>${escape(job.payload.business)}</h1><h2>${escape(m.subject)}</h2><p>Store: ${escape(job.payload.store)} · Currency: ${escape(job.payload.currency)}</p><div style="line-height:1.6">${m.text.split("\n").map(escape).join("<br>")}</div></body></html>`;
+  const sections = notificationDocumentSections(job).map((section) => `<h3 style="margin:24px 0 8px;color:#182c4d">${escape(section.title)}</h3><table style="border-collapse:collapse;width:100%;font-size:14px"><thead><tr>${section.columns.map((column) => `<th style="background:#182c4d;color:#fff;padding:9px;text-align:left">${escape(column.label)}</th>`).join("")}</tr></thead><tbody>${section.rows.map((row) => `<tr>${section.columns.map((column) => `<td style="border-bottom:1px solid #d9e0e8;padding:8px;vertical-align:top">${escape(String(row[column.key] ?? "—"))}</td>`).join("")}</tr>`).join("")}</tbody></table>`).join("");
+  const p = job.payload;
+  const period = p.from && p.to ? `${p.from} to ${p.to}` : "";
+  const notes = p.notes ? `<p style="color:#526276;font-size:12px">${escape(p.notes)}</p>` : "";
+  const limit = p.rows && (p.count ?? 0) > p.rows.length ? `<p>Showing ${p.rows.length} of ${p.count} records. Open POS INVENTORY for the complete report.</p>` : "";
+  return `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#182c4d;padding:24px"><p style="font-size:12px;color:#526276">${escape(p.business)} · ${escape(p.store)} · ${escape(p.currency)}${period ? ` · ${escape(period)}` : ""}</p><h1>${escape(m.subject)}</h1>${sections}${limit}${notes}<p style="margin-top:24px;font-size:12px;color:#526276">Manage this email in Settings → Scheduled Email Notifications.</p></body></html>`;
 }
 type Result<T> = { data: T | null; error: { message: string } | null };
 export type NotificationWorkerDependencies = {
