@@ -15,6 +15,7 @@ import { money, qty, dateTime } from "@/lib/format";
 import { ExpiryBatches } from "@/features/products/expiry-batches";
 import type { ProductStock } from "@/lib/db/database.types";
 import { BarcodeCopy } from "@/features/products/barcode-copy";
+import { ProductDeleteButton } from "@/features/products/product-delete-button";
 
 export default async function ProductDetailPage({
   params,
@@ -79,11 +80,14 @@ export default async function ProductDetailPage({
         crumbs={[{ label: "Products", href: "/products" }, { label: p.name }]}
         description={p.category_name ?? undefined}
         actions={
-          <ProductEditDialog
-            key={(barcodes ?? [])[0]?.barcode ?? "none"}
-            product={p}
-            barcode={(barcodes ?? [])[0]?.barcode ?? ""}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <ProductEditDialog
+              key={(barcodes ?? [])[0]?.barcode ?? "none"}
+              product={p}
+              barcode={(barcodes ?? [])[0]?.barcode ?? ""}
+            />
+            <ProductDeleteButton productId={p.id} productName={p.name} active={p.is_active} />
+          </div>
         }
       />
 

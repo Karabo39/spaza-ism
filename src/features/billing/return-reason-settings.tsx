@@ -18,8 +18,9 @@ export function ReturnReasonSettings({ initial }: { initial: string[] }) {
   const valid = validReturnReasons(reasons);
   if (!can("owner")) return null;
   return (
-    <section className="mt-6 max-w-xl space-y-3 rounded-lg border border-border bg-surface p-5">
-      <h2 className="font-semibold">Return reasons</h2>
+    <details className="mt-6 max-w-xl rounded-lg border border-border bg-surface p-5">
+      <summary className="cursor-pointer font-semibold">Return Reasons</summary>
+      <div className="mt-4 space-y-3">
       <p className="text-sm text-muted">
         Staff must choose one of these reasons when capturing a return. Previous
         returns keep their recorded reason. Choosing “Other” also requires an
@@ -59,6 +60,7 @@ export function ReturnReasonSettings({ initial }: { initial: string[] }) {
       >
         Save return reasons
       </Button>
-    </section>
+      </div>
+    </details>
   );
 }

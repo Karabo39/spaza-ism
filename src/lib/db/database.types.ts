@@ -1250,6 +1250,20 @@ export type Database = {
         Returns: string;
       };
       report_schedules_page: { Args: { p_store: string }; Returns: Json };
+      delete_report_schedule: {
+        Args: { p_id: string; p_expected: number };
+        Returns: undefined;
+      };
+      archive_product: { Args: { p_product: string }; Returns: undefined };
+      search_online_orders_page: {
+        Args: {
+          p_store: string;
+          p_search?: string;
+          p_before?: string;
+          p_before_id?: string;
+        };
+        Returns: Json;
+      };
       online_orders_page: {
         Args: { p_store: string; p_before?: string; p_before_id?: string };
         Returns: Json;
@@ -1324,6 +1338,17 @@ export type Database = {
           p_date?: string;
           p_after?: number;
           p_customer?: string;
+        };
+        Returns: Json;
+      };
+      search_delivery_page: {
+        Args: {
+          p_store: string;
+          p_queue?: string;
+          p_date?: string;
+          p_after?: number;
+          p_customer?: string;
+          p_search?: string;
         };
         Returns: Json;
       };

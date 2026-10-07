@@ -9,10 +9,13 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { dateTime } from "@/lib/format";
+import { ChevronDown, Trash2 } from "lucide-react";
 import type { Json } from "@/lib/db/database.types";
 
 const kinds = [
@@ -50,10 +53,12 @@ export function ReportSchedules() {
   const [editing, setEditing] = useState<Schedule | null | undefined>(
     undefined,
   );
+  const [deleting, setDeleting] = useState<Schedule | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const query = useQuery({
     queryKey: ["billing", "report-schedules", store.id],
-    enabled: canModule("settings_manage"),
-    refetchInterval: 60000,
+    enabled: canModule("settings_manage") && expanded,
+    refetchInterval: expanded ? 60000 : false,
     queryFn: async () => {
       const r = await createClient().rpc("report_schedules_page", {
         p_store: store.id,
@@ -79,10 +84,25 @@ export function ReportSchedules() {
       },
     );
   }
+  async function remove(s: Schedule) {
+    if (s.active) return;
+    await run(
+      () => createClient().rpc("delete_report_schedule", { p_id: s.id, p_expected: s.version }),
+      "Scheduled notification deleted",
+      () => {
+        setDeleting(null);
+        void query.refetch();
+      },
+    );
+  }
   return (
-    <section className="mt-6 space-y-4 rounded-lg border border-border bg-surface p-5">
-      <div className="flex flex-wrap justify-between gap-3">
-        <h2 className="font-semibold">Scheduled Email Notifications</h2>
+    <details className="group mt-6 rounded-lg border border-border bg-surface p-5" onToggle={(event) => setExpanded(event.currentTarget.open)}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold [&::-webkit-details-marker]:hidden">
+        <span>Scheduled Email Notifications</span>
+        <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="mt-4 space-y-4">
+      <div className="flex flex-wrap justify-end gap-3">
         <Button
           disabled={!online || !available.length}
           onClick={() => setEditing(null)}
@@ -148,7 +168,16 @@ export function ReportSchedules() {
                 >
                   {s.active ? "Deactivate" : "Activate"}
                 </Button>
+                <Button
+                  variant="danger"
+                  disabled={!online || busy || s.active}
+                  title={s.active ? "Deactivate this notification before deleting it" : undefined}
+                  onClick={() => setDeleting(s)}
+                >
+                  <Trash2 className="size-4" /> Delete
+                </Button>
               </div>
+              {s.active && <p className="w-full text-xs text-muted">Deactivate this notification before deleting it.</p>}
             </div>
           </article>
         ))}
@@ -301,6 +330,23 @@ export function ReportSchedules() {
           )}
         </DialogContent>
       </Dialog>
-    </section>
+      <Dialog open={deleting !== null} onOpenChange={(value) => !busy && !value && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete scheduled notification?</DialogTitle>
+            <DialogDescription>
+              {deleting?.active
+                ? "Deactivate this notification before deleting it."
+                : `“${deleting?.name ?? "This notification"}” will be removed from the schedule list. Its delivery history will be retained.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" disabled={busy} onClick={() => setDeleting(null)}>Keep notification</Button>
+            <Button variant="danger" disabled={!online || busy || !deleting || deleting.active} loading={busy} onClick={() => deleting && void remove(deleting)}>Delete notification</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      </div>
+    </details>
   );
 }

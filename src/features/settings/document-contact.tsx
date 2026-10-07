@@ -42,8 +42,10 @@ function ContactForm({
     [phone, setPhone] = useState(initial.document_phone ?? ""),
     [email, setEmail] = useState(initial.document_email ?? "");
   return (
-    <form
-      className="mt-5 rounded-lg border border-border bg-surface p-5 space-y-3"
+    <details className="mt-5 rounded-lg border border-border bg-surface p-5">
+      <summary className="cursor-pointer font-semibold">Delivery Document Contact Details</summary>
+      <form
+      className="mt-4 space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         void action.run(
@@ -58,7 +60,6 @@ function ContactForm({
         );
       }}
     >
-      <h2 className="font-semibold">Delivery document contact details</h2>
       <p className="text-sm text-muted">
         Used on new delivery notes. Existing notes retain their business
         details.
@@ -91,6 +92,7 @@ function ContactForm({
         </label>
         <Button type="submit">Save document contact details</Button>
       </fieldset>
-    </form>
+      </form>
+    </details>
   );
 }

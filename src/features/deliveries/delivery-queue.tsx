@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
@@ -13,7 +13,9 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
   const { store, canModule } = useStore();
   const [queue, setQueue] = useState("all"),
     [date, setDate] = useState(""),
+    [search, setSearch] = useState(""),
     [cursors, setCursors] = useState<(number | undefined)[]>([undefined]);
+  const deferredSearch = useDeferredValue(search);
   const cursor = cursors[cursors.length - 1];
   const query = useQuery({
     queryKey: [
@@ -22,17 +24,19 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
       store.id,
       queue,
       date,
+      deferredSearch,
       cursor,
       customerId,
     ],
     enabled: canModule("orders_deliveries"),
     queryFn: async () => {
-      const { data, error } = await createClient().rpc("delivery_page", {
+      const { data, error } = await createClient().rpc("search_delivery_page", {
         p_store: store.id,
         p_queue: queue,
         p_date: date || undefined,
         p_after: cursor,
         p_customer: customerId,
+        p_search: deferredSearch || undefined,
       });
       if (error) throw error;
       return data as unknown as { rows: DeliveryRow[] };
@@ -78,6 +82,20 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
             }}
           />
         </label>
+        {!customerId && <label className="min-w-[min(100%,18rem)] flex-1">
+          Search deliveries
+          <Input
+            className="mt-1 h-11 sm:h-10"
+            value={search}
+            maxLength={128}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCursors([undefined]);
+            }}
+            placeholder="Enter all or part of a delivery number"
+            aria-label="Search deliveries by delivery number"
+          />
+        </label>}
         <Button onClick={() => query.refetch()} disabled={query.isFetching}>
           Refresh
         </Button>
@@ -92,7 +110,7 @@ export function DeliveryQueue({ customerId }: { customerId?: string }) {
         <p role="alert">Could not load deliveries. Please retry.</p>
       )}
       {!query.isLoading && !query.error && !rows.length && (
-        <p>No deliveries in this queue.</p>
+        <p>{search ? "No deliveries match this number." : "No deliveries in this queue."}</p>
       )}
       <div className="space-y-3">
         {rows.map((row) => (

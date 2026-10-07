@@ -247,6 +247,12 @@ export function friendlyError(message: string | undefined | null): string {
     return "Check for invalid quantities or duplicate products in the workbook. No counts were saved.";
   if (m.includes("DEACTIVATE_SCHEDULE_FIRST"))
     return "Deactivate the recurring schedule before deleting it.";
+  if (m.includes("PRODUCT_HAS_STOCK"))
+    return "This product still has non-expired stock. Remove the remaining stock first; products with only expired stock may be deleted.";
+  if (m.includes("PRODUCT_IN_USE"))
+    return "This product is in a bulk configuration, active online order, or unfinished stock transfer. Complete or cancel that work before deleting it.";
+  if (m.includes("PRODUCT_ALREADY_INACTIVE"))
+    return "This product is already inactive. Refresh the product list.";
   if (m.includes("COUNT_CHANGED_REFRESH"))
     return "A count changed elsewhere. Refresh and review before saving again.";
   if (m.includes("INVALID_DELIVERY_FEE"))

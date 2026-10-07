@@ -139,8 +139,9 @@ export function OverrideCodeSettings() {
     }
   }
   return (
-    <section className="mt-6 max-w-xl space-y-3 rounded-lg border border-border bg-surface p-5">
-      <h2 className="font-semibold">Credit approval code</h2>
+    <details className="mt-6 max-w-xl rounded-lg border border-border bg-surface p-5">
+      <summary className="cursor-pointer font-semibold">Credit Approval Code</summary>
+      <div className="mt-4 space-y-3">
       <p className="text-sm text-muted">
         Set your personal 6–12 digit code to approve a cashier’s sale above a
         customer’s credit limit. Each approval records you as the approver.
@@ -162,6 +163,7 @@ export function OverrideCodeSettings() {
       >
         Save approval code
       </Button>
-    </section>
+      </div>
+    </details>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@/lib/store-context";
@@ -14,17 +14,23 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useBillingAction } from "@/features/billing/use-billing-action";
+import { ChevronDown } from "lucide-react";
 import type { OnlineOrder } from "./types";
 import type { Json } from "@/lib/db/database.types";
 export function OnlineOrdersConsole() {
   const { store } = useStore();
   const [cursors, setCursors] = useState<{ date: string; id: string }[]>([]);
+  const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [expanded, setExpanded] = useState(false);
   const cursor = cursors.at(-1);
   const { data, error, isFetching, refetch } = useQuery({
-    queryKey: ["billing", "online-orders", store.id, cursor],
+    queryKey: ["billing", "online-orders", store.id, deferredSearch, cursor],
+    enabled: expanded,
     queryFn: async () => {
-      const { data, error } = await createClient().rpc("online_orders_page", {
+      const { data, error } = await createClient().rpc("search_online_orders_page", {
         p_store: store.id,
+        p_search: deferredSearch || undefined,
         ...(cursor ? { p_before: cursor.date, p_before_id: cursor.id } : {}),
       });
       if (error) throw error;
@@ -33,39 +39,65 @@ export function OnlineOrdersConsole() {
   });
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap justify-between gap-3">
-        <Button disabled={isFetching} onClick={() => refetch()}>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="min-w-[min(100%,18rem)] flex-1 text-sm">
+          Search order number
+          <Input
+            className="mt-1"
+            value={search}
+            maxLength={128}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setCursors([]);
+            }}
+            placeholder="Enter all or part of an order number"
+            aria-label="Search online orders by order number"
+          />
+        </label>
+        <Button disabled={isFetching} onClick={() => expanded ? void refetch() : setExpanded(true)}>
           Refresh orders
         </Button>
       </div>
-      {error && <p role="alert">Unable to load online orders.</p>}
-      {data?.map((o) => (
-        <OrderCard key={`${store.id}:${o.id}:${o.version}`} order={o} />
-      ))}
-      {data && !data.length && (
-        <p className="rounded-xl border border-border p-6 text-muted">
-          No online orders on this page.
-        </p>
-      )}
-      <div className="flex gap-3">
-        <Button
-          variant="secondary"
-          disabled={!cursors.length || isFetching}
-          onClick={() => setCursors((c) => c.slice(0, -1))}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={data?.length !== 25 || isFetching}
-          onClick={() => {
-            const last = data!.at(-1)!;
-            setCursors((c) => [...c, { date: last.date, id: last.id }]);
-          }}
-        >
-          Next
-        </Button>
-      </div>
+      <Button
+        className="mt-1 w-full justify-between"
+        variant="secondary"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <span>Online Orders{data ? ` (${data.length}${data.length === 25 ? "+" : ""})` : ""}</span>
+        <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </Button>
+      {expanded && <>
+        {error && <p role="alert">Unable to load online orders.</p>}
+        {isFetching && !data && <p role="status">Loading online orders…</p>}
+        {data?.map((o) => (
+          <OrderCard key={`${store.id}:${o.id}:${o.version}`} order={o} />
+        ))}
+        {data && !data.length && (
+          <p className="rounded-xl border border-border p-6 text-muted">
+            No online orders match this search.
+          </p>
+        )}
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            disabled={!cursors.length || isFetching}
+            onClick={() => setCursors((c) => c.slice(0, -1))}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={data?.length !== 25 || isFetching}
+            onClick={() => {
+              const last = data!.at(-1)!;
+              setCursors((c) => [...c, { date: last.date, id: last.id }]);
+            }}
+          >
+            Next
+          </Button>
+        </div>
+      </>}
     </div>
   );
 }
